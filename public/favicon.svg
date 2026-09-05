@@ -1,0 +1,61 @@
+<svg viewBox="0 0 120 120" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="fav-trunk" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stopColor="#0284C7" />
+      <stop offset="50%" stopColor="#0D9488" />
+      <stop offset="100%" stopColor="#16A34A" />
+    </linearGradient>
+    <linearGradient id="fav-orange" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#FB923C" />
+      <stop offset="100%" stopColor="#EA580C" />
+    </linearGradient>
+    <linearGradient id="fav-blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#38BDF8" />
+      <stop offset="100%" stopColor="#0284C7" />
+    </linearGradient>
+    <linearGradient id="fav-green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#4ADE80" />
+      <stop offset="100%" stopColor="#15803D" />
+    </linearGradient>
+    <linearGradient id="fav-book-l" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#0284C7" />
+      <stop offset="100%" stopColor="#1B365D" />
+    </linearGradient>
+    <linearGradient id="fav-book-r" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#0D9488" />
+      <stop offset="100%" stopColor="#1B365D" />
+    </linearGradient>
+  </defs>
+
+  <rect width="120" height="120" rx="28" fill="#F8FAFC" stroke="#E2E8F0" stroke-width="2" />
+
+  <g transform="translate(60, 58) scale(0.24)">
+    <!-- Book Wings -->
+    <path d="M -15 95 C -60 80 -120 55 -145 40 L -155 130 C -120 150 -60 175 -15 190 Z" fill="url(#fav-book-l)" />
+    <path d="M 15 95 C 60 80 120 55 145 40 L 155 130 C 120 150 60 175 15 190 Z" fill="url(#fav-book-r)" />
+
+    <!-- Orange / Green Ribbons -->
+    <path d="M -10 178 C -50 160 -105 135 -125 120 L -118 45 C -100 60 -50 85 -12 98 Z" fill="url(#fav-orange)" />
+    <path d="M 10 178 C 50 160 105 135 125 120 L 118 45 C 100 60 50 85 12 98 Z" fill="url(#fav-green)" />
+
+    <!-- Ascending Trunk -->
+    <path d="M -15 185 C -8 140 -12 90 -10 40 C -8 -5 -3 -40 0 -80 C 3 -40 8 -5 10 40 C 12 90 8 140 15 185 Z" fill="url(#fav-trunk)" />
+
+    <!-- Center Leaves -->
+    <path d="M 0 -70 C -10 -45 -10 -15 0 5 C 10 -15 10 -45 0 -70 Z" fill="#22C55E" />
+    <path d="M 0 -110 C -8 -90 -8 -65 0 -50 C 8 -65 8 -90 0 -110 Z" fill="#16A34A" />
+
+    <!-- Left Leaves (Orange) -->
+    <path d="M -18 -85 C -45 -95 -62 -80 -68 -62 C -50 -52 -28 -65 -18 -85 Z" fill="#F97316" />
+    <path d="M -35 -55 C -65 -60 -82 -42 -88 -22 C -68 -12 -45 -30 -35 -55 Z" fill="#FB923C" />
+    <path d="M -20 -30 C -52 -25 -70 -5 -72 18 C -50 22 -28 0 -20 -30 Z" fill="#EA580C" />
+
+    <!-- Right Leaves (Blue) -->
+    <path d="M 18 -85 C 45 -95 62 -80 68 -62 C 50 -52 28 -65 18 -85 Z" fill="#0284C7" />
+    <path d="M 35 -55 C 65 -60 82 -42 88 -22 C 68 -12 45 -30 35 -55 Z" fill="#38BDF8" />
+    <path d="M 20 -30 C 52 -25 70 -5 72 18 C 50 22 28 0 20 -30 Z" fill="#0284C7" />
+
+    <!-- Apex Star -->
+    <path d="M 0 -138 L 7 -119 L 27 -119 L 11 -107 L 17 -88 L 0 -100 L -17 -88 L -11 -107 L -27 -119 L -7 -119 Z" fill="#F97316" />
+  </g>
+</svg>

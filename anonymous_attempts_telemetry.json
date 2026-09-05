@@ -1,0 +1,72 @@
+[
+  {
+    "id": "att_9a12c41",
+    "timestamp": "2026-09-05T02:10:03.964Z",
+    "test_type": "spoken_assessment",
+    "target_cefr_level": "B2",
+    "achieved_cefr_or_score": "B2",
+    "score_numeric": 84,
+    "plagiarism_risk": "LOW",
+    "similarity_percentage": 6,
+    "flagged_passages_count": 0,
+    "word_count": 182,
+    "integrity_status": "passed",
+    "client_session_hash": "anon_8f2a1b"
+  },
+  {
+    "id": "att_8b44d19",
+    "timestamp": "2026-09-05T02:55:03.964Z",
+    "test_type": "writing_diagnostic",
+    "target_cefr_level": "B2",
+    "achieved_cefr_or_score": "B1",
+    "score_numeric": 72,
+    "plagiarism_risk": "LOW",
+    "similarity_percentage": 8,
+    "flagged_passages_count": 1,
+    "word_count": 145,
+    "integrity_status": "passed",
+    "client_session_hash": "anon_4e92d7"
+  },
+  {
+    "id": "att_7f33e88",
+    "timestamp": "2026-09-05T03:40:03.964Z",
+    "test_type": "spoken_assessment",
+    "target_cefr_level": "B2",
+    "achieved_cefr_or_score": "A1",
+    "score_numeric": 35,
+    "plagiarism_risk": "HIGH",
+    "similarity_percentage": 88,
+    "flagged_passages_count": 2,
+    "word_count": 110,
+    "integrity_status": "flagged",
+    "client_session_hash": "anon_6c18f3"
+  },
+  {
+    "id": "att_6e22f71",
+    "timestamp": "2026-09-05T04:25:03.964Z",
+    "test_type": "grammar_diagnostic",
+    "target_cefr_level": "B1",
+    "achieved_cefr_or_score": "85/100",
+    "score_numeric": 85,
+    "plagiarism_risk": "LOW",
+    "similarity_percentage": 4,
+    "flagged_passages_count": 0,
+    "word_count": 96,
+    "integrity_status": "passed",
+    "client_session_hash": "anon_1d55a9"
+  },
+  {
+    "id": "att_5a99b33",
+    "timestamp": "2026-09-05T04:55:03.964Z",
+    "test_type": "integrity_studio_scan",
+    "target_cefr_level": "C1",
+    "achieved_cefr_or_score": "C1",
+    "score_numeric": 91,
+    "plagiarism_risk": "LOW",
+    "similarity_percentage": 5,
+    "flagged_passages_count": 0,
+    "word_count": 215,
+    "integrity_status": "passed",
+    "client_session_hash": "anon_7a33c2"
+  }
+]

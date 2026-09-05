@@ -1,0 +1,11 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Contains real-looking demo credentials (Admin123!, Learner123!) — local/dev seeding only, never ship this.
+scripts/seed-demo.ts

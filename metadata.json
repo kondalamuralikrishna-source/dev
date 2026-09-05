@@ -1,0 +1,10 @@
+{
+  "name": "LinguaFlow • Language & Communication Solutions",
+  "description": "Fluenxia (www.fluenxiaapp.com): Comprehensive English LMS & Enterprise Oral Assessment Platform featuring CEFR Oral Assessor, Dynamic Adaptive Remediation & Institutional Role-Play Authoring Engine (1-3 min micro-lessons & domain rubrics), Acoustic Speech Science DSP, Enterprise Compliance & HITL Proctoring Controller (GDPR, FERPA, India DPDP Act 2023), Psychometric ALA Evaluator, ASE Anti-Gaming Engine, Dual Plagiarism & Integrity Analysis, Suprasegmental & Prosody Tutor, FluidConvo conversational AI, and adaptive C2 curricula.",
+  "requestFramePermissions": [
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

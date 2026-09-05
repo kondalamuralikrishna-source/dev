@@ -1,0 +1,109 @@
+<svg viewBox="0 0 600 600" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <style>
+      .bg-rect { fill: #F8FAFC; }
+      .brand-title {
+        font-family: -apple-system, BlinkMacSystemFont, "Montserrat", "Segoe UI", Roboto, sans-serif;
+        font-size: 46px;
+        font-weight: 900;
+        letter-spacing: 0.16em;
+        fill: #1B365D;
+        text-anchor: middle;
+      }
+      .brand-accent {
+        fill: #0284C7;
+      }
+      .sans-sub {
+        font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        fill: #475569;
+        text-anchor: middle;
+      }
+    </style>
+
+    <linearGradient id="app-trunk" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stopColor="#0284C7" />
+      <stop offset="50%" stopColor="#0D9488" />
+      <stop offset="100%" stopColor="#16A34A" />
+    </linearGradient>
+
+    <linearGradient id="app-orange" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#FB923C" />
+      <stop offset="100%" stopColor="#EA580C" />
+    </linearGradient>
+
+    <linearGradient id="app-blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#38BDF8" />
+      <stop offset="100%" stopColor="#0284C7" />
+    </linearGradient>
+
+    <linearGradient id="app-green" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#4ADE80" />
+      <stop offset="100%" stopColor="#15803D" />
+    </linearGradient>
+
+    <linearGradient id="app-book-l" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#0284C7" />
+      <stop offset="100%" stopColor="#1B365D" />
+    </linearGradient>
+
+    <linearGradient id="app-book-r" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#0D9488" />
+      <stop offset="100%" stopColor="#1B365D" />
+    </linearGradient>
+
+    <linearGradient id="app-star" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stopColor="#F97316" />
+      <stop offset="50%" stopColor="#FBBF24" />
+      <stop offset="100%" stopColor="#0284C7" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Light Canvas -->
+  <rect width="600" height="600" rx="36" class="bg-rect" />
+
+  <!-- Fluenxia Tree-of-Knowledge & Open Book Mark -->
+  <g transform="translate(300, 215) scale(0.68)">
+    <!-- Book Wings -->
+    <path d="M -15 95 C -60 80 -120 55 -145 40 L -155 130 C -120 150 -60 175 -15 190 Z" fill="url(#app-book-l)" />
+    <path d="M 15 95 C 60 80 120 55 145 40 L 155 130 C 120 150 60 175 15 190 Z" fill="url(#app-book-r)" />
+
+    <!-- Orange / Green Ribbons -->
+    <path d="M -10 178 C -50 160 -105 135 -125 120 L -118 45 C -100 60 -50 85 -12 98 Z" fill="url(#app-orange)" />
+    <path d="M 10 178 C 50 160 105 135 125 120 L 118 45 C 100 60 50 85 12 98 Z" fill="url(#app-green)" />
+
+    <!-- Ascending Trunk -->
+    <path d="M -15 185 C -8 140 -12 90 -10 40 C -8 -5 -3 -40 0 -80 C 3 -40 8 -5 10 40 C 12 90 8 140 15 185 Z" fill="url(#app-trunk)" />
+
+    <!-- Sprouting Leaves from Book -->
+    <path d="M -15 100 C -45 85 -75 70 -95 85 C -100 100 -75 120 -35 115 Z" fill="url(#app-green)" />
+    <path d="M 15 100 C 45 85 75 70 95 85 C 100 100 75 120 35 115 Z" fill="url(#app-green)" />
+
+    <!-- Center Leaves -->
+    <path d="M 0 -70 C -10 -45 -10 -15 0 5 C 10 -15 10 -45 0 -70 Z" fill="#22C55E" />
+    <path d="M 0 -110 C -8 -90 -8 -65 0 -50 C 8 -65 8 -90 0 -110 Z" fill="#16A34A" />
+
+    <!-- Left Leaves (Warm Orange) -->
+    <path d="M -18 -85 C -45 -95 -62 -80 -68 -62 C -50 -52 -28 -65 -18 -85 Z" fill="#F97316" />
+    <path d="M -35 -55 C -65 -60 -82 -42 -88 -22 C -68 -12 -45 -30 -35 -55 Z" fill="#FB923C" />
+    <path d="M -20 -30 C -52 -25 -70 -5 -72 18 C -50 22 -28 0 -20 -30 Z" fill="#EA580C" />
+    <path d="M -12 5 C -40 18 -52 40 -45 60 C -25 58 -12 35 -12 5 Z" fill="#F97316" />
+    <path d="M -30 -110 C -45 -118 -55 -105 -58 -92 C -45 -88 -35 -98 -30 -110 Z" fill="#FB923C" />
+
+    <!-- Right Leaves (Sky Blue & Cyan) -->
+    <path d="M 18 -85 C 45 -95 62 -80 68 -62 C 50 -52 28 -65 18 -85 Z" fill="#0284C7" />
+    <path d="M 35 -55 C 65 -60 82 -42 88 -22 C 68 -12 45 -30 35 -55 Z" fill="#38BDF8" />
+    <path d="M 20 -30 C 52 -25 70 -5 72 18 C 50 22 28 0 20 -30 Z" fill="#0284C7" />
+    <path d="M 12 5 C 40 18 52 40 45 60 C 25 58 12 35 12 5 Z" fill="#0EA5E9" />
+    <path d="M 30 -110 C 45 -118 55 -105 58 -92 C 45 -88 35 -98 30 -110 Z" fill="#38BDF8" />
+
+    <!-- Apex Star of Excellence -->
+    <path d="M 0 -138 L 7 -119 L 27 -119 L 11 -107 L 17 -88 L 0 -100 L -17 -88 L -11 -107 L -27 -119 L -7 -119 Z" fill="url(#app-star)" />
+  </g>
+
+  <!-- Typography -->
+  <text x="300" y="445" class="brand-title">FLUENXI<tspan class="brand-accent">A</tspan></text>
+  <text x="300" y="488" class="sans-sub">Empower Learning, Unleash Potential.</text>
+</svg>
