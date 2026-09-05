@@ -4,7 +4,7 @@ export const REGIONAL_LANGUAGES: RegionalLanguageConfig[] = [
   {
     code: "en",
     name: "English",
-    nativeName: "English (Default)",
+    nativeName: "English",
     script: "Latin",
     region: "Global Standard",
     flagBadge: "🌐 EN",

@@ -96,9 +96,9 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
   });
 
   // Form Fields
-  const [email, setEmail] = useState<string>("alex.chen@globaltech.io");
-  const [password, setPassword] = useState<string>("Learner123!");
-  const [fullName, setFullName] = useState<string>("Alex Chen");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [fullName, setFullName] = useState<string>("");
   const [selectedLevel, setSelectedLevel] = useState<CEFRLevel>("B1");
   const [rememberMe, setRememberMe] = useState<boolean>(true);
 
@@ -116,13 +116,39 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [isShaking, setIsShaking] = useState<boolean>(false);
 
+  // Rotating, contextual loading messages shown while a sign-in/sign-up request is in flight —
+  // cycles every ~1.1s so the wait feels active rather than a single frozen "Loading..." label.
+  const LOGIN_LOADING_STEPS = [
+    "Verifying your credentials...",
+    "Unlocking your CEFR curriculum...",
+    "Syncing your progress...",
+    "Almost there...",
+  ];
+  const SIGNUP_LOADING_STEPS = [
+    "Creating your account...",
+    "Setting up your oral AI lab...",
+    "Migrating your guest progress...",
+    "Almost there...",
+  ];
+  const [loadingStepIndex, setLoadingStepIndex] = useState<number>(0);
+  useEffect(() => {
+    if (!isLoading) {
+      setLoadingStepIndex(0);
+      return;
+    }
+    const steps = authIntent === "signup" ? SIGNUP_LOADING_STEPS : LOGIN_LOADING_STEPS;
+    const interval = setInterval(() => {
+      setLoadingStepIndex((prev) => Math.min(prev + 1, steps.length - 1));
+    }, 1100);
+    return () => clearInterval(interval);
+  }, [isLoading, authIntent]);
+
   // Rate Limiting & Cooldown Protection
   const [failedAttempts, setFailedAttempts] = useState<number>(0);
   const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
 
   // Google SSO State
   const [isGooglePopupPending, setIsGooglePopupPending] = useState<boolean>(false);
-  const [isGoogleAccountChooserOpen, setIsGoogleAccountChooserOpen] = useState<boolean>(false);
   const [googleAuthStatus, setGoogleAuthStatus] = useState<GoogleAuthStatus | null>(null);
 
   // Forgot Password Modal State
@@ -296,34 +322,6 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
   const strengthLabels = ["Very Weak", "Fair", "Moderate", "Strong", "Rock-Solid"];
   const strengthColors = ["bg-slate-200", "bg-rose-500", "bg-amber-500", "bg-blue-500", "bg-emerald-500"];
 
-  // Quick Account Picker Items for instant student testing
-  const demoStudentAccounts = [
-    {
-      name: "Alex Chen",
-      email: "alex.chen@globaltech.io",
-      role: "student",
-      level: "B2",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
-      description: "Software Engineer • 1,420 XP • 6-day streak",
-    },
-    {
-      name: "Elena Rostova",
-      email: "elena.rostova@berlin-tech.de",
-      role: "student",
-      level: "C1",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
-      description: "Product Manager • 2,150 XP • 11-day streak",
-    },
-    {
-      name: "Rajesh Kumar",
-      email: "rajesh.kumar@medcare.in",
-      role: "student",
-      level: "A2",
-      avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150&auto=format&fit=crop&q=80",
-      description: "Medical Student • 780 XP • 4-day streak",
-    },
-  ];
-
   // 1. Handle Primary Email / Password Submit
   const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -386,9 +384,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
   };
 
   // 2. Handle Google SSO Sign-In
-  const [isGoogleCustomModalOpen, setIsGoogleCustomModalOpen] = useState<boolean>(false);
-  const [isRedirectHelpOpen, setIsRedirectHelpOpen] = useState<boolean>(false);
-  const [personalGoogleEmail, setPersonalGoogleEmail] = useState<string>("kondala.muralikrishna@gmail.com");
+  const personalGoogleEmail = "kondala.muralikrishna@gmail.com";
 
   const handleGoogleDirectSignIn = async (forcedEmail?: string) => {
     setErrorMsg(null);
@@ -732,7 +728,9 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
       {/* Main Form Centerpiece */}
       <main className={`flex-1 flex items-center justify-center ${isModalMode ? "p-6" : "px-4 py-8"}`}>
         <div
-          className={`w-full max-w-md ${
+          className={`w-full ${
+            !isModalMode && activePortal === "student" ? "max-w-md lg:max-w-5xl" : "max-w-md"
+          } ${
             isModalMode
               ? ""
               : "bg-white/95 backdrop-blur-xl text-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100/50 ring-1 ring-white/20"
@@ -782,25 +780,42 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
 
           {/* Student Hub View */}
           {activePortal === "student" ? (
-            <div>
-              {/* Regional Mother Tongue Translation Option Banner inside card */}
-              <div className="mb-4 p-2.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl flex items-center justify-between gap-2 shadow-xs">
-                <div className="flex items-center gap-1.5">
-                  <span className="p-1.5 bg-amber-500 text-slate-950 rounded-lg text-xs font-black">
-                    <Globe size={13} />
-                  </span>
-                  <div>
-                    <span className="text-[11px] font-black text-slate-900 block leading-tight">
-                      Mother Tongue Translation
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-medium">
-                      Telugu, Hindi, Tamil, etc.
-                    </span>
+            <div className={!isModalMode ? "lg:grid lg:grid-cols-[0.85fr_1fr] lg:gap-10 lg:items-start" : undefined}>
+              {/* LEFT COLUMN: Content — brand context + regional translation option */}
+              <div className={!isModalMode ? "lg:pr-2 lg:border-r lg:border-slate-100 lg:sticky lg:top-0 lg:self-start" : undefined}>
+                {!isModalMode && (
+                  <div className="hidden lg:block mb-6">
+                    <h2 className="text-lg font-black text-slate-900 tracking-tight mb-1.5">
+                      Your CEFR-Aligned English Journey
+                    </h2>
+                    <p className="text-sm text-slate-500 leading-relaxed">
+                      Grammar, vocabulary, and AI-scored spoken English practice — tracked from A1 to C2, with real-time feedback in every session.
+                    </p>
                   </div>
+                )}
+
+                {/* Regional Mother Tongue Translation Option Banner inside card */}
+                <div className="mb-4 p-2.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl shadow-xs space-y-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="p-1.5 bg-amber-500 text-slate-950 rounded-lg text-xs font-black shrink-0">
+                      <Globe size={13} />
+                    </span>
+                    <div className="min-w-0">
+                      <span className="text-[11px] font-black text-slate-900 block leading-tight whitespace-nowrap">
+                        Mother Tongue Translation
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap">
+                        Telugu, Hindi, Tamil, etc.
+                      </span>
+                    </div>
+                  </div>
+                  <LanguageSelector variant="header" />
                 </div>
-                <LanguageSelector variant="header" />
               </div>
 
+              {/* RIGHT COLUMN: Sign In / Create Account form — scrolls independently so the left
+                  column (content) stays fixed in place instead of the whole page scrolling. */}
+              <div className={!isModalMode ? "lg:max-h-[75vh] lg:overflow-y-auto lg:pr-1 no-scrollbar" : undefined}>
               {/* Segmented Tab Switcher (Sign In vs Create Account) */}
               <div
                 id="switcher_auth_intent"
@@ -814,7 +829,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                     setErrorMsg(null);
                     setSuccessMsg(null);
                   }}
-                  className={`flex-1 py-2.5 text-xs font-extrabold rounded-xl transition-all ${
+                  className={`flex-1 py-2 text-xs font-extrabold rounded-xl transition-all ${
                     authIntent === "login"
                       ? "bg-white text-indigo-700 shadow-sm"
                       : "text-slate-500 hover:text-slate-900"
@@ -830,7 +845,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                     setErrorMsg(null);
                     setSuccessMsg(null);
                   }}
-                  className={`flex-1 py-2.5 text-xs font-extrabold rounded-xl transition-all ${
+                  className={`flex-1 py-2 text-xs font-extrabold rounded-xl transition-all ${
                     authIntent === "signup"
                       ? "bg-white text-indigo-700 shadow-sm"
                       : "text-slate-500 hover:text-slate-900"
@@ -841,8 +856,8 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
               </div>
 
               {/* Title & Context */}
-              <div className="mb-5 text-center">
-                <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+              <div className="mb-4 text-center">
+                <h1 className="text-lg font-black text-slate-900 tracking-tight">
                   {authIntent === "login" ? "Welcome Back, Learner" : "Begin Your Mastery Journey"}
                 </h1>
                 <p className="text-xs text-slate-500 mt-1">
@@ -890,14 +905,14 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
               )}
 
               {/* 2. Social Authentication (SSO) Stack */}
-              <div className="space-y-2.5 mb-5">
+              <div className="space-y-2 mb-4">
                 {/* Google Sign In Button */}
                 <button
                   id="btn_sso_google"
                   type="button"
                   onClick={() => handleGoogleSignIn()}
                   disabled={isLoading || cooldownRemaining > 0}
-                  className="w-full h-11 px-4 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-2xl border border-slate-300 shadow-sm flex items-center justify-center gap-3 transition-all hover:border-slate-400 active:scale-[0.99] disabled:opacity-50"
+                  className="w-full h-10 px-4 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl border border-slate-300 shadow-sm flex items-center justify-center gap-2.5 transition-all hover:border-slate-400 active:scale-[0.99] disabled:opacity-50"
                 >
                   <GoogleGIcon className="w-5 h-5 shrink-0" />
                   <span>Continue with Google</span>
@@ -909,143 +924,12 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                   type="button"
                   onClick={handleAppleSignIn}
                   disabled={isLoading || cooldownRemaining > 0}
-                  className="w-full h-11 px-4 bg-black hover:bg-slate-900 text-white font-bold text-xs rounded-2xl border border-black shadow-sm flex items-center justify-center gap-3 transition-all active:scale-[0.99] disabled:opacity-50"
+                  className="w-full h-10 px-4 bg-black hover:bg-slate-900 text-white font-bold text-xs rounded-xl border border-black shadow-sm flex items-center justify-center gap-2.5 transition-all active:scale-[0.99] disabled:opacity-50"
                 >
                   <AppleIcon className="w-5 h-5 shrink-0 text-white" />
                   <span>Continue with Apple</span>
                 </button>
 
-                {/* 1-Tap Google Switcher Toggle & Custom Account Input */}
-                <div className="text-center pt-0.5 space-y-2">
-                  <div className="flex items-center justify-center flex-wrap gap-2 text-[11px] font-semibold text-indigo-600">
-                    <button
-                      type="button"
-                      onClick={() => handleGoogleDirectSignIn(personalGoogleEmail)}
-                      className="hover:text-indigo-800 hover:underline inline-flex items-center gap-1 font-bold text-indigo-700"
-                    >
-                      <span>1-Click Sign In ({personalGoogleEmail.split("@")[0]})</span>
-                    </button>
-                    <span className="text-slate-300">•</span>
-                    <button
-                      type="button"
-                      onClick={() => setIsRedirectHelpOpen(!isRedirectHelpOpen)}
-                      className="hover:text-indigo-800 hover:underline inline-flex items-center gap-1"
-                    >
-                      <span>Fix 400 Error Info</span>
-                      <ChevronRight size={12} className={isRedirectHelpOpen ? "rotate-90 transition-transform" : "transition-transform"} />
-                    </button>
-                    <span className="text-slate-300">•</span>
-                    <button
-                      type="button"
-                      onClick={() => setIsGoogleAccountChooserOpen(!isGoogleAccountChooserOpen)}
-                      className="hover:text-indigo-800 hover:underline inline-flex items-center gap-1"
-                    >
-                      <span>Demo accounts</span>
-                      <ChevronRight size={12} className={isGoogleAccountChooserOpen ? "rotate-90 transition-transform" : "transition-transform"} />
-                    </button>
-                  </div>
-
-                  {isRedirectHelpOpen && (
-                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-2xl space-y-2 text-left animate-in fade-in text-xs text-amber-900">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-amber-950">How to fix Error 400: redirect_uri_mismatch:</span>
-                        <button
-                          type="button"
-                          onClick={() => setIsRedirectHelpOpen(false)}
-                          className="text-amber-700 font-bold hover:text-amber-950"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                      <p className="text-[11px] text-amber-800">
-                        In the <strong>Google Cloud Console &gt; APIs & Services &gt; Credentials &gt; OAuth 2.0 Client IDs</strong>, add this exact URL to <strong>Authorized redirect URIs</strong>:
-                      </p>
-                      <div className="p-2 bg-white rounded-xl border border-amber-300 font-mono text-[10px] break-all select-all text-slate-800">
-                        https://remix-remix-english-mastery-lms-ai-tutor-401243760389.asia-southeast1.run.app/auth/google/callback
-                      </div>
-                      <div className="flex gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText("https://remix-remix-english-mastery-lms-ai-tutor-401243760389.asia-southeast1.run.app/auth/google/callback");
-                            alert("Copied redirect URI to clipboard!");
-                          }}
-                          className="px-2.5 py-1 bg-amber-200/80 hover:bg-amber-300 rounded-lg text-[10px] font-bold text-amber-900"
-                        >
-                          Copy Redirect URI
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleGoogleDirectSignIn(personalGoogleEmail)}
-                          className="px-2.5 py-1 bg-indigo-600 hover:bg-indigo-700 rounded-lg text-[10px] font-bold text-white ml-auto"
-                        >
-                          Instant Sign-In (Skip Popup)
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {isGoogleCustomModalOpen && (
-                    <div className="p-3 bg-indigo-50/70 border border-indigo-200 rounded-2xl space-y-2 text-left animate-in fade-in">
-                      <label className="text-[11px] font-bold text-indigo-950 block">
-                        Sign In with Any Personal Google / Gmail Account:
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="email"
-                          value={personalGoogleEmail}
-                          onChange={(e) => setPersonalGoogleEmail(e.target.value)}
-                          placeholder="e.g. yourname@gmail.com"
-                          className="flex-1 px-3 py-1.5 bg-white border border-indigo-200 rounded-xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleGoogleDirectSignIn(personalGoogleEmail)}
-                          disabled={isLoading || !personalGoogleEmail}
-                          className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm active:scale-95 disabled:opacity-50"
-                        >
-                          Sign In
-                        </button>
-                      </div>
-                      <p className="text-[10px] text-indigo-700">
-                        Defaulting to <strong>{personalGoogleEmail}</strong> (Owner / C1 Level profile).
-                      </p>
-                    </div>
-                  )}
-
-                  {isGoogleAccountChooserOpen && (
-                    <div className="mt-2 p-2 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5 text-left animate-in fade-in">
-                      <p className="text-[10px] font-black uppercase tracking-wider text-slate-400 px-2 pt-1">
-                        Select a Pre-Configured Student
-                      </p>
-                      {demoStudentAccounts.map((acc) => (
-                        <button
-                          key={acc.email}
-                          type="button"
-                          onClick={() => {
-                            setEmail(acc.email);
-                            setPassword("Learner123!");
-                            setFullName(acc.name);
-                            setSelectedLevel(acc.level as CEFRLevel);
-                            handleGoogleSignIn(acc.email);
-                          }}
-                          className="w-full p-2 rounded-xl bg-white hover:bg-indigo-50 border border-slate-200/80 text-left flex items-center gap-2.5 transition-colors"
-                        >
-                          <img src={acc.avatar} alt={acc.name} className="w-7 h-7 rounded-lg object-cover" />
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs font-bold text-slate-900 truncate">{acc.name}</span>
-                              <span className="text-[10px] font-extrabold text-indigo-600 px-1.5 py-0.5 bg-indigo-50 rounded">
-                                {acc.level}
-                              </span>
-                            </div>
-                            <p className="text-[10px] text-slate-500 truncate">{acc.description}</p>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
               </div>
 
               {/* 3. Visual Divider */}
@@ -1220,8 +1104,10 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                 >
                   {isLoading ? (
                     <>
-                      <Loader2 size={16} className="animate-spin" />
-                      <span>{authIntent === "signup" ? "Creating Account..." : "Signing In..."}</span>
+                      <Loader2 size={16} className="animate-spin shrink-0" />
+                      <span className="animate-in fade-in" key={loadingStepIndex}>
+                        {(authIntent === "signup" ? SIGNUP_LOADING_STEPS : LOGIN_LOADING_STEPS)[loadingStepIndex]}
+                      </span>
                     </>
                   ) : cooldownRemaining > 0 ? (
                     <span>Cooldown active ({cooldownRemaining}s)</span>
@@ -1233,18 +1119,6 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                   )}
                 </button>
               </form>
-
-              {/* Guest Access Escape Hatch (Bottom) */}
-              <div className="mt-5 text-center border-t border-slate-100 pt-4">
-                <button
-                  id="btn_guest_explore_bottom"
-                  type="button"
-                  onClick={handleGuestExplore}
-                  className="text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors inline-flex items-center gap-1"
-                >
-                  <span>Want to try without an account?</span>
-                  <span className="font-bold underline text-indigo-600">Explore Demo Lesson</span>
-                </button>
               </div>
             </div>
           ) : (

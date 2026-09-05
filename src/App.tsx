@@ -270,6 +270,7 @@ export default function App() {
 
   const handleLoginSuccess = (user: UserAccount) => {
     setCurrentUser(user);
+    localStorage.setItem("linguaflow_user_session", JSON.stringify(user));
     if (user.progress) {
       setProgress(user.progress);
     }
@@ -314,6 +315,7 @@ export default function App() {
   const handleLogout = () => {
     localStorage.removeItem("linguaflow_user_session");
     localStorage.removeItem("auth_user");
+    localStorage.removeItem("auth_token");
     sessionStorage.removeItem("linguaflow_user_session");
     setCurrentUser(null);
   };
@@ -485,8 +487,6 @@ export default function App() {
           onClose={() => setIsLegalModalOpen(false)}
           initialTab={legalInitialTab}
         />
-        {/* Floating Translation Widget on Login/Landing Page */}
-        <LanguageSelector variant="floating" />
       </>
     );
   }
