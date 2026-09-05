@@ -198,7 +198,7 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
 
                   {userDropdownOpen && (
-                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95">
+                    <div className="absolute right-0 mt-2 w-56 max-h-[calc(100vh-5rem)] overflow-y-auto no-scrollbar bg-white rounded-2xl shadow-xl border border-slate-200 py-2 z-50 animate-in fade-in zoom-in-95">
                       <div className="px-4 py-2 border-b border-slate-100">
                         <p className="text-xs font-black text-slate-900">{currentUser.name}</p>
                         <p className="text-[11px] text-slate-500 truncate">
