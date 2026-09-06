@@ -60,6 +60,7 @@ import {
   isLevelUnlocked,
   updateDailyGoalSettings,
   logStudyTime,
+  getTodayDateString,
 } from "./utils/storageUtils";
 
 export type PortalType = "student" | "admin";
@@ -215,10 +216,34 @@ export default function App() {
     }
   }, [portal, studentTab, adminTab, isAuthInitialized]);
 
-  // Update streak on mount
+  // Update streak on mount. Must NOT clobber a just-restored logged-in user's server progress
+  // with the guest-only localStorage progress (updateStreak() reads/writes that guest key
+  // unconditionally) — this effect and the session-restore effect above both run on mount, and
+  // this one ran second, silently overwriting real progress with stale/empty guest data on every
+  // refresh. Guests still use the original localStorage-backed path; logged-in users get the same
+  // streak math applied to their already-restored progress instead.
   useEffect(() => {
-    const updated = updateStreak();
-    setProgress(updated);
+    const hasSession =
+      localStorage.getItem("linguaflow_user_session") ||
+      localStorage.getItem("auth_user") ||
+      sessionStorage.getItem("linguaflow_user_session");
+
+    if (hasSession) {
+      setProgress((prev) => {
+        const today = getTodayDateString();
+        const lastActive = prev.lastActiveDate || today;
+        const diffDays = Math.floor(
+          (new Date(today).getTime() - new Date(lastActive).getTime()) / (1000 * 3600 * 24)
+        );
+        let streak = prev.streakDays || 1;
+        if (diffDays === 1) streak += 1;
+        else if (diffDays > 1) streak = 1;
+        return { ...prev, streakDays: streak, lastActiveDate: today };
+      });
+    } else {
+      const updated = updateStreak();
+      setProgress(updated);
+    }
   }, []);
 
   // Sync progress to server when progress changes

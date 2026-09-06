@@ -2016,7 +2016,7 @@ Requirements:
 3. "explanation": A concise, 1-2 sentence linguistic note explaining how this English structure (e.g. SVO word order, auxiliary verbs, articles, or tense) differs from or maps to ${langInfo.name}.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
+      model: "gemini-3.7-flash",
       contents: `Context: ${context}\nEnglish Text to Translate into ${langInfo.name}:\n"${text.trim()}"`,
       config: {
         systemInstruction,
@@ -6014,6 +6014,18 @@ app.post("/api/auth/sync-progress", requireAuth, async (req, res) => {
   try {
     const { progress } = req.body;
     const userId = req.authUser!.id;
+
+    // Basic shape guard: reject non-objects and reject if key numeric fields would poison the
+    // record with NaN/non-finite values (a bad client payload should error, not corrupt data).
+    if (!progress || typeof progress !== "object" || Array.isArray(progress)) {
+      return res.status(400).json({ error: "Progress payload must be an object." });
+    }
+    for (const field of ["xp", "streakDays", "minutesToday", "dailyGoalMinutes"]) {
+      if (field in progress && !Number.isFinite(progress[field])) {
+        return res.status(400).json({ error: `Progress field '${field}' must be a valid number.` });
+      }
+    }
+
     const user = await userStore.getById(userId);
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -6250,12 +6262,16 @@ app.get("/api/admin/activities", requireAuth, requireRole("admin", "owner"), asy
 app.post(["/api/admin/user/:id/grant-xp", "/api/admin/grant-xp"], requireAuth, requireRole("admin", "owner"), async (req, res) => {
   try {
     const targetId = req.params.id || req.body.userId;
-    const amount = Number(req.body.amount || req.body.xp || 100);
+    const rawAmount = Number(req.body.amount ?? req.body.xp ?? 100);
+    if (!Number.isFinite(rawAmount)) {
+      return res.status(400).json({ error: "XP amount must be a valid number." });
+    }
+    const amount = Math.trunc(rawAmount);
     if (!targetId || !await userStore.has(targetId)) {
       return res.status(404).json({ error: "User not found" });
     }
     const user = (await userStore.getById(targetId))!;
-    user.progress.xp = (user.progress.xp || 0) + amount;
+    user.progress.xp = Math.max(0, (user.progress.xp || 0) + amount);
     await userStore.upsert(user);
 
     activityLogStore.unshift({
@@ -6301,6 +6317,10 @@ app.post("/api/admin/user/:id/change-role", requireAuth, requireRole("owner"), a
   try {
     const { id } = req.params;
     const { role } = req.body;
+    const validRoles = ["student", "admin", "owner"];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ error: `Role must be one of: ${validRoles.join(", ")}` });
+    }
     if (!await userStore.has(id)) {
       return res.status(404).json({ error: "User not found" });
     }

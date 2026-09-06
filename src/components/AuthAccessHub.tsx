@@ -391,15 +391,20 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
     }
   };
 
-  // 2. Handle Google SSO Sign-In
-  const personalGoogleEmail = "kondala.muralikrishna@gmail.com";
-
+  // 2. Handle Google SSO Sign-In (dev-only fallback path — the real OAuth popup flow is what
+  // production actually uses; this direct endpoint is disabled server-side unless ALLOW_DEV_AUTH
+  // is set). Never default to a real person's email here — if no email is available, fail loudly
+  // instead of silently impersonating whoever happened to be hardcoded.
   const handleGoogleDirectSignIn = async (forcedEmail?: string) => {
     setErrorMsg(null);
     setSuccessMsg(null);
     sendTelemetry("auth_method_selected", { method: "google_sso" });
 
-    const targetEmail = forcedEmail || personalGoogleEmail || email || "kondala.muralikrishna@gmail.com";
+    const targetEmail = forcedEmail || email;
+    if (!targetEmail) {
+      triggerErrorShake("No Google account email available. Please use the Google Sign-In button instead.");
+      return;
+    }
 
     setIsLoading(true);
     try {
