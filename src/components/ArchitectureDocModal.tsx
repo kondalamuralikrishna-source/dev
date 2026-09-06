@@ -83,7 +83,7 @@ export const ArchitectureDocModal: React.FC<ArchitectureDocModalProps> = ({
       }
 
       setExportProgress("Finalizing download...");
-      pdf.save("LinguaFlow-System-Architecture-Whitepaper.pdf");
+      pdf.save("Fluenxia-System-Architecture-Whitepaper.pdf");
       setExportProgress("");
       setIsExporting(false);
     } catch (err) {
@@ -99,7 +99,7 @@ export const ArchitectureDocModal: React.FC<ArchitectureDocModalProps> = ({
   };
 
   const handleDownloadWordDoc = () => {
-    const title = "LinguaFlow Enterprise & Special Features Technical Specification";
+    const title = "Fluenxia Enterprise & Special Features Technical Specification";
     const author = "Regana Kasieswaramma (regana.kasieswaramma@fluenxiaapp.com)";
     const contacts = "Support: support@fluenxiaapp.com | Sales: sales@fluenxiaapp.com";
     const date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
@@ -130,7 +130,7 @@ export const ArchitectureDocModal: React.FC<ArchitectureDocModalProps> = ({
       <body>
         <h1>${title}</h1>
         <div class="meta-box">
-          <p><strong>System Name:</strong> LinguaFlow & Fluenxia Voice AI Platform</p>
+          <p><strong>System Name:</strong> Fluenxia & Fluenxia Voice AI Platform</p>
           <p><strong>Application Owner:</strong> ${author}</p>
           <p><strong>Contact Channels:</strong> ${contacts}</p>
           <p><strong>Document Revision:</strong> 2.4 (Enterprise Edition)</p>
@@ -139,7 +139,7 @@ export const ArchitectureDocModal: React.FC<ArchitectureDocModalProps> = ({
 
         <h2>Executive Summary</h2>
         <p>
-          LinguaFlow is an enterprise-grade, pedagogically accredited English language acceleration platform aligned with the Common European Framework of Reference for Languages (CEFR A1 through C2). By combining deep psychometric adaptive learning engines, real-time acoustic speech science, interactive LLM conversational agents, and rigorous anti-gaming safeguards, LinguaFlow delivers measurable oral fluency and syntactic mastery to learners worldwide.
+          Fluenxia is an enterprise-grade, pedagogically accredited English language acceleration platform aligned with the Common European Framework of Reference for Languages (CEFR A1 through C2). By combining deep psychometric adaptive learning engines, real-time acoustic speech science, interactive LLM conversational agents, and rigorous anti-gaming safeguards, Fluenxia delivers measurable oral fluency and syntactic mastery to learners worldwide.
         </p>
 
         <h2>Comprehensive Inventory of Special Features</h2>
@@ -265,7 +265,7 @@ export const ArchitectureDocModal: React.FC<ArchitectureDocModalProps> = ({
         </table>
 
         <div class="footer">
-          <p>&copy; ${new Date().getFullYear()} LinguaFlow & Fluenxia. All rights reserved. Registered Owner: Regana Kasieswaramma. Inquiries: support@fluenxiaapp.com | sales@fluenxiaapp.com</p>
+          <p>&copy; ${new Date().getFullYear()} Fluenxia & Fluenxia. All rights reserved. Registered Owner: Regana Kasieswaramma. Inquiries: support@fluenxiaapp.com | sales@fluenxiaapp.com</p>
         </div>
       </body>
       </html>
@@ -277,7 +277,7 @@ export const ArchitectureDocModal: React.FC<ArchitectureDocModalProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "LinguaFlow-Special-Features-Specification.doc";
+    link.download = "Fluenxia-Special-Features-Specification.doc";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -295,7 +295,7 @@ export const ArchitectureDocModal: React.FC<ArchitectureDocModalProps> = ({
             </div>
             <div>
               <h2 className="text-base font-bold text-stone-900 font-serif leading-tight">
-                LinguaFlow System Architecture Whitepaper
+                Fluenxia System Architecture Whitepaper
               </h2>
               <p className="text-xs text-stone-500 font-sans">
                 Full-Stack Technical Specifications, Microservices, AI Pipelines &amp; Security Topology
@@ -383,7 +383,7 @@ export const ArchitectureDocModal: React.FC<ArchitectureDocModalProps> = ({
                   System Architecture &amp; Engineering Whitepaper
                 </span>
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-[#005A5B] font-serif tracking-tight">
-                  LinguaFlow: English Mastery LMS &amp; AI Voice Tutor
+                  Fluenxia: English Mastery LMS &amp; AI Voice Tutor
                 </h1>
                 <p className="text-sm text-stone-600 mt-2 leading-relaxed">
                   End-to-End Enterprise Architecture, Real-Time Acoustic &amp; Prosody Pipelines, Large Language Model (Gemini) Orchestration, Role-Based Access Control, and Cloud Run Container Topology.
@@ -398,7 +398,7 @@ export const ArchitectureDocModal: React.FC<ArchitectureDocModalProps> = ({
                 <h2 className="text-xl font-bold font-serif">1. Executive Overview &amp; System Purpose</h2>
               </div>
               <p className="text-sm leading-relaxed text-stone-700">
-                <strong>LinguaFlow</strong> is a high-throughput, modern English Language Learning &amp; Communication Management System (LMS) engineered to accelerate spoken English fluency from CEFR A1 (Beginner) through C2 (Mastery/Proficiency). It integrates a single-container full-stack Node.js/TypeScript Express server with a React 19 single-page application (SPA), featuring real-time Web Audio signal processing, contextual Gemini Generative AI voice simulations, automated pronunciation stress auditing, and comprehensive teacher/admin telemetry.
+                <strong>Fluenxia</strong> is a high-throughput, modern English Language Learning &amp; Communication Management System (LMS) engineered to accelerate spoken English fluency from CEFR A1 (Beginner) through C2 (Mastery/Proficiency). It integrates a single-container full-stack Node.js/TypeScript Express server with a React 19 single-page application (SPA), featuring real-time Web Audio signal processing, contextual Gemini Generative AI voice simulations, automated pronunciation stress auditing, and comprehensive teacher/admin telemetry.
               </p>
 
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
@@ -637,7 +637,7 @@ export const ArchitectureDocModal: React.FC<ArchitectureDocModalProps> = ({
             <div className="border-t-2 border-stone-200 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-stone-500">
               <div className="flex items-center gap-2">
                 <LinguaFlowLogo variant="compact" size="sm" />
-                <span>LinguaFlow: Language &amp; Communication Solutions</span>
+                <span>Fluenxia: Language &amp; Communication Solutions</span>
               </div>
               <div>
                 Lead Systems Architect: <strong>Muralikrishna Kondala</strong> (<a href="mailto:kondala.muralikrishna@gmail.com" className="text-[#005A5B] underline">kondala.muralikrishna@gmail.com</a>)

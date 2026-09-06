@@ -166,6 +166,83 @@ const loginLimiter = rateLimit({
   message: { error: "Too many login attempts. Please wait a few minutes and try again." },
 });
 
+// ============================================================================
+// TRANSACTIONAL EMAIL (OTP codes, password-reset codes)
+// ============================================================================
+// Prefers Resend's HTTPS API — most PaaS hosts (including Render's free/starter tiers) block
+// outbound SMTP (port 587/25) to prevent spam abuse, so raw SMTP silently hangs/fails in production
+// even with correct credentials. Falls back to SMTP for local dev or hosts that do allow it.
+interface EmailSendResult {
+  delivered: boolean;
+  channel: "resend" | "smtp" | "none";
+}
+
+async function sendTransactionalEmail(params: {
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+}): Promise<EmailSendResult> {
+  const resendApiKey = process.env.RESEND_API_KEY;
+  const fromAddress = process.env.SMTP_FROM || "Fluenxia LMS <onboarding@resend.dev>";
+
+  if (resendApiKey) {
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${resendApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: fromAddress,
+          to: params.to,
+          subject: params.subject,
+          text: params.text,
+          html: params.html,
+        }),
+      });
+      if (res.ok) {
+        console.log(`[EMAIL DISPATCHED VIA RESEND] Sent to ${params.to}`);
+        return { delivered: true, channel: "resend" };
+      }
+      const errBody = await res.text();
+      console.error("[RESEND ERROR]", res.status, errBody);
+    } catch (err) {
+      console.error("[RESEND ERROR] Request failed:", err);
+    }
+  }
+
+  const smtpConfigured = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+  if (smtpConfigured) {
+    try {
+      const transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT) || 587,
+        secure: Number(process.env.SMTP_PORT) === 465,
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+        connectionTimeout: 8000,
+      });
+      await transporter.sendMail({
+        from: fromAddress,
+        to: params.to,
+        subject: params.subject,
+        text: params.text,
+        html: params.html,
+      });
+      console.log(`[EMAIL DISPATCHED VIA SMTP] Sent to ${params.to}`);
+      return { delivered: true, channel: "smtp" };
+    } catch (err) {
+      console.error("[SMTP ERROR]", err);
+    }
+  }
+
+  return { delivered: false, channel: "none" };
+}
+
 // Lazy AI initialization
 let aiClient: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI {
@@ -2427,7 +2504,7 @@ app.post("/api/gemini/evaluate-spoken-assessment", async (req, res) => {
 
     const systemInstruction = `SYSTEM INSTRUCTION: LINGUAFLOW MULTI-STAGE CEFR SPEECH & RELEVANCY EVALUATOR
 
-You are an expert Cambridge / CEFR Oral Assessment Specialist and Applied Linguist for LinguaFlow.
+You are an expert Cambridge / CEFR Oral Assessment Specialist and Applied Linguist for Fluenxia.
 Your objective is to diagnose the candidate's genuine English Oral Proficiency from A1 to C2 based strictly on the language used, sentence framing ability, grammatical accuracy, vocabulary range, and phonetics in their spoken assessment transcripts.
 
 ---
@@ -4051,11 +4128,14 @@ app.post("/api/auth/send-otp", otpSendLimiter, async (req, res) => {
       return res.status(400).json({ error: "Please enter a valid email address" });
     }
 
-    const smtpConfigured = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+    const emailConfigured = Boolean(
+      process.env.RESEND_API_KEY || (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS)
+    );
 
-    // Fail closed: without SMTP configured, there's no way to deliver the code to the user, and we
-    // must not fall back to handing it back in the response outside of an explicit dev opt-in.
-    if (!smtpConfigured && !isDevAuthAllowed()) {
+    // Fail closed: without any email delivery configured, there's no way to deliver the code to
+    // the user, and we must not fall back to handing it back in the response outside of an
+    // explicit dev opt-in.
+    if (!emailConfigured && !isDevAuthAllowed()) {
       return res.status(503).json({
         error: "Email verification is not available right now. Please try again later or contact support.",
       });
@@ -4067,30 +4147,13 @@ app.post("/api/auth/send-otp", otpSendLimiter, async (req, res) => {
 
     await otpStore.set(cleanTarget, generatedOtp, expiresAt);
 
-    let isLiveDelivered = false;
-    let deliveryChannel: "smtp" | "sandbox" = "sandbox";
-
-    // LIVE EMAIL DISPATCH (via SMTP if configured)
-    if (smtpConfigured) {
-      try {
-        const transporter = nodemailer.createTransport({
-          host: process.env.SMTP_HOST,
-          port: Number(process.env.SMTP_PORT) || 587,
-          secure: Number(process.env.SMTP_PORT) === 465,
-          auth: {
-            user: process.env.SMTP_USER,
-            pass: process.env.SMTP_PASS,
-          },
-        });
-
-        await transporter.sendMail({
-          from: process.env.SMTP_FROM || `"LinguaFlow LMS" <${process.env.SMTP_USER}>`,
-          to: cleanTarget,
-          subject: `${generatedOtp} is your LinguaFlow LMS verification code`,
-          text: `Your LinguaFlow English LMS 6-digit verification code is: ${generatedOtp}. This code expires in 5 minutes. If you did not request this code, please ignore this email.`,
-          html: `
+    const emailResult = await sendTransactionalEmail({
+      to: cleanTarget,
+      subject: `${generatedOtp} is your Fluenxia LMS verification code`,
+      text: `Your Fluenxia English LMS 6-digit verification code is: ${generatedOtp}. This code expires in 5 minutes. If you did not request this code, please ignore this email.`,
+      html: `
             <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;">
-              <h2 style="color: #4f46e5; margin-bottom: 8px;">LinguaFlow English LMS</h2>
+              <h2 style="color: #4f46e5; margin-bottom: 8px;">Fluenxia English LMS</h2>
               <p style="color: #475569; font-size: 14px;">Your 6-digit verification code for sign-in is:</p>
               <div style="margin: 20px 0; padding: 16px; background-color: #f1f5f9; text-align: center; border-radius: 12px;">
                 <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1e293b; font-family: monospace;">${generatedOtp}</span>
@@ -4098,14 +4161,10 @@ app.post("/api/auth/send-otp", otpSendLimiter, async (req, res) => {
               <p style="color: #64748b; font-size: 12px;">This code will expire in 5 minutes. For security, never share this code with anyone.</p>
             </div>
           `,
-        });
-        isLiveDelivered = true;
-        deliveryChannel = "smtp";
-        console.log(`[EMAIL DISPATCHED VIA SMTP] Successfully sent verification email to ${cleanTarget}`);
-      } catch (smtpErr) {
-        console.error("[SMTP ERROR] Could not send live email via SMTP:", smtpErr);
-      }
-    }
+    });
+
+    const isLiveDelivered = emailResult.delivered;
+    const deliveryChannel = emailResult.delivered ? emailResult.channel : "sandbox";
 
     // Log OTP dispatch in server console
     // Never log the OTP itself — logs are a second place a cleartext code could leak.
@@ -4118,7 +4177,7 @@ app.post("/api/auth/send-otp", otpSendLimiter, async (req, res) => {
       deliveryChannel,
       message: isLiveDelivered
         ? `A 6-digit verification code was delivered to ${cleanTarget}. Please check your inbox and spam folder.`
-        : `Verification code generated for ${cleanTarget}. (Email SMTP server is in Sandbox Mode).`,
+        : `Verification code generated for ${cleanTarget}. (Email delivery is in Sandbox Mode).`,
       sandboxOtp: !isLiveDelivered && isDevAuthAllowed() ? generatedOtp : undefined,
       expiresInSeconds: 300,
       target: cleanTarget,
@@ -4734,7 +4793,7 @@ app.get("/privacy", (req, res) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Privacy Policy - LinguaFlow: English Mastery LMS & AI Tutor</title>
+  <title>Privacy Policy - Fluenxia: English Mastery LMS & AI Tutor</title>
   <link rel="icon" type="image/svg+xml" href="/app-logo.svg">
   <style>
     * { box-sizing: border-box; }
@@ -4763,8 +4822,8 @@ app.get("/privacy", (req, res) => {
 <body>
   <div class="navbar">
     <a href="/" class="brand">
-      <img src="/app-logo.svg" alt="LinguaFlow Logo" width="36" height="36" />
-      <span>LinguaFlow: Language & Communication Solutions</span>
+      <img src="/app-logo.svg" alt="Fluenxia Logo" width="36" height="36" />
+      <span>Fluenxia: Language & Communication Solutions</span>
     </a>
     <div class="nav-links">
       <a href="/">← Return to App</a>
@@ -4777,11 +4836,11 @@ app.get("/privacy", (req, res) => {
     <h1>Privacy Policy</h1>
     <p><em>Last updated: August 26, 2026</em></p>
     
-    <p>Welcome to <strong>LinguaFlow: Language & Communication Solutions (English Mastery LMS & AI Tutor)</strong> ("we", "our", "us", or "the platform"). We are committed to protecting your privacy, personal identity, and educational records. This Privacy Policy details how we collect, use, and protect information when you access our learning management system, interactive voice tutor, curriculum modules, and Google Single Sign-On services.</p>
+    <p>Welcome to <strong>Fluenxia: Language & Communication Solutions (English Mastery LMS & AI Tutor)</strong> ("we", "our", "us", or "the platform"). We are committed to protecting your privacy, personal identity, and educational records. This Privacy Policy details how we collect, use, and protect information when you access our learning management system, interactive voice tutor, curriculum modules, and Google Single Sign-On services.</p>
 
     <div class="google-clause">
       <h3>Google API Limited Use Disclosure</h3>
-      <p><strong>LinguaFlow's use and transfer to any other app of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" style="color: #005A5B; text-decoration: underline; font-weight: bold;">Google API Services User Data Policy</a>, including the Limited Use requirements.</strong></p>
+      <p><strong>Fluenxia's use and transfer to any other app of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" style="color: #005A5B; text-decoration: underline; font-weight: bold;">Google API Services User Data Policy</a>, including the Limited Use requirements.</strong></p>
     </div>
 
     <h2>1. Information We Collect Through Google Authentication</h2>
@@ -4834,13 +4893,13 @@ app.get("/privacy", (req, res) => {
     <p>
       <strong>Lead Developer / Data Controller:</strong> Muralikrishna Kondala<br>
       <strong>Official Support Email:</strong> <a href="mailto:kondala.muralikrishna@gmail.com" style="color: #005A5B; font-weight: bold;">kondala.muralikrishna@gmail.com</a><br>
-      <strong>Application:</strong> LinguaFlow: Language & Communication Solutions<br>
+      <strong>Application:</strong> Fluenxia: Language & Communication Solutions<br>
       <strong>Platform URL:</strong> <a href="/" style="color: #005A5B; font-weight: bold;">Home Dashboard</a>
     </p>
   </div>
 
   <div class="footer">
-    © 2026 LinguaFlow: Language & Communication Solutions. All rights reserved. • <a href="/privacy" style="color: #64748b;">Privacy Policy</a> • <a href="/terms" style="color: #64748b;">Terms of Service</a>
+    © 2026 Fluenxia: Language & Communication Solutions. All rights reserved. • <a href="/privacy" style="color: #64748b;">Privacy Policy</a> • <a href="/terms" style="color: #64748b;">Terms of Service</a>
   </div>
 </body>
 </html>`);
@@ -4854,7 +4913,7 @@ app.get("/terms", (req, res) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Terms of Service - LinguaFlow: English Mastery LMS & AI Tutor</title>
+  <title>Terms of Service - Fluenxia: English Mastery LMS & AI Tutor</title>
   <link rel="icon" type="image/svg+xml" href="/app-logo.svg">
   <style>
     * { box-sizing: border-box; }
@@ -4877,8 +4936,8 @@ app.get("/terms", (req, res) => {
 <body>
   <div class="navbar">
     <a href="/" class="brand">
-      <img src="/app-logo.svg" alt="LinguaFlow Logo" width="36" height="36" />
-      <span>LinguaFlow: Language & Communication Solutions</span>
+      <img src="/app-logo.svg" alt="Fluenxia Logo" width="36" height="36" />
+      <span>Fluenxia: Language & Communication Solutions</span>
     </a>
     <div class="nav-links">
       <a href="/">← Return to App</a>
@@ -4891,13 +4950,13 @@ app.get("/terms", (req, res) => {
     <h1>Terms of Service</h1>
     <p><em>Last updated: August 26, 2026</em></p>
     
-    <p>Please read these Terms of Service carefully before accessing or using <strong>LinguaFlow: Language & Communication Solutions (English Mastery LMS & AI Tutor)</strong> (the "Service", "Platform", or "Application").</p>
+    <p>Please read these Terms of Service carefully before accessing or using <strong>Fluenxia: Language & Communication Solutions (English Mastery LMS & AI Tutor)</strong> (the "Service", "Platform", or "Application").</p>
 
     <h2>1. Acceptance of Terms</h2>
     <p>By creating an account, logging in via Google Single Sign-On, or utilizing our interactive voice tutoring tools, you agree to be bound by these Terms of Service, all applicable laws, and our Privacy Policy.</p>
 
     <h2>2. Educational Scope & AI-Assisted Features</h2>
-    <p>LinguaFlow provides interactive ESL (English as a Second Language) training, CEFR benchmarks, IELTS prep modules, spoken fluency simulations, and automated grammar evaluations.</p>
+    <p>Fluenxia provides interactive ESL (English as a Second Language) training, CEFR benchmarks, IELTS prep modules, spoken fluency simulations, and automated grammar evaluations.</p>
     <ul>
       <li>AI feedback is provided for educational guidance and skill acceleration.</li>
       <li>Learners are encouraged to practice in a positive, respectful learning environment.</li>
@@ -4912,7 +4971,7 @@ app.get("/terms", (req, res) => {
     </ul>
 
     <h2>4. Intellectual Property</h2>
-    <p>All curriculum lessons, interactive exercises, software algorithms, design assets, and logos are the property of LinguaFlow: Language & Communication Solutions or licensed educational contributors. You are granted a personal, non-exclusive, non-transferable license to access course materials for your individual education.</p>
+    <p>All curriculum lessons, interactive exercises, software algorithms, design assets, and logos are the property of Fluenxia: Language & Communication Solutions or licensed educational contributors. You are granted a personal, non-exclusive, non-transferable license to access course materials for your individual education.</p>
 
     <h2>5. Termination & Service Availability</h2>
     <p>We reserve the right to suspend or terminate accounts that violate these terms or engage in abusive platform behavior. Users may delete their account at any time.</p>
@@ -4926,7 +4985,7 @@ app.get("/terms", (req, res) => {
   </div>
 
   <div class="footer">
-    © 2026 LinguaFlow: Language & Communication Solutions. All rights reserved. • <a href="/privacy" style="color: #64748b;">Privacy Policy</a> • <a href="/terms" style="color: #64748b;">Terms of Service</a> • <a href="/architecture" style="color: #005A5B;">Architecture Doc</a>
+    © 2026 Fluenxia: Language & Communication Solutions. All rights reserved. • <a href="/privacy" style="color: #64748b;">Privacy Policy</a> • <a href="/terms" style="color: #64748b;">Terms of Service</a> • <a href="/architecture" style="color: #005A5B;">Architecture Doc</a>
   </div>
 </body>
 </html>`);
@@ -4940,7 +4999,7 @@ app.get(["/architecture", "/architecture-doc", "/api/architecture/doc"], (req, r
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>System Architecture Whitepaper - LinguaFlow: English Mastery LMS & AI Tutor</title>
+  <title>System Architecture Whitepaper - Fluenxia: English Mastery LMS & AI Tutor</title>
   <link rel="icon" type="image/svg+xml" href="/app-logo.svg">
   <style>
     @media print {
@@ -4980,8 +5039,8 @@ app.get(["/architecture", "/architecture-doc", "/api/architecture/doc"], (req, r
 <body>
   <div class="navbar no-print">
     <a href="/" class="brand">
-      <img src="/app-logo.svg" alt="LinguaFlow Logo" width="36" height="36" />
-      <span>LinguaFlow System Architecture</span>
+      <img src="/app-logo.svg" alt="Fluenxia Logo" width="36" height="36" />
+      <span>Fluenxia System Architecture</span>
     </a>
     <div class="nav-links">
       <a href="/">← Return to App</a>
@@ -4994,7 +5053,7 @@ app.get(["/architecture", "/architecture-doc", "/api/architecture/doc"], (req, r
 
   <div class="card">
     <span class="badge">Technical Whitepaper & Engineering Blueprint</span>
-    <h1>LinguaFlow: System Architecture Specifications</h1>
+    <h1>Fluenxia: System Architecture Specifications</h1>
     <p><em>Enterprise Spoken English LMS, Acoustic Prosody Signal Engine &amp; Gemini Generative AI Orchestration</em></p>
 
     <div class="meta-bar">
@@ -5005,7 +5064,7 @@ app.get(["/architecture", "/architecture-doc", "/api/architecture/doc"], (req, r
     </div>
 
     <h2>1. Executive Summary & Purpose</h2>
-    <p><strong>LinguaFlow: Language & Communication Solutions</strong> is a full-stack educational platform delivering adaptive English mastery from CEFR Level A1 through C2. It combines real-time browser audio signal processing with server-side Google Gemini 3.7 / 2.5 generative AI pipelines, automated speech assessment (ASE), roleplay dialogue branches, and strict OAuth 2.0 / JWT role-based access control.</p>
+    <p><strong>Fluenxia: Language & Communication Solutions</strong> is a full-stack educational platform delivering adaptive English mastery from CEFR Level A1 through C2. It combines real-time browser audio signal processing with server-side Google Gemini 3.7 / 2.5 generative AI pipelines, automated speech assessment (ASE), roleplay dialogue branches, and strict OAuth 2.0 / JWT role-based access control.</p>
 
     <h2>2. High-Level Architecture Topology</h2>
     <p>The system operates as a unified, single-container deployment on Google Cloud Run with an Express reverse-proxied backend and a high-performance React 19 single-page application.</p>
@@ -5126,14 +5185,14 @@ app.get(["/architecture", "/architecture-doc", "/api/architecture/doc"], (req, r
 
     <h2>6. Author & Administrative Contacts</h2>
     <p>
-      <strong>Application:</strong> LinguaFlow: Language & Communication Solutions<br>
+      <strong>Application:</strong> Fluenxia: Language & Communication Solutions<br>
       <strong>Lead Systems Architect:</strong> Muralikrishna Kondala<br>
       <strong>Contact Email:</strong> <a href="mailto:kondala.muralikrishna@gmail.com" style="color: #005A5B; font-weight: bold;">kondala.muralikrishna@gmail.com</a>
     </p>
   </div>
 
   <div class="footer no-print">
-    © 2026 LinguaFlow: Language & Communication Solutions. All rights reserved. • <a href="/privacy" style="color: #64748b;">Privacy Policy</a> • <a href="/terms" style="color: #64748b;">Terms of Service</a> • <a href="/architecture" style="color: #005A5B; font-weight: bold;">Architecture Doc</a>
+    © 2026 Fluenxia: Language & Communication Solutions. All rights reserved. • <a href="/privacy" style="color: #64748b;">Privacy Policy</a> • <a href="/terms" style="color: #64748b;">Terms of Service</a> • <a href="/architecture" style="color: #005A5B; font-weight: bold;">Architecture Doc</a>
   </div>
 </body>
 </html>`);
@@ -5814,6 +5873,27 @@ app.post("/api/auth/forgot-password", async (req, res) => {
     const expiresAt = Date.now() + 15 * 60 * 1000; // 15 minutes
 
     await passwordResetStore.set(cleanEmail, { token, expiresAt, code: recoveryCode });
+
+    // Only actually email the code if an account exists — but the response below is identical
+    // either way (anti-enumeration: never let a caller learn which emails are registered).
+    const existingUser = await userStore.getByEmail(cleanEmail);
+    if (existingUser) {
+      await sendTransactionalEmail({
+        to: cleanEmail,
+        subject: `${recoveryCode} is your Fluenxia password reset code`,
+        text: `Your Fluenxia password reset code is: ${recoveryCode}. This code expires in 15 minutes. If you did not request this, please ignore this email.`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;">
+            <h2 style="color: #4f46e5; margin-bottom: 8px;">Fluenxia Password Reset</h2>
+            <p style="color: #475569; font-size: 14px;">Your password reset code is:</p>
+            <div style="margin: 20px 0; padding: 16px; background-color: #f1f5f9; text-align: center; border-radius: 12px;">
+              <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; color: #1e293b; font-family: monospace;">${recoveryCode}</span>
+            </div>
+            <p style="color: #64748b; font-size: 12px;">This code will expire in 15 minutes. If you didn't request this, you can safely ignore this email.</p>
+          </div>
+        `,
+      });
+    }
 
     authTelemetryStore.unshift({
       id: `tel_${Date.now()}`,
@@ -7057,7 +7137,7 @@ app.post("/api/gemini/after-action-audit", async (req, res) => {
 
     const ai = getAI();
 
-    const systemInstruction = `You are the Chief Linguistic Auditor for LinguaFlow LMS.
+    const systemInstruction = `You are the Chief Linguistic Auditor for Fluenxia LMS.
 Generate a structured, quantifiable After-Action Review (AAR) Audit Report for the completed session.
 Every metric must be concrete, actionable, and deliver measurable ROI for the learner.
 

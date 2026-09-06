@@ -511,13 +511,13 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
       case "B1":
         return { bg: "bg-amber-500", text: "text-slate-950", light: "bg-amber-50 text-amber-900 border-amber-200" };
       case "B2":
-        return { bg: "bg-indigo-600", text: "text-white", light: "bg-indigo-50 text-indigo-700 border-indigo-200" };
+        return { bg: "bg-blue-600", text: "text-white", light: "bg-blue-50 text-blue-700 border-blue-200" };
       case "C1":
         return { bg: "bg-purple-600", text: "text-white", light: "bg-purple-50 text-purple-700 border-purple-200" };
       case "C2":
         return { bg: "bg-rose-600", text: "text-white", light: "bg-rose-50 text-rose-700 border-rose-200" };
       default:
-        return { bg: "bg-indigo-600", text: "text-white", light: "bg-indigo-50 text-indigo-700 border-indigo-200" };
+        return { bg: "bg-blue-600", text: "text-white", light: "bg-blue-50 text-blue-700 border-blue-200" };
     }
   };
 
@@ -546,7 +546,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
         {/* Certificate Card */}
         <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden">
           {/* Header Banner */}
-          <div className="bg-gradient-to-r from-slate-950 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 relative">
+          <div className="bg-gradient-to-r from-slate-950 via-blue-950 to-slate-900 text-white p-6 sm:p-8 relative">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
               <div>
                 <div className="flex flex-wrap items-center gap-3 mb-3">
@@ -578,7 +578,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                   {band === "C1" && "C1: Effective Operational"}
                   {band === "C2" && "C2: Mastery / Oratorical"}
                 </span>
-                <div className="mt-2 text-[10px] text-indigo-200 bg-indigo-900/50 px-2 py-0.5 rounded-full border border-indigo-400/30">
+                <div className="mt-2 text-[10px] text-blue-200 bg-blue-900/50 px-2 py-0.5 rounded-full border border-blue-400/30">
                   {confidencePct}% Confidence Score
                 </div>
               </div>
@@ -711,20 +711,20 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                     <div className="mt-3 space-y-2">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between">
                         <span>Flagged Segments ({plag.flagged_passages.length})</span>
-                        <span className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold">Click snippet to view improvement tips</span>
+                        <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">Click snippet to view improvement tips</span>
                       </span>
                       <div className="space-y-1.5">
                         {plag.flagged_passages.map((p, idx) => (
                           <div
                             key={idx}
                             onClick={() => setSelectedFlaggedPassage(p)}
-                            className="text-xs p-3 bg-white/90 dark:bg-slate-900/90 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/40 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all cursor-pointer group shadow-sm"
+                            className="text-xs p-3 bg-white/90 dark:bg-slate-900/90 hover:bg-blue-50/50 dark:hover:bg-blue-950/40 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 transition-all cursor-pointer group shadow-sm"
                           >
                             <div className="flex items-center justify-between gap-2 mb-1">
                               <span className="font-mono text-rose-700 dark:text-rose-400 font-bold block truncate">
                                 "{p.text_snippet}"
                               </span>
-                              <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 shrink-0 group-hover:underline flex items-center gap-0.5">
+                              <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 shrink-0 group-hover:underline flex items-center gap-0.5">
                                 <span>Drill Down</span>
                                 <ChevronRight size={12} />
                               </span>
@@ -774,7 +774,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
             {/* 5 CEFR Parameter Evaluations Breakdown */}
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
-                <Brain size={14} className="text-indigo-600" />
+                <Brain size={14} className="text-blue-600" />
                 <span>5-Parameter CEFR Diagnostic Breakdown</span>
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -808,7 +808,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                 <div className="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-700 dark:text-slate-200">3. Lexical Resource</span>
-                    <span className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-300 text-xs font-black rounded-md">
+                    <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 text-xs font-black rounded-md">
                       {params.lexical_resource.score}
                     </span>
                   </div>
@@ -857,13 +857,13 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
               </div>
 
               {/* Course Unlock Roadmap */}
-              <div className="p-4 bg-indigo-50/70 dark:bg-indigo-950/40 rounded-xl border border-indigo-200 dark:border-indigo-800/60 space-y-3">
+              <div className="p-4 bg-blue-50/70 dark:bg-blue-950/40 rounded-xl border border-blue-200 dark:border-blue-800/60 space-y-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-200 flex items-center gap-1.5">
+                  <span className="text-xs font-black uppercase tracking-wider text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
                     <Sparkles size={14} className="text-amber-500" />
                     <span>Unlocked Course Pathway: Level {band} to C2 Mastery</span>
                   </span>
-                  <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-300 bg-white/80 dark:bg-slate-900 px-2.5 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-700">
+                  <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-white/80 dark:bg-slate-900 px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-700">
                     Active: Level {band}
                   </span>
                 </div>
@@ -937,7 +937,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <Sparkles size={16} className="text-indigo-600 dark:text-indigo-400" />
+                    <Sparkles size={16} className="text-blue-600 dark:text-blue-400" />
                     <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
                       Sentence Structure & Grammar Upgrades
                     </h3>
@@ -954,7 +954,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                       className="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-3 shadow-sm"
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 rounded-md border border-indigo-200 dark:border-indigo-800">
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 rounded-md border border-blue-200 dark:border-blue-800">
                           {corr.grammarRule || "Sentence Structure"}
                         </span>
                         {corr.errorType && (
@@ -1027,7 +1027,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                               ? "bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-950 dark:text-teal-300"
                               : qEval.task_score === "B1"
                               ? "bg-amber-100 text-amber-900 border-amber-200 dark:bg-amber-950 dark:text-amber-300"
-                              : "bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-950 dark:text-indigo-300"
+                              : "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950 dark:text-blue-300"
                           }`}
                         >
                           Task CEFR: {qEval.task_score}
@@ -1054,8 +1054,8 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                             {qEval.positive_feedback}
                           </p>
                         </div>
-                        <div className="p-3 bg-indigo-50/60 dark:bg-indigo-950/20 rounded-xl border border-indigo-200/60 dark:border-indigo-900/30">
-                          <span className="font-bold text-indigo-800 dark:text-indigo-300 flex items-center gap-1 mb-1">
+                        <div className="p-3 bg-blue-50/60 dark:bg-blue-950/20 rounded-xl border border-blue-200/60 dark:border-blue-900/30">
+                          <span className="font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1 mb-1">
                             <TrendingUp size={13} />
                             <span>Area for Improvement:</span>
                           </span>
@@ -1103,17 +1103,17 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
               </div>
 
               {/* Areas for Growth */}
-              <div className="bg-indigo-50/70 dark:bg-indigo-950/30 rounded-2xl p-4 border border-indigo-200/80 dark:border-indigo-800/40">
+              <div className="bg-blue-50/70 dark:bg-blue-950/30 rounded-2xl p-4 border border-blue-200/80 dark:border-blue-800/40">
                 <div className="flex items-center gap-2 mb-3">
-                  <TrendingUp size={18} className="text-indigo-600 dark:text-indigo-400" />
-                  <h4 className="text-xs font-bold text-indigo-950 dark:text-indigo-200 uppercase tracking-wider">
+                  <TrendingUp size={18} className="text-blue-600 dark:text-blue-400" />
+                  <h4 className="text-xs font-bold text-blue-950 dark:text-blue-200 uppercase tracking-wider">
                     Targeted Growth Priorities to Reach C2
                   </h4>
                 </div>
                 <ul className="space-y-2">
                   {(assessmentResult.areas_for_growth || []).map((g, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-xs text-indigo-900 dark:text-indigo-200 leading-relaxed">
-                      <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
+                    <li key={idx} className="flex items-start gap-2 text-xs text-blue-900 dark:text-blue-200 leading-relaxed">
+                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
                       <span>{g}</span>
                     </li>
                   ))}
@@ -1140,7 +1140,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                 id="btn-enter-learning-path"
                 type="button"
                 onClick={handleEnterLearningPath}
-                className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-teal-600 via-indigo-600 to-purple-600 hover:from-teal-500 hover:to-purple-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-indigo-500/25 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
+                className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-teal-600 via-blue-600 to-purple-600 hover:from-teal-500 hover:to-purple-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
               >
                 <span>Launch My C2 Course Pathway</span>
                 <ArrowRight size={18} />
@@ -1219,7 +1219,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                 key={t.id}
                 className={`w-3 h-3 rounded-full transition-all ${
                   isCurrent
-                    ? "bg-indigo-600 ring-4 ring-indigo-200 dark:ring-indigo-900"
+                    ? "bg-blue-600 ring-4 ring-blue-200 dark:ring-blue-900"
                     : isDone
                     ? "bg-emerald-500"
                     : "bg-slate-300 dark:bg-slate-700"
@@ -1236,7 +1236,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
         {/* Category Header */}
         <div className="bg-slate-50 dark:bg-slate-800/80 px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-black uppercase px-2.5 py-1 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-lg">
+            <span className="text-xs font-black uppercase px-2.5 py-1 bg-blue-100 dark:bg-blue-900/50 text-blue-700 dark:text-blue-300 rounded-lg">
               {currentTask.category}
             </span>
           </div>
@@ -1247,7 +1247,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
 
         <div className="p-6 sm:p-8 space-y-6">
           {/* Prompt Question */}
-          <div className="bg-indigo-50/40 dark:bg-indigo-950/20 rounded-2xl p-5 border border-indigo-100 dark:border-indigo-900/50 space-y-3">
+          <div className="bg-blue-50/40 dark:bg-blue-950/20 rounded-2xl p-5 border border-blue-100 dark:border-blue-900/50 space-y-3">
             <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-relaxed">
               "{currentTask.prompt}"
             </h3>
@@ -1354,7 +1354,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                     className={`px-5 py-3 rounded-full text-xs font-black flex items-center gap-2 transition-all cursor-pointer ${
                       isPlayingAudio
                         ? "bg-amber-400 text-slate-950 shadow-md"
-                        : "bg-indigo-600 hover:bg-indigo-500 text-white"
+                        : "bg-blue-600 hover:bg-blue-500 text-white"
                     }`}
                   >
                     {isPlayingAudio ? <Pause size={16} /> : <Play size={16} />}
@@ -1448,7 +1448,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                 className={`px-6 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all ${
                   !currentResponse
                     ? "opacity-50 bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
-                    : "bg-indigo-600 hover:bg-indigo-500 text-white shadow-md cursor-pointer active:scale-95"
+                    : "bg-blue-600 hover:bg-blue-500 text-white shadow-md cursor-pointer active:scale-95"
                 }`}
               >
                 <span>Next Task</span>
@@ -1463,7 +1463,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                 className={`px-7 py-3 rounded-xl text-xs font-black flex items-center gap-2 transition-all ${
                   !currentResponse || isEvaluating
                     ? "opacity-50 bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed"
-                    : "bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-500 hover:to-indigo-500 text-white shadow-lg shadow-teal-500/25 cursor-pointer active:scale-95"
+                    : "bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-500 hover:to-blue-500 text-white shadow-lg shadow-teal-500/25 cursor-pointer active:scale-95"
                 }`}
               >
                 {isEvaluating ? (

@@ -36,6 +36,7 @@ import { LanguageSelector } from "./LanguageSelector";
 
 interface DashboardProps {
   progress: UserProgress;
+  learnerName?: string;
   setActiveTab: (tab: NavTab) => void;
   onSelectGrammarLesson: (lessonId: string) => void;
   onSelectVocabCollection: (collectionId: string) => void;
@@ -53,6 +54,7 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({
   progress,
+  learnerName,
   setActiveTab,
   onSelectGrammarLesson,
   onSelectVocabCollection,
@@ -83,20 +85,52 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const currentVal = goalType === "minutes" ? progress.minutesToday || 0 : progress.lessonsToday || 0;
   const goalPercent = Math.min(100, Math.round((currentVal / targetVal) * 100));
 
+  const hourOfDay = new Date().getHours();
+  const timeGreeting = hourOfDay < 12 ? "Good morning" : hourOfDay < 17 ? "Good afternoon" : "Good evening";
+  const firstName = learnerName?.split(" ")[0] || "Learner";
+
   return (
     <div className="space-y-8 pb-12 animate-in fade-in duration-300">
+      {/* Greeting Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-black text-slate-900">
+            {timeGreeting}, {firstName}! 👋
+          </h1>
+          <p className="text-sm text-slate-500 mt-0.5">Small steps every day lead to big progress.</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 bg-white border border-orange-200 rounded-2xl px-4 py-2 shadow-xs">
+            <Flame size={18} className="fill-orange-500 text-orange-500" />
+            <div>
+              <p className="text-sm font-black text-slate-900 leading-none">{progress.streakDays}</p>
+              <p className="text-[10px] text-slate-500 font-semibold">Day Streak</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 bg-white border border-emerald-200 rounded-2xl px-4 py-2 shadow-xs">
+            <CheckCircle size={18} className="text-emerald-500" />
+            <div>
+              <p className="text-sm font-black text-slate-900 leading-none">
+                {goalPercent >= 100 ? "Complete" : `${goalPercent}%`}
+              </p>
+              <p className="text-[10px] text-slate-500 font-semibold">Today's Goal</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* High-Visibility Mother Tongue Translation Banner */}
       <LanguageSelector variant="banner" />
 
       {/* Hero Welcome & Daily Motivation */}
-      <div className="bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
+      <div className="bg-gradient-to-br from-blue-700 via-blue-600 to-blue-700 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
         {/* Subtle decorative circles */}
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-blue-400/10 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/3 -mb-16 w-64 h-64 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
 
         <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
           <div className="lg:col-span-2 space-y-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-indigo-200 text-xs font-semibold tracking-wide border border-white/15">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-blue-200 text-xs font-semibold tracking-wide border border-white/15">
               <Sparkles size={14} className="text-amber-400" />
               <span>Active CEFR Level {progress.selectedLevel} LMS Portal</span>
             </div>
@@ -104,7 +138,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
               Ready to elevate your English today?
             </h1>
-            <p className="text-indigo-200 text-sm sm:text-base max-w-xl leading-relaxed">
+            <p className="text-blue-200 text-sm sm:text-base max-w-xl leading-relaxed">
               Complete your level tutorials, build vocabulary fluency, and pass benchmark exams to unlock advanced CEFR levels.
             </p>
 
@@ -116,7 +150,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   onSelectGrammarLesson(nextLesson.id);
                   setActiveTab("grammar");
                 }}
-                className="px-5 py-2.5 bg-indigo-500 hover:bg-indigo-400 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-600/30 flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
+                className="px-5 py-2.5 bg-blue-500 hover:bg-blue-400 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/30 flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
               >
                 <span>Continue: {nextLesson.title}</span>
                 <ArrowRight size={16} />
@@ -126,7 +160,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 id="btn-l2-speaking-coach-quick"
                 type="button"
                 onClick={() => setActiveTab("roleplay_coach")}
-                className="px-4 py-2.5 bg-gradient-to-r from-teal-500 via-emerald-400 to-indigo-500 hover:from-teal-400 hover:to-indigo-400 text-slate-950 font-black text-sm rounded-xl shadow-lg shadow-teal-500/25 flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
+                className="px-4 py-2.5 bg-gradient-to-r from-teal-500 via-emerald-400 to-blue-500 hover:from-teal-400 hover:to-blue-400 text-slate-950 font-black text-sm rounded-xl shadow-lg shadow-teal-500/25 flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
               >
                 <Sparkles size={16} className="text-slate-950" />
                 <span>Speaking Coach</span>
@@ -193,7 +227,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           {/* Daily Progress Gauge Card */}
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/15 space-y-4">
             <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider font-bold text-indigo-200">
+              <span className="text-xs uppercase tracking-wider font-bold text-blue-200">
                 Daily Goal • {goalType === "minutes" ? "Minutes" : "Lessons"}
               </span>
               <span
@@ -211,7 +245,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span className="text-3xl font-black text-white">
                 {currentVal}
               </span>
-              <span className="text-indigo-200 text-sm">
+              <span className="text-blue-200 text-sm">
                 / {targetVal} {goalType === "minutes" ? "active mins" : "lessons"}
               </span>
             </div>
@@ -229,15 +263,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
             <div className="grid grid-cols-2 gap-2 pt-1 text-center">
               <div className="bg-white/5 rounded-xl p-2 border border-white/10">
-                <span className="text-xs text-indigo-200 block">Streak</span>
+                <span className="text-xs text-blue-200 block">Streak</span>
                 <span className="text-lg font-bold text-amber-300 flex items-center justify-center gap-1">
                   <Flame size={16} className="fill-amber-400" /> {progress.streakDays} / {progress.dailyGoalTargetStreak || 14}d
                 </span>
               </div>
               <div className="bg-white/5 rounded-xl p-2 border border-white/10">
-                <span className="text-xs text-indigo-200 block">Earned XP</span>
-                <span className="text-lg font-bold text-indigo-100 flex items-center justify-center gap-1">
-                  <Zap size={16} className="fill-indigo-400 text-indigo-400" /> {progress.xp}
+                <span className="text-xs text-blue-200 block">Earned XP</span>
+                <span className="text-lg font-bold text-blue-100 flex items-center justify-center gap-1">
+                  <Zap size={16} className="fill-blue-400 text-blue-400" /> {progress.xp}
                 </span>
               </div>
             </div>
@@ -297,7 +331,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* 4 Core Pillars Action Grid */}
       <div className="space-y-3">
         <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-          <Layers size={18} className="text-indigo-600" />
+          <Layers size={18} className="text-blue-600" />
           <span>Core English Learning Pillars</span>
         </h2>
 
@@ -306,7 +340,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div
             id="card-pillar-c2course"
             onClick={() => setActiveTab("c2course")}
-            className="group bg-gradient-to-br from-purple-950 via-indigo-950 to-slate-900 text-white rounded-2xl p-5 border border-purple-500/40 shadow-lg hover:shadow-purple-500/20 hover:border-purple-400 transition-all cursor-pointer relative overflow-hidden"
+            className="group bg-gradient-to-br from-purple-950 via-blue-950 to-slate-900 text-white rounded-2xl p-5 border border-purple-500/40 shadow-lg hover:shadow-purple-500/20 hover:border-purple-400 transition-all cursor-pointer relative overflow-hidden"
           >
             <div className="w-12 h-12 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-400/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
               <Crown size={24} className="text-amber-400" />
@@ -332,7 +366,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div
             id="card-pillar-l2-coach"
             onClick={() => setActiveTab("roleplay_coach")}
-            className="group bg-gradient-to-br from-slate-900 via-teal-950 to-indigo-950 text-white rounded-2xl p-5 border border-teal-500/40 shadow-lg hover:shadow-teal-500/20 hover:border-teal-400 transition-all cursor-pointer relative overflow-hidden"
+            className="group bg-gradient-to-br from-slate-900 via-teal-950 to-blue-950 text-white rounded-2xl p-5 border border-teal-500/40 shadow-lg hover:shadow-teal-500/20 hover:border-teal-400 transition-all cursor-pointer relative overflow-hidden"
           >
             <div className="w-12 h-12 rounded-xl bg-teal-500/20 text-teal-300 border border-teal-400/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
               <Sparkles size={24} className="text-amber-400" />
@@ -358,7 +392,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div
             id="card-pillar-fluidconvo"
             onClick={() => setActiveTab("fluidconvo")}
-            className="group bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-5 border border-teal-500/40 shadow-lg hover:shadow-teal-500/20 hover:border-teal-400 transition-all cursor-pointer relative overflow-hidden"
+            className="group bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white rounded-2xl p-5 border border-teal-500/40 shadow-lg hover:shadow-teal-500/20 hover:border-teal-400 transition-all cursor-pointer relative overflow-hidden"
           >
             <div className="w-12 h-12 rounded-xl bg-teal-500/20 text-teal-300 border border-teal-400/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
               <Radio size={24} className="animate-pulse" />
@@ -410,18 +444,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div
             id="card-pillar-grammar"
             onClick={() => setActiveTab("grammar")}
-            className="group bg-white rounded-2xl p-5 border border-slate-200 shadow-xs hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer relative overflow-hidden"
+            className="group bg-white rounded-2xl p-5 border border-slate-200 shadow-xs hover:shadow-md hover:border-blue-300 transition-all cursor-pointer relative overflow-hidden"
           >
-            <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
               <Layers size={24} />
             </div>
-            <h3 className="font-bold text-slate-900 text-base group-hover:text-indigo-600 transition-colors">
+            <h3 className="font-bold text-slate-900 text-base group-hover:text-blue-600 transition-colors">
               Grammar Hub
             </h3>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
               Step-by-step rules, verb tense timelines, and common pitfalls explained simply.
             </p>
-            <div className="mt-4 flex items-center justify-between text-xs font-semibold text-indigo-600">
+            <div className="mt-4 flex items-center justify-between text-xs font-semibold text-blue-600">
               <span>{completedLessonsCount}/{totalLessonsCount} Completed</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
@@ -431,7 +465,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div
             id="card-pillar-vocabulary"
             onClick={() => setActiveTab("vocabulary")}
-            className="group bg-white rounded-2xl p-5 border border-slate-200 shadow-xs hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer relative overflow-hidden"
+            className="group bg-white rounded-2xl p-5 border border-slate-200 shadow-xs hover:shadow-md hover:border-blue-300 transition-all cursor-pointer relative overflow-hidden"
           >
             <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
               <BookOpen size={24} />
@@ -452,7 +486,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div
             id="card-pillar-chat"
             onClick={() => setActiveTab("chat")}
-            className="group bg-white rounded-2xl p-5 border border-slate-200 shadow-xs hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer relative overflow-hidden"
+            className="group bg-white rounded-2xl p-5 border border-slate-200 shadow-xs hover:shadow-md hover:border-blue-300 transition-all cursor-pointer relative overflow-hidden"
           >
             <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
               <MessageSquare size={24} />
@@ -478,7 +512,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div
             id="card-pillar-pronounce"
             onClick={() => setActiveTab("pronunciation")}
-            className="group bg-white rounded-2xl p-5 border border-slate-200 shadow-xs hover:shadow-md hover:border-indigo-300 transition-all cursor-pointer relative overflow-hidden"
+            className="group bg-white rounded-2xl p-5 border border-slate-200 shadow-xs hover:shadow-md hover:border-blue-300 transition-all cursor-pointer relative overflow-hidden"
           >
             <div className="w-12 h-12 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
               <Mic size={24} />
@@ -530,23 +564,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div
             id="card-pillar-doctor"
             onClick={() => setActiveTab("doctor")}
-            className="group bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-5 border border-indigo-500/30 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer relative overflow-hidden"
+            className="group bg-gradient-to-br from-slate-900 via-blue-950 to-slate-900 text-white rounded-2xl p-5 border border-blue-500/30 shadow-md hover:shadow-xl hover:scale-[1.02] transition-all cursor-pointer relative overflow-hidden"
           >
-            <div className="w-12 h-12 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-400/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 rounded-xl bg-blue-500/20 text-blue-300 border border-blue-400/30 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
               <Sparkles size={24} className="text-amber-300" />
             </div>
             <div className="flex items-center gap-1.5">
-              <h3 className="font-bold text-white text-base group-hover:text-indigo-300 transition-colors">
+              <h3 className="font-bold text-white text-base group-hover:text-blue-300 transition-colors">
                 Writing Assistant
               </h3>
-              <span className="text-[10px] font-black px-1.5 py-0.2 bg-indigo-500 text-white rounded">
+              <span className="text-[10px] font-black px-1.5 py-0.2 bg-blue-500 text-white rounded">
                 AI DIAGNOSIS
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-1 leading-relaxed">
               Analyze sentences for CEFR nuance, grammatical correctness, syntax improvements, and natural phrasing.
             </p>
-            <div className="mt-4 flex items-center justify-between text-xs font-bold text-indigo-300">
+            <div className="mt-4 flex items-center justify-between text-xs font-bold text-blue-300">
               <span>Instant Grammar Diagnosis</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
@@ -560,14 +594,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
         <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-              <Target size={18} className="text-indigo-600" />
+              <Target size={18} className="text-blue-600" />
               <span>Recommended Quick Practice</span>
             </h2>
             <button
               id="btn-see-all-quizzes"
               type="button"
               onClick={() => setActiveTab("quizzes")}
-              className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1"
+              className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
             >
               <span>Explore All Quizzes</span>
               <ArrowRight size={14} />
@@ -579,7 +613,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs flex flex-col justify-between space-y-4">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded">
+                  <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-bold rounded">
                     Quiz Challenge
                   </span>
                   <span className="text-xs text-slate-400">• 5 Questions</span>
@@ -596,7 +630,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 id="btn-start-diagnostic-quiz"
                 type="button"
                 onClick={() => setActiveTab("quizzes")}
-                className="w-full py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs rounded-xl border border-indigo-200 flex items-center justify-center gap-1.5 transition-colors"
+                className="w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-xl border border-blue-200 flex items-center justify-center gap-1.5 transition-colors"
               >
                 <Award size={14} />
                 <span>Start Practice Quiz (+50 XP)</span>
@@ -635,7 +669,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Right 1-Col: Featured Word of the Day */}
         {dailyWord && (
-          <div className="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-2xl p-5 text-white shadow-md flex flex-col justify-between space-y-4">
+          <div className="bg-gradient-to-br from-slate-900 to-blue-950 rounded-2xl p-5 text-white shadow-md flex flex-col justify-between space-y-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] uppercase font-bold tracking-wider text-amber-400 px-2 py-0.5 bg-amber-400/10 rounded-full border border-amber-400/20">
@@ -653,7 +687,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   </h3>
                   <AudioButton text={dailyWord.word} size="sm" variant="secondary" />
                 </div>
-                <p className="text-xs text-indigo-300 font-mono mt-0.5">
+                <p className="text-xs text-blue-300 font-mono mt-0.5">
                   {dailyWord.phonetic} • <span className="italic">{dailyWord.partOfSpeech}</span>
                 </p>
               </div>
@@ -662,7 +696,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {dailyWord.definition}
               </p>
 
-              <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-xs text-indigo-100 italic">
+              <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-xs text-blue-100 italic">
                 "{dailyWord.exampleSentence}"
               </div>
             </div>

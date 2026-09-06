@@ -96,7 +96,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
               Learning Analytics & Progress
             </h1>
-            <span className="text-xs px-2 py-0.5 bg-indigo-50 text-indigo-700 font-bold rounded">
+            <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 font-bold rounded">
               Real-time Tracker
             </span>
           </div>
@@ -123,11 +123,11 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1: Total XP */}
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-2">
-          <div className="flex items-center justify-between text-indigo-600">
+          <div className="flex items-center justify-between text-blue-600">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
               Total XP
             </span>
-            <Zap size={18} className="fill-indigo-500" />
+            <Zap size={18} className="fill-blue-500" />
           </div>
           <p className="text-3xl font-black text-slate-900">{progress.xp}</p>
           <span className="text-[11px] text-slate-500 block">
@@ -186,10 +186,10 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-sm space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-            <TrendingUp size={18} className="text-indigo-600" />
+            <TrendingUp size={18} className="text-blue-600" />
             <span>CEFR Skill Distribution & Mastery</span>
           </h2>
-          <span className="text-xs font-bold text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-lg">
+          <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg">
             Current Level: {progress.selectedLevel}
           </span>
         </div>
@@ -199,13 +199,13 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-bold text-slate-700">
               <span>Grammar & Syntax Rules</span>
-              <span className="text-indigo-600">
+              <span className="text-blue-600">
                 {Math.min(100, Math.max(30, lessonProgressPercent))}%
               </span>
             </div>
             <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
               <div
-                className="h-full bg-indigo-600 rounded-full transition-all duration-700"
+                className="h-full bg-blue-600 rounded-full transition-all duration-700"
                 style={{ width: `${Math.min(100, Math.max(30, lessonProgressPercent))}%` }}
               />
             </div>
@@ -302,7 +302,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
               <button
                 type="button"
                 onClick={() => setActiveTab("vocabulary")}
-                className="text-xs text-indigo-600 font-bold hover:underline"
+                className="text-xs text-blue-600 font-bold hover:underline"
               >
                 Open Flashcards
               </button>
@@ -324,7 +324,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
                         <span className="font-bold text-slate-900 text-sm">
                           {word.word}
                         </span>
-                        <span className="text-[10px] font-mono text-indigo-600">
+                        <span className="text-[10px] font-mono text-blue-600">
                           {word.phonetic}
                         </span>
                       </div>
@@ -343,7 +343,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         {/* Right: Milestone Badges & Achievements */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
           <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
-            <Shield size={18} className="text-indigo-600" />
+            <Shield size={18} className="text-blue-600" />
             <span>Milestone Badges ({progress.achievements.length}/{INITIAL_ACHIEVEMENTS.length})</span>
           </h3>
 

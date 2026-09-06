@@ -25,12 +25,15 @@ import {
   Layers,
   Award,
   Globe,
+  BookOpen,
+  Mic,
 } from "lucide-react";
 import { UserAccount, CEFRLevel, GoogleAuthStatus, AuthMethod, AuthIntent } from "../types";
 import { LegalTab } from "./LegalModal";
 import { LinguaFlowLogo } from "./LinguaFlowLogo";
 import { loadUserProgress } from "../utils/storageUtils";
 import { LanguageSelector } from "./LanguageSelector";
+import { useTranslation } from "../context/TranslationContext";
 
 interface AuthAccessHubProps {
   onLoginSuccess: (user: UserAccount, targetTab?: string) => void;
@@ -84,6 +87,8 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
   const [authIntent, setAuthIntent] = useState<AuthIntent>(initialIntent);
 
   // Portal Switcher: "student" vs "admin"
+  const { t } = useTranslation();
+
   const [activePortal, setActivePortal] = useState<"student" | "admin">(() => {
     if (initialPortal) return initialPortal;
     if (typeof window !== "undefined") {
@@ -105,10 +110,13 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
   // Password Visibility
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
-  // Admin Credentials
-  const [adminEmail, setAdminEmail] = useState<string>("kondala.muralikrishna@gmail.com");
-  const [adminPasscode, setAdminPasscode] = useState<string>("admin2026");
-  const [adminName, setAdminName] = useState<string>("Muralikrishna Kondala (Owner)");
+  // Admin Credentials — never pre-fill real values here. This state used to default to the
+  // actual owner email and the real admin passcode, which shipped those secrets in plaintext to
+  // every visitor's browser (view-source, not just "hidden" UI) regardless of whether the login
+  // attempt itself would succeed.
+  const [adminEmail, setAdminEmail] = useState<string>("");
+  const [adminPasscode, setAdminPasscode] = useState<string>("");
+  const [adminName, setAdminName] = useState<string>("");
 
   // UI State
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -524,19 +532,27 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
     setIsLoading(true);
 
     try {
-      const res = await fetch("/api/auth/admin/signin", {
+      // The admin gateway has its own form, but authenticates through the same real,
+      // password-verified endpoint students use — there's no separate passcode auth anymore.
+      const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: adminEmail,
-          passcode: adminPasscode,
-          name: adminName,
+          password: adminPasscode,
         }),
       });
 
       const data = await res.json();
       if (!res.ok) {
         throw new Error(data.error || "Invalid administrator credentials.");
+      }
+
+      // This form is for admins/owners only — a valid student login here is rejected with a
+      // clear redirect message rather than silently dropping them into the admin shell (the real
+      // access control is still server-side on every /api/admin/* route regardless).
+      if (data.user.role !== "admin" && data.user.role !== "owner") {
+        throw new Error("This account doesn't have administrator access. Please use the student Sign In instead.");
       }
 
       setSuccessMsg(`Authenticated as ${data.user.role.toUpperCase()}: ${data.user.email}`);
@@ -655,73 +671,52 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
       className={`${
         isModalMode
           ? "w-full max-w-lg mx-auto bg-white rounded-3xl overflow-hidden shadow-2xl border border-slate-200"
-          : "min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 text-slate-100 flex flex-col justify-between"
-      } selection:bg-indigo-500 selection:text-white font-sans`}
+          : "min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50/60 to-blue-100 text-slate-900 flex flex-col justify-between relative overflow-hidden"
+      } selection:bg-blue-500 selection:text-white font-sans`}
     >
-      {/* Top App Bar (Only in full-screen mode) */}
+      {/* Soft decorative background shapes (purely visual, matches design reference) */}
       {!isModalMode && (
-        <header className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <LinguaFlowLogo variant="mark" size="sm" />
-            <div className="flex flex-col">
-              <span className="text-base font-black tracking-tight text-white flex items-center gap-2">
-                FLUENXIA <span className="text-xs bg-cyan-500/30 text-cyan-300 font-bold px-2 py-0.5 rounded-md border border-cyan-400/30">Oral AI & LMS</span>
-              </span>
-              <span className="text-[11px] text-slate-400 font-medium">Empower Learning, Unleash Potential.</span>
-            </div>
+        <>
+          <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-200/40 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute top-1/3 -right-32 w-[28rem] h-[28rem] bg-indigo-200/40 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -bottom-32 left-1/4 w-96 h-96 bg-blue-100/50 rounded-full blur-3xl pointer-events-none" />
+        </>
+      )}
+
+      {/* Minimal utility row — kept deliberately quiet so it doesn't compete with the clean card
+          design below. All the same functionality (guest mode, language, admin portal) as before,
+          just no heavy header bar. */}
+      {!isModalMode && (
+        <header className="w-full px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-end gap-4">
+          <button
+            id="btn_guest_explore_top"
+            type="button"
+            onClick={handleGuestExplore}
+            className="text-xs font-semibold text-slate-500 hover:text-blue-700 transition-colors flex items-center gap-1"
+          >
+            <span>{t("auth.explore_guest", "Explore as Guest")}</span>
+            <ArrowRight size={12} />
+          </button>
+
+          <div className="text-slate-500">
+            <LanguageSelector variant="compact" />
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Escape Hatch: Explore as Guest */}
-            <button
-              id="btn_guest_explore_top"
-              type="button"
-              onClick={handleGuestExplore}
-              className="text-xs font-semibold text-slate-300 hover:text-white px-3 py-2 rounded-xl hover:bg-slate-800/60 transition-colors flex items-center gap-1.5 border border-slate-700/50"
-            >
-              <span>Explore as Guest</span>
-              <ArrowRight size={14} />
-            </button>
-
-            {/* Regional Translation Language Dropdown */}
-            <div className="bg-slate-800/90 px-2.5 py-1 rounded-xl border border-slate-700 flex items-center">
-              <LanguageSelector variant="admin" />
-            </div>
-
-            {/* Portal Switcher Pill */}
-            <div className="bg-slate-800/80 p-1 rounded-xl border border-slate-700 flex items-center text-xs font-bold">
-              <button
-                type="button"
-                onClick={() => {
-                  setActivePortal("student");
-                  setErrorMsg(null);
-                }}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                  activePortal === "student"
-                    ? "bg-indigo-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <GraduationCap size={14} />
-                <span>Learner Hub</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setActivePortal("admin");
-                  setErrorMsg(null);
-                }}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                  activePortal === "admin"
-                    ? "bg-amber-600 text-white shadow-sm"
-                    : "text-slate-400 hover:text-slate-200"
-                }`}
-              >
-                <Shield size={14} />
-                <span>Faculty / Admin</span>
-              </button>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              const next = activePortal === "student" ? "admin" : "student";
+              setActivePortal(next);
+              setErrorMsg(null);
+              const url = new URL(window.location.href);
+              url.searchParams.set("portal", next);
+              window.history.replaceState({}, "", url);
+            }}
+            className="text-xs font-semibold text-slate-500 hover:text-blue-700 transition-colors flex items-center gap-1"
+          >
+            {activePortal === "student" ? <Shield size={12} /> : <GraduationCap size={12} />}
+            <span>{activePortal === "student" ? t("auth.faculty_admin", "Faculty / Admin") : t("auth.learner_hub", "Learner Hub")}</span>
+          </button>
         </header>
       )}
 
@@ -732,8 +727,8 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
             !isModalMode && activePortal === "student" ? "max-w-md lg:max-w-5xl" : "max-w-md"
           } ${
             isModalMode
-              ? ""
-              : "bg-white/95 backdrop-blur-xl text-slate-900 rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100/50 ring-1 ring-white/20"
+              ? "bg-white/95 backdrop-blur-xl text-slate-900 rounded-3xl p-6 shadow-2xl border border-slate-100/50 ring-1 ring-white/20"
+              : "bg-white text-slate-900 rounded-3xl shadow-2xl border border-slate-100/80 overflow-hidden"
           } ${isShaking ? "animate-shake" : ""}`}
         >
           {/* Modal Close Button if in modal mode */}
@@ -753,116 +748,134 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
             </div>
           )}
 
-          {/* 1. Pedagogical Progress Continuity Banner */}
+          {/* 1. Pedagogical Progress Continuity Notice — compact pill, only shown when relevant
+              (a guest has unsaved progress), kept subtle so it doesn't compete with the clean layout */}
           {guestProgressSnapshot.xp > 0 && activePortal === "student" && (
             <div
               id="banner_pedagogical_continuity"
-              className="mb-5 p-3.5 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100 flex items-center gap-3"
+              className={`${isModalMode ? "" : "mx-6 mt-4"} mb-2 inline-flex items-center gap-2 px-3 py-1.5 bg-amber-50 border border-amber-200 rounded-full text-[11px] text-amber-800 font-semibold`}
             >
-              <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shrink-0 shadow-sm">
-                <Flame size={20} className="fill-amber-400 text-amber-400 animate-pulse" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-black text-indigo-950 flex items-center gap-1.5">
-                    <span>{guestProgressSnapshot.xp} XP & {guestProgressSnapshot.streakDays}-Day Streak</span>
-                    <span className="inline-block px-1.5 py-0.2 text-[9px] font-extrabold bg-amber-200 text-amber-900 rounded">
-                      Unsaved
-                    </span>
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-600 leading-snug truncate mt-0.5">
-                  Sign in to bind your speech models & keep your progress safe.
-                </p>
-              </div>
+              <Flame size={13} className="fill-amber-500 text-amber-500 shrink-0" />
+              <span>
+                {guestProgressSnapshot.xp} XP unsaved — sign in to keep your progress safe.
+              </span>
             </div>
           )}
 
           {/* Student Hub View */}
           {activePortal === "student" ? (
-            <div className={!isModalMode ? "lg:grid lg:grid-cols-[0.85fr_1fr] lg:gap-10 lg:items-start" : undefined}>
-              {/* LEFT COLUMN: Content — brand context + regional translation option */}
-              <div className={!isModalMode ? "lg:pr-2 lg:border-r lg:border-slate-100 lg:sticky lg:top-0 lg:self-start" : undefined}>
+            <div className={!isModalMode ? "lg:grid lg:grid-cols-2" : undefined}>
+              {/* LEFT COLUMN: Branded content panel — logo, headline, feature highlights, illustration */}
+              <div
+                className={
+                  !isModalMode
+                    ? "bg-gradient-to-br from-blue-50 via-indigo-50/60 to-blue-100 p-8 lg:p-10 lg:sticky lg:top-0 lg:self-start flex flex-col"
+                    : undefined
+                }
+              >
                 {!isModalMode && (
-                  <div className="hidden lg:block mb-6">
-                    <h2 className="text-lg font-black text-slate-900 tracking-tight mb-1.5">
-                      Your CEFR-Aligned English Journey
+                  <>
+                    <div className="flex items-center gap-2.5 mb-8">
+                      <LinguaFlowLogo variant="mark" size="sm" />
+                      <div>
+                        <span className="block text-lg font-black text-blue-700 tracking-tight">Fluenxia</span>
+                        <span className="block text-[10px] font-bold text-slate-500 tracking-wide">
+                          Learn &bull; Practice &bull; Speak &bull; Grow
+                        </span>
+                      </div>
+                    </div>
+
+                    <h2 className="text-2xl lg:text-3xl font-black text-slate-900 tracking-tight leading-tight mb-3">
+                      {t("auth.cefr_journey_title", "Your AI-Powered English Learning Partner")}
                     </h2>
-                    <p className="text-sm text-slate-500 leading-relaxed">
-                      Grammar, vocabulary, and AI-scored spoken English practice — tracked from A1 to C2, with real-time feedback in every session.
+                    <p className="text-sm text-slate-600 leading-relaxed mb-6">
+                      {t("auth.cefr_journey_desc", "Build your confidence, improve your skills, and speak English fluently — one step at a time.")}
                     </p>
-                  </div>
+
+                    {/* Feature Highlight Badges */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+                      {[
+                        { icon: BookOpen, label: "Learn", desc: "Structured lessons", color: "bg-blue-500" },
+                        { icon: Mic, label: "Practice", desc: "Interactive drills", color: "bg-teal-500" },
+                        { icon: Sparkles, label: "AI Speaking", desc: "Real conversations", color: "bg-purple-500" },
+                        { icon: Zap, label: "Track Progress", desc: "See improvement", color: "bg-amber-500" },
+                      ].map((f) => (
+                        <div key={f.label} className="flex flex-col items-center text-center gap-1.5">
+                          <div className={`w-11 h-11 rounded-full ${f.color} text-white flex items-center justify-center shadow-sm`}>
+                            <f.icon size={18} />
+                          </div>
+                          <span className="text-[11px] font-extrabold text-slate-800 leading-tight">{f.label}</span>
+                          <span className="text-[10px] text-slate-500 leading-tight hidden sm:block">{f.desc}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
 
-                {/* Regional Mother Tongue Translation Option Banner inside card */}
-                <div className="mb-4 p-2.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl shadow-xs space-y-2">
-                  <div className="flex items-center gap-1.5">
-                    <span className="p-1.5 bg-amber-500 text-slate-950 rounded-lg text-xs font-black shrink-0">
-                      <Globe size={13} />
-                    </span>
-                    <div className="min-w-0">
-                      <span className="text-[11px] font-black text-slate-900 block leading-tight whitespace-nowrap">
-                        Mother Tongue Translation
-                      </span>
-                      <span className="text-[10px] text-slate-500 font-medium whitespace-nowrap">
-                        Telugu, Hindi, Tamil, etc.
-                      </span>
-                    </div>
-                  </div>
+                {/* Regional Mother Tongue Translation — compact single-line control (same feature,
+                    just no longer a heavy standalone card) */}
+                <div className="mb-4 flex items-center gap-1.5 text-slate-500">
+                  <Globe size={13} className="shrink-0" />
+                  <span className="text-[11px] font-semibold whitespace-nowrap">Read in your language:</span>
                   <LanguageSelector variant="header" />
                 </div>
+
+                {/* Simple illustration placeholder (icon-based — no illustration assets exist in the
+                    codebase yet; swap for real artwork if the client provides it) */}
+                {!isModalMode && (
+                  <div className="hidden lg:flex mt-auto pt-6 items-end gap-3">
+                    <div className="w-16 h-16 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shrink-0">
+                      <GraduationCap size={30} />
+                    </div>
+                    <div className="bg-white rounded-2xl rounded-bl-none px-4 py-2.5 shadow-sm border border-blue-100">
+                      <p className="text-xs font-bold text-slate-700 italic">Small steps make big progress!</p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* RIGHT COLUMN: Sign In / Create Account form — scrolls independently so the left
                   column (content) stays fixed in place instead of the whole page scrolling. */}
-              <div className={!isModalMode ? "lg:max-h-[75vh] lg:overflow-y-auto lg:pr-1 no-scrollbar" : undefined}>
-              {/* Segmented Tab Switcher (Sign In vs Create Account) */}
-              <div
-                id="switcher_auth_intent"
-                className="flex p-1 bg-slate-100 rounded-2xl border border-slate-200/80 mb-6"
-              >
+              <div className={!isModalMode ? "p-8 lg:p-10 lg:max-h-[75vh] lg:overflow-y-auto no-scrollbar" : undefined}>
+              {/* Quick link to switch between Sign In / Create Account (top-right, matches design) */}
+              <div className="flex justify-end mb-2">
                 <button
-                  id="tab_auth_signin"
+                  id="tab_auth_switch_link"
                   type="button"
                   onClick={() => {
-                    setAuthIntent("login");
+                    const next = authIntent === "login" ? "signup" : "login";
+                    setAuthIntent(next);
                     setErrorMsg(null);
                     setSuccessMsg(null);
                   }}
-                  className={`flex-1 py-2 text-xs font-extrabold rounded-xl transition-all ${
-                    authIntent === "login"
-                      ? "bg-white text-indigo-700 shadow-sm"
-                      : "text-slate-500 hover:text-slate-900"
-                  }`}
+                  className="text-xs font-semibold text-slate-500 hover:text-blue-700"
                 >
-                  Sign In
-                </button>
-                <button
-                  id="tab_auth_signup"
-                  type="button"
-                  onClick={() => {
-                    setAuthIntent("signup");
-                    setErrorMsg(null);
-                    setSuccessMsg(null);
-                  }}
-                  className={`flex-1 py-2 text-xs font-extrabold rounded-xl transition-all ${
-                    authIntent === "signup"
-                      ? "bg-white text-indigo-700 shadow-sm"
-                      : "text-slate-500 hover:text-slate-900"
-                  }`}
-                >
-                  Create Account
+                  {authIntent === "login" ? (
+                    <>
+                      New here?{" "}
+                      <span className="text-blue-600 font-extrabold hover:underline">
+                        {t("auth.create_account_tab", "Create an account")}
+                      </span>
+                    </>
+                  ) : (
+                    <>
+                      Already have an account?{" "}
+                      <span className="text-blue-600 font-extrabold hover:underline">
+                        {t("auth.sign_in_tab", "Sign In")}
+                      </span>
+                    </>
+                  )}
                 </button>
               </div>
 
               {/* Title & Context */}
-              <div className="mb-4 text-center">
-                <h1 className="text-lg font-black text-slate-900 tracking-tight">
-                  {authIntent === "login" ? "Welcome Back, Learner" : "Begin Your Mastery Journey"}
+              <div className="mb-4 text-left">
+                <h1 className="text-2xl font-black text-slate-900 tracking-tight">
+                  {authIntent === "login" ? t("auth.welcome_back_title", "Welcome Back, Learner") : t("auth.create_account_title", "Begin Your Mastery Journey")}
                 </h1>
                 <p className="text-xs text-slate-500 mt-1">
                   {authIntent === "login"
-                    ? "Log into your personalized CEFR curriculum & oral lab"
+                    ? t("auth.welcome_back_subtitle", "Log into your personalized CEFR curriculum & oral lab")
                     : "Create your permanent account with full cloud synchronization"}
                 </p>
               </div>
@@ -915,7 +928,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                   className="w-full h-10 px-4 bg-white hover:bg-slate-50 text-slate-800 font-bold text-xs rounded-xl border border-slate-300 shadow-sm flex items-center justify-center gap-2.5 transition-all hover:border-slate-400 active:scale-[0.99] disabled:opacity-50"
                 >
                   <GoogleGIcon className="w-5 h-5 shrink-0" />
-                  <span>Continue with Google</span>
+                  <span>{t("auth.continue_google", "Continue with Google")}</span>
                 </button>
 
                 {/* Apple Sign In Button */}
@@ -927,7 +940,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                   className="w-full h-10 px-4 bg-black hover:bg-slate-900 text-white font-bold text-xs rounded-xl border border-black shadow-sm flex items-center justify-center gap-2.5 transition-all active:scale-[0.99] disabled:opacity-50"
                 >
                   <AppleIcon className="w-5 h-5 shrink-0 text-white" />
-                  <span>Continue with Apple</span>
+                  <span>{t("auth.continue_apple", "Continue with Apple")}</span>
                 </button>
 
               </div>
@@ -936,7 +949,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
               <div className="relative flex items-center justify-center mb-5">
                 <div className="border-t border-slate-200 w-full" />
                 <span className="bg-white px-3 text-[11px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
-                  or continue with email
+                  {t("auth.or_continue_email", "or continue with email")}
                 </span>
                 <div className="border-t border-slate-200 w-full" />
               </div>
@@ -946,14 +959,14 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                 {/* Full Name (Sign Up only) */}
                 {authIntent === "signup" && (
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Full Name</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">{t("auth.full_name_label", "Full Name")}</label>
                     <input
                       id="input_auth_name"
                       type="text"
                       value={fullName}
                       onChange={(e) => setFullName(e.target.value)}
                       placeholder="e.g. Alex Chen"
-                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+                      className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                     />
                   </div>
                 )}
@@ -961,7 +974,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                 {/* Email Field with validation */}
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="block text-xs font-bold text-slate-700">Email Address</label>
+                    <label className="block text-xs font-bold text-slate-700">{t("auth.email_label", "Email Address")}</label>
                   </div>
                   <div className="relative">
                     <input
@@ -972,7 +985,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="learner@domain.com"
-                      className="w-full h-11 pl-10 pr-9 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+                      className="w-full h-11 pl-10 pr-9 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                     />
                     <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     {email && (
@@ -990,7 +1003,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                 {/* Password Field with Eye Toggle */}
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <label className="block text-xs font-bold text-slate-700">Password</label>
+                    <label className="block text-xs font-bold text-slate-700">{t("auth.password_label", "Password")}</label>
                     {authIntent === "login" && (
                       <button
                         id="btn_forgot_password"
@@ -999,9 +1012,9 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                           setRecoveryEmail(email);
                           setIsForgotPasswordOpen(true);
                         }}
-                        className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 hover:underline"
+                        className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline"
                       >
-                        Forgot password?
+                        {t("auth.forgot_password", "Forgot password?")}
                       </button>
                     )}
                   </div>
@@ -1013,7 +1026,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full h-11 pl-10 pr-10 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all"
+                      className="w-full h-11 pl-10 pr-10 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                     />
                     <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <button
@@ -1070,7 +1083,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                           onClick={() => setSelectedLevel(lvl)}
                           className={`py-1.5 text-xs font-extrabold rounded-lg border transition-all ${
                             selectedLevel === lvl
-                              ? "bg-indigo-600 text-white border-indigo-600"
+                              ? "bg-blue-600 text-white border-blue-600"
                               : "bg-slate-50 text-slate-600 border-slate-200 hover:border-slate-300"
                           }`}
                         >
@@ -1088,10 +1101,10 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    className="w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
+                    className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500"
                   />
                   <label htmlFor="checkbox_remember_device" className="text-xs font-medium text-slate-600 cursor-pointer">
-                    Remember this device for 30 days
+                    {t("auth.remember_device", "Remember this device for 30 days")}
                   </label>
                 </div>
 
@@ -1100,7 +1113,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                   id="btn_auth_submit"
                   type="submit"
                   disabled={isLoading || cooldownRemaining > 0}
-                  className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50 mt-2"
+                  className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50 mt-2"
                 >
                   {isLoading ? (
                     <>
@@ -1113,19 +1126,24 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                     <span>Cooldown active ({cooldownRemaining}s)</span>
                   ) : (
                     <>
-                      <span>{authIntent === "signup" ? "Create Account & Save Streak" : "Continue Practicing"}</span>
+                      <span>{authIntent === "signup" ? t("auth.create_account_save_streak", "Create Account & Save Streak") : t("auth.continue_practicing", "Continue Practicing")}</span>
                       <ArrowRight size={16} />
                     </>
                   )}
                 </button>
               </form>
+
+              <p className="mt-5 flex items-center justify-center gap-1.5 text-[11px] text-slate-400 font-medium">
+                <ShieldCheck size={13} />
+                <span>Your data is safe and secure</span>
+              </p>
               </div>
             </div>
           ) : (
             /* Admin / Faculty Portal View */
-            <div>
-              <div className="mb-5 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-amber-100 text-amber-700 mx-auto flex items-center justify-center mb-3">
+            <div className={!isModalMode ? "p-8 lg:p-10" : undefined}>
+              <div className="mb-4 text-center">
+                <div className="w-12 h-12 rounded-2xl bg-blue-100 text-blue-700 mx-auto flex items-center justify-center mb-3">
                   <Shield size={24} />
                 </div>
                 <h1 className="text-2xl font-black text-slate-900 tracking-tight">Faculty & Admin Gateway</h1>
@@ -1148,66 +1166,46 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                 </div>
               )}
 
-              {/* One-Click Owner Access Button */}
-              <button
-                type="button"
-                onClick={() => {
-                  setAdminEmail("kondala.muralikrishna@gmail.com");
-                  setAdminPasscode("admin2026");
-                  setAdminName("Muralikrishna Kondala (Owner)");
-                  handleAdminSignIn({ preventDefault: () => {} } as any);
-                }}
-                disabled={isLoading}
-                className="w-full mb-4 p-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-bold text-xs flex items-center justify-between shadow-sm transition-all"
-              >
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-amber-600/50 flex items-center justify-center font-bold">
-                    👑
-                  </div>
-                  <div className="text-left">
-                    <div className="font-black text-xs">Instant Platform Owner Sign-In</div>
-                    <div className="text-[10px] opacity-90">kondala.muralikrishna@gmail.com</div>
-                  </div>
-                </div>
-                <ArrowRight size={16} />
-              </button>
-
-              <div className="relative flex items-center justify-center my-4">
-                <div className="border-t border-slate-200 w-full" />
-                <span className="bg-white px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider shrink-0">
-                  or admin credentials
-                </span>
-                <div className="border-t border-slate-200 w-full" />
-              </div>
-
-              <form onSubmit={handleAdminSignIn} className="space-y-3.5">
+              <form onSubmit={handleAdminSignIn} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">Faculty / Admin Email</label>
                   <input
                     type="email"
                     required
+                    autoComplete="off"
                     value={adminEmail}
                     onChange={(e) => setAdminEmail(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Admin Security Passcode</label>
-                  <input
-                    type="password"
-                    required
-                    value={adminPasscode}
-                    onChange={(e) => setAdminPasscode(e.target.value)}
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    placeholder="admin2026"
-                  />
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Password</label>
+                  <div className="relative">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      autoComplete="off"
+                      value={adminPasscode}
+                      onChange={(e) => setAdminPasscode(e.target.value)}
+                      className="w-full h-11 pl-3.5 pr-10 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      aria-label={showPassword ? "Hide passcode" : "Show passcode"}
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                    >
+                      {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                    </button>
+                  </div>
                 </div>
 
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-12 bg-amber-600 hover:bg-amber-700 text-white font-extrabold text-xs rounded-2xl shadow-md transition-all flex items-center justify-center gap-2"
+                  className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-2xl shadow-md transition-all flex items-center justify-center gap-2"
                 >
                   {isLoading ? <Loader2 size={16} className="animate-spin" /> : <span>Open Admin Console</span>}
                 </button>
@@ -1219,10 +1217,10 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
 
       {/* Footer Legal & Security Notice (Only in full-screen mode) */}
       {!isModalMode && (
-        <footer className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 border-t border-slate-800/80">
+        <footer className="max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 border-t border-slate-200/70">
           <div className="flex items-center gap-2">
-            <ShieldCheck size={16} className="text-indigo-400" />
-            <span>256-bit TLS Encryption • GDPR & CEFR Compliant LMS Architecture</span>
+            <ShieldCheck size={16} className="text-blue-500" />
+            <span>256-bit TLS Encryption • CEFR-Aligned LMS Architecture</span>
           </div>
 
           <div className="flex items-center gap-4">
@@ -1231,20 +1229,20 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                 <button
                   type="button"
                   onClick={() => onOpenLegalModal("terms")}
-                  className="hover:text-slate-200 transition-colors"
+                  className="hover:text-blue-700 transition-colors"
                 >
                   Terms of Service
                 </button>
                 <button
                   type="button"
                   onClick={() => onOpenLegalModal("privacy")}
-                  className="hover:text-slate-200 transition-colors"
+                  className="hover:text-blue-700 transition-colors"
                 >
                   Privacy Policy
                 </button>
               </>
             )}
-            <span>© 2026 LinguaFlow</span>
+            <span>© 2026 Fluenxia</span>
           </div>
         </footer>
       )}
@@ -1257,7 +1255,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
         >
           <div className="bg-white text-slate-900 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl border border-slate-100 animate-in zoom-in-95">
             <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2 text-indigo-600">
+              <div className="flex items-center gap-2 text-blue-600">
                 <KeyRound size={20} />
                 <h3 className="text-lg font-black text-slate-900">Password Recovery</h3>
               </div>
@@ -1284,7 +1282,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                     value={recoveryEmail}
                     onChange={(e) => setRecoveryEmail(e.target.value)}
                     placeholder="learner@domain.com"
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -1299,7 +1297,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                   <button
                     type="submit"
                     disabled={isResettingPassword}
-                    className="flex-1 h-11 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2"
+                    className="flex-1 h-11 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2"
                   >
                     {isResettingPassword ? <Loader2 size={16} className="animate-spin" /> : <span>Send Reset Code</span>}
                   </button>
@@ -1338,7 +1336,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                     value={recoveryInputCode}
                     onChange={(e) => setRecoveryInputCode(e.target.value)}
                     placeholder="e.g. 123456"
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 tracking-wider text-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 tracking-wider text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -1350,7 +1348,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                     value={newRecoveryPassword}
                     onChange={(e) => setNewRecoveryPassword(e.target.value)}
                     placeholder="Enter at least 6 characters"
-                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full h-11 px-3.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -1360,7 +1358,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                     type="button"
                     disabled={recoveryCountdown > 0}
                     onClick={handleRequestPasswordReset}
-                    className="font-bold text-indigo-600 hover:text-indigo-800 disabled:opacity-50"
+                    className="font-bold text-blue-600 hover:text-blue-800 disabled:opacity-50"
                   >
                     {recoveryCountdown > 0 ? `Resend in ${recoveryCountdown}s` : "Resend Code"}
                   </button>
@@ -1369,7 +1367,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                 <button
                   type="submit"
                   disabled={isResettingPassword}
-                  className="w-full h-11 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2"
+                  className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl flex items-center justify-center gap-2"
                 >
                   {isResettingPassword ? <Loader2 size={16} className="animate-spin" /> : <span>Update Password & Sign In</span>}
                 </button>

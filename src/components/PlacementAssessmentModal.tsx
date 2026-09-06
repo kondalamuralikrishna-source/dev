@@ -190,7 +190,7 @@ export const PlacementAssessmentModal: React.FC<PlacementAssessmentModalProps> =
     A1: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200" },
     A2: { bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200" },
     B1: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
-    B2: { bg: "bg-indigo-50", text: "text-indigo-700", border: "border-indigo-200" },
+    B2: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
     C1: { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200" },
     C2: { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200" },
   };
@@ -201,7 +201,7 @@ export const PlacementAssessmentModal: React.FC<PlacementAssessmentModalProps> =
         {/* Header Bar */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-md shadow-indigo-600/20">
+            <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/20">
               <Sparkles size={20} />
             </div>
             <div>
@@ -234,7 +234,7 @@ export const PlacementAssessmentModal: React.FC<PlacementAssessmentModalProps> =
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-bold text-slate-600">
                 <span className="flex items-center gap-1.5">
-                  <span className="px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 text-[11px]">
+                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[11px]">
                     Question {currentStep + 1} of {totalQuestions}
                   </span>
                   <span className="text-slate-400">•</span>
@@ -242,14 +242,14 @@ export const PlacementAssessmentModal: React.FC<PlacementAssessmentModalProps> =
                     Target: {currentQuestion.targetLevel} ({currentQuestion.difficultyLabel})
                   </span>
                 </span>
-                <span className="text-indigo-600">
+                <span className="text-blue-600">
                   {Math.round(((currentStep + 1) / totalQuestions) * 100)}%
                 </span>
               </div>
 
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 transition-all duration-300 rounded-full"
+                  className="h-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-300 rounded-full"
                   style={{ width: `${((currentStep + 1) / totalQuestions) * 100}%` }}
                 />
               </div>
@@ -259,7 +259,7 @@ export const PlacementAssessmentModal: React.FC<PlacementAssessmentModalProps> =
             <div className="p-5 sm:p-6 bg-slate-50 rounded-2xl border border-slate-200 space-y-4 text-left">
               <div className="flex items-start justify-between gap-3">
                 <div className="space-y-1 flex-1">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-600 px-2 py-0.5 bg-indigo-50 rounded border border-indigo-200 inline-block">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-blue-600 px-2 py-0.5 bg-blue-50 rounded border border-blue-200 inline-block">
                     {currentQuestion.category} competency
                   </span>
                   <h3 className="text-base sm:text-lg font-bold text-slate-900 leading-snug">
@@ -287,8 +287,8 @@ export const PlacementAssessmentModal: React.FC<PlacementAssessmentModalProps> =
                       onClick={() => handleSelectOption(currentQuestion.id, option.id)}
                       className={`w-full p-3.5 sm:p-4 rounded-xl text-left font-medium text-xs sm:text-sm border transition-all cursor-pointer flex items-center justify-between gap-3 ${
                         isSelected
-                          ? "bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-600/20"
-                          : "bg-white text-slate-800 border-slate-200 hover:border-indigo-300 hover:bg-indigo-50/50"
+                          ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20"
+                          : "bg-white text-slate-800 border-slate-200 hover:border-blue-300 hover:bg-blue-50/50"
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -327,7 +327,7 @@ export const PlacementAssessmentModal: React.FC<PlacementAssessmentModalProps> =
                 type="button"
                 disabled={!answers[currentQuestion.id]}
                 onClick={handleNext}
-                className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs sm:text-sm rounded-xl shadow-md shadow-indigo-600/20 flex items-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-xs sm:text-sm rounded-xl shadow-md shadow-blue-600/20 flex items-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
               >
                 <span>{currentStep === totalQuestions - 1 ? "Evaluate Placement" : "Next Question"}</span>
                 <ArrowRight size={15} />
@@ -342,7 +342,7 @@ export const PlacementAssessmentModal: React.FC<PlacementAssessmentModalProps> =
         {isCompleted && assessmentResult && (
           <div className="space-y-6 text-left animate-in fade-in duration-300">
             {/* Result Hero Banner */}
-            <div className="p-6 bg-gradient-to-br from-indigo-900 via-indigo-800 to-slate-900 rounded-3xl text-white shadow-xl space-y-4 text-center sm:text-left relative overflow-hidden">
+            <div className="p-6 bg-gradient-to-br from-blue-900 via-blue-800 to-slate-900 rounded-3xl text-white shadow-xl space-y-4 text-center sm:text-left relative overflow-hidden">
               <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
 
               <div className="flex flex-col sm:flex-row items-center sm:items-start justify-between gap-4">
@@ -355,13 +355,13 @@ export const PlacementAssessmentModal: React.FC<PlacementAssessmentModalProps> =
                   <h3 className="text-2xl sm:text-3xl font-black tracking-tight">
                     You have unlocked <span className="text-amber-400">Level {assessmentResult.diagnosedLevel}</span>
                   </h3>
-                  <p className="text-xs sm:text-sm text-indigo-200 max-w-lg leading-relaxed">
+                  <p className="text-xs sm:text-sm text-blue-200 max-w-lg leading-relaxed">
                     {assessmentResult.summaryFeedback}
                   </p>
                 </div>
 
                 <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 text-center min-w-[120px]">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-indigo-200 block">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-blue-200 block">
                     Diagnostic Score
                   </span>
                   <span className="text-3xl font-black text-amber-300">
@@ -375,7 +375,7 @@ export const PlacementAssessmentModal: React.FC<PlacementAssessmentModalProps> =
 
               {/* Unlocked Levels Progression Map */}
               <div className="pt-2 border-t border-white/10">
-                <span className="text-[11px] font-bold text-indigo-200 uppercase tracking-wider block mb-2">
+                <span className="text-[11px] font-bold text-blue-200 uppercase tracking-wider block mb-2">
                   Your CEFR Unlocked Curriculum Portals:
                 </span>
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -423,7 +423,7 @@ export const PlacementAssessmentModal: React.FC<PlacementAssessmentModalProps> =
                 <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">
                   Grammar Core
                 </span>
-                <span className="text-lg font-black text-indigo-600">
+                <span className="text-lg font-black text-blue-600">
                   {assessmentResult.grammarScore}%
                 </span>
               </div>
@@ -448,15 +448,15 @@ export const PlacementAssessmentModal: React.FC<PlacementAssessmentModalProps> =
             </div>
 
             {/* Recommended Learning Focus */}
-            <div className="p-4 bg-indigo-50/70 rounded-2xl border border-indigo-100 space-y-2">
-              <h4 className="text-xs font-bold text-indigo-900 uppercase tracking-wider flex items-center gap-1.5">
-                <BookOpen size={14} className="text-indigo-600" />
+            <div className="p-4 bg-blue-50/70 rounded-2xl border border-blue-100 space-y-2">
+              <h4 className="text-xs font-bold text-blue-900 uppercase tracking-wider flex items-center gap-1.5">
+                <BookOpen size={14} className="text-blue-600" />
                 <span>Recommended Level {assessmentResult.diagnosedLevel} Learning Modules:</span>
               </h4>
-              <ul className="space-y-1.5 text-xs text-indigo-950">
+              <ul className="space-y-1.5 text-xs text-blue-950">
                 {assessmentResult.recommendedNextSteps.map((step, idx) => (
                   <li key={idx} className="flex items-start gap-2">
-                    <CheckCircle2 size={14} className="text-indigo-600 shrink-0 mt-0.5" />
+                    <CheckCircle2 size={14} className="text-blue-600 shrink-0 mt-0.5" />
                     <span>{step}</span>
                   </li>
                 ))}
@@ -467,7 +467,7 @@ export const PlacementAssessmentModal: React.FC<PlacementAssessmentModalProps> =
             <button
               type="button"
               onClick={handleApplyResult}
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-sm rounded-2xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
+              className="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white font-black text-sm rounded-2xl shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.99]"
             >
               <span>Unlock & Enter Level {assessmentResult.diagnosedLevel} LMS Portal</span>
               <ArrowRight size={16} />

@@ -271,7 +271,7 @@ export const ErrorMemoryStudio: React.FC<ErrorMemoryStudioProps> = ({
             Dynamic Error Memory Bank
           </h1>
           <p className="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
-            Mistakes are never treated as isolated events. LinguaFlow logs your specific grammar,
+            Mistakes are never treated as isolated events. Fluenxia logs your specific grammar,
             phonetic, and pragmatic slips and dynamically weaves them into future high-stakes
             conversational scenarios to verify true retention under real-world pressure.
           </p>

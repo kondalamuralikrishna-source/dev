@@ -76,10 +76,6 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                 <span className="font-sans font-black text-lg text-white tracking-wider uppercase">
                   FLUENXI<span className="text-cyan-400">A</span>
                 </span>
-                <span className="text-[10px] uppercase font-black tracking-wider px-2 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded flex items-center gap-1">
-                  <Crown size={11} className="text-amber-400" />
-                  <span>Admin Command Center</span>
-                </span>
               </div>
               <p className="text-[10px] font-semibold text-slate-400 tracking-wider hidden sm:block">
                 Institutional Governance, Acoustic DSP & Psychometrics

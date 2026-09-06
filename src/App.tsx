@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Header, NavTab } from "./components/Header";
+import { Sidebar } from "./components/Sidebar";
 import { AdminHeader, AdminNavTab } from "./components/AdminHeader";
 import { Dashboard } from "./components/Dashboard";
 import { GrammarHub } from "./components/GrammarHub";
@@ -492,33 +493,39 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100/70 text-slate-900 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
-      {/* Dynamic Navigation Header based on Portal Mode */}
-      {portal === "admin" && isOwnerOrAdmin ? (
-        <AdminHeader
-          activeAdminTab={adminTab}
-          setActiveAdminTab={setAdminTab}
-          currentUser={currentUser}
-          onLogout={handleLogout}
-          onOpenLegalModal={handleOpenLegalModal}
-          onOpenArchitectureDoc={() => setIsArchitectureModalOpen(true)}
-        />
-      ) : portal === "student" && !isOwnerOrAdmin ? (
-        <Header
-          activeTab={studentTab}
-          setActiveTab={setStudentTab}
-          progress={progress}
-          onUpdateLevel={handleSelectLevel}
-          currentUser={currentUser}
-          onOpenAuthModal={() => setIsAuthModalOpen(true)}
-          onLogout={handleLogout}
-          onOpenLegalModal={handleOpenLegalModal}
-          onOpenArchitectureDoc={() => setIsArchitectureModalOpen(true)}
-        />
-      ) : null}
+    <div className="min-h-screen bg-slate-100/70 text-slate-900 font-sans selection:bg-indigo-500 selection:text-white flex">
+      {/* Left sidebar navigation (student portal only — admin keeps its existing top-nav shell) */}
+      {portal === "student" && !isOwnerOrAdmin && (
+        <Sidebar activeTab={studentTab} setActiveTab={setStudentTab} onLogout={handleLogout} />
+      )}
 
-      {/* Main Content Area with Strict Isolation Gates */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Dynamic Navigation Header based on Portal Mode */}
+        {portal === "admin" && isOwnerOrAdmin ? (
+          <AdminHeader
+            activeAdminTab={adminTab}
+            setActiveAdminTab={setAdminTab}
+            currentUser={currentUser}
+            onLogout={handleLogout}
+            onOpenLegalModal={handleOpenLegalModal}
+            onOpenArchitectureDoc={() => setIsArchitectureModalOpen(true)}
+          />
+        ) : portal === "student" && !isOwnerOrAdmin ? (
+          <Header
+            activeTab={studentTab}
+            setActiveTab={setStudentTab}
+            progress={progress}
+            onUpdateLevel={handleSelectLevel}
+            currentUser={currentUser}
+            onOpenAuthModal={() => setIsAuthModalOpen(true)}
+            onLogout={handleLogout}
+            onOpenLegalModal={handleOpenLegalModal}
+            onOpenArchitectureDoc={() => setIsArchitectureModalOpen(true)}
+          />
+        ) : null}
+
+        {/* Main Content Area with Strict Isolation Gates */}
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* SCENARIO 1: Admin User accesses Student Portal -> HARD RESTRICTION GATE */}
         {portal === "student" && isOwnerOrAdmin && (
           <StudentGateForAdmin
@@ -615,6 +622,7 @@ export default function App() {
             {studentTab === "dashboard" && (
               <Dashboard
                 progress={progress}
+                learnerName={currentUser?.name}
                 setActiveTab={setStudentTab}
                 onSelectGrammarLesson={handleSelectGrammarLesson}
                 onSelectVocabCollection={handleSelectVocabCollection}
@@ -860,6 +868,7 @@ export default function App() {
 
       {/* Persistent Floating Quick-Translation Widget */}
       <LanguageSelector variant="floating" />
+      </div>
     </div>
   );
 }

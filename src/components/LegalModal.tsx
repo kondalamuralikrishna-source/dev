@@ -77,14 +77,14 @@ export const LegalModal: React.FC<LegalModalProps> = ({
             <div>
               <div className="flex items-center gap-2">
                 <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight font-serif uppercase">
-                  LinguaFlow Legal & Trust Center
+                  Fluenxia Legal & Trust Center
                 </h2>
                 <span className="px-2 py-0.5 text-[10px] font-bold bg-teal-100 text-teal-800 rounded-full">
                   v2026.1
                 </span>
               </div>
               <p className="text-xs text-slate-500 font-medium">
-                LinguaFlow: Language & Communication Solutions • Effective 2026
+                Fluenxia: Language & Communication Solutions • Effective 2026
               </p>
             </div>
           </div>
@@ -171,10 +171,10 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 <ShieldCheck size={22} className="text-indigo-600 shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <h3 className="text-sm font-bold text-indigo-950">
-                    Summary of LinguaFlow Terms of Usage
+                    Summary of Fluenxia Terms of Usage
                   </h3>
                   <p className="text-xs text-indigo-900/80">
-                    By accessing or using LinguaFlow LMS ("the Platform"), you agree to these Terms of Usage. LinguaFlow provides AI-powered CEFR English learning tools, conversational practice with Google Gemini AI, phonetic analysis, and curriculum progression tracking for educational purposes.
+                    By accessing or using Fluenxia LMS ("the Platform"), you agree to these Terms of Usage. Fluenxia provides AI-powered CEFR English learning tools, conversational practice with Google Gemini AI, phonetic analysis, and curriculum progression tracking for educational purposes.
                   </p>
                 </div>
               </div>
@@ -186,7 +186,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   <span>Acceptance of Terms & Eligibility</span>
                 </h4>
                 <p className="text-xs sm:text-sm text-slate-600">
-                  These Terms of Usage constitute a legally binding agreement between you ("User", "Learner", or "Student") and LinguaFlow ("we", "us", or "our"). By registering with your Google / Gmail account or browsing the platform, you represent that you are at least 13 years of age (or the minimum legal age for digital consent in your jurisdiction) and possess the authority to enter into these terms. If you do not agree to all terms, you must discontinue platform use immediately.
+                  These Terms of Usage constitute a legally binding agreement between you ("User", "Learner", or "Student") and Fluenxia ("we", "us", or "our"). By registering with your Google / Gmail account or browsing the platform, you represent that you are at least 13 years of age (or the minimum legal age for digital consent in your jurisdiction) and possess the authority to enter into these terms. If you do not agree to all terms, you must discontinue platform use immediately.
                 </p>
               </section>
 
@@ -211,7 +211,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   <span>AI Conversational Tutoring & Speech Recognition</span>
                 </h4>
                 <p className="text-xs sm:text-sm text-slate-600">
-                  LinguaFlow incorporates Google Gemini generative artificial intelligence and browser-based Web Speech Recognition APIs to simulate authentic English dialogues, offer phonetic feedback, and generate adaptive grammar corrections.
+                  Fluenxia incorporates Google Gemini generative artificial intelligence and browser-based Web Speech Recognition APIs to simulate authentic English dialogues, offer phonetic feedback, and generate adaptive grammar corrections.
                 </p>
                 <ul className="list-disc pl-5 text-xs sm:text-sm text-slate-600 space-y-1">
                   <li><strong>Educational Purpose:</strong> AI-generated outputs, translations, and explanations are for language learning assistance only. While our algorithms strive for high CEFR fidelity, AI models may occasionally generate unintended variations.</li>
@@ -227,7 +227,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   <span>Intellectual Property & Platform Rights</span>
                 </h4>
                 <p className="text-xs sm:text-sm text-slate-600">
-                  All curriculum structures, interactive quizzes, CEFR grammar rubrics, design components, software code, graphic interfaces, and trademarks contained within LinguaFlow are the exclusive intellectual property of the platform owner and its licensors. You are granted a limited, personal, non-exclusive, non-transferable license to access and use the educational materials for your individual, non-commercial English study.
+                  All curriculum structures, interactive quizzes, CEFR grammar rubrics, design components, software code, graphic interfaces, and trademarks contained within Fluenxia are the exclusive intellectual property of the platform owner and its licensors. You are granted a limited, personal, non-exclusive, non-transferable license to access and use the educational materials for your individual, non-commercial English study.
                 </p>
               </section>
 
@@ -249,7 +249,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   <span>Limitation of Liability & Disclaimers</span>
                 </h4>
                 <p className="text-xs sm:text-sm text-slate-600">
-                  LinguaFlow is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind, whether express or implied, including fitness for a particular academic or certification exam (e.g., IELTS, TOEFL, CEFR official exams). In no event shall LinguaFlow or its maintainers be liable for any indirect, incidental, special, or consequential damages resulting from your use or inability to use the platform.
+                  Fluenxia is provided on an "AS IS" and "AS AVAILABLE" basis without warranties of any kind, whether express or implied, including fitness for a particular academic or certification exam (e.g., IELTS, TOEFL, CEFR official exams). In no event shall Fluenxia or its maintainers be liable for any indirect, incidental, special, or consequential damages resulting from your use or inability to use the platform.
                 </p>
               </section>
 
@@ -277,10 +277,10 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 <Lock size={22} className="text-emerald-600 shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <h3 className="text-sm font-bold text-emerald-950">
-                    LinguaFlow Privacy & Data Protection Commitment
+                    Fluenxia Privacy & Data Protection Commitment
                   </h3>
                   <p className="text-xs text-emerald-900/80">
-                    We respect your privacy. LinguaFlow complies with global privacy principles, Google API User Data Policies, and industry-standard TLS encryption. We do not sell, rent, or trade your personal information.
+                    We respect your privacy. Fluenxia complies with global privacy principles, Google API User Data Policies, and industry-standard TLS encryption. We do not sell, rent, or trade your personal information.
                   </p>
                 </div>
               </div>
@@ -292,7 +292,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   <span>Information We Collect</span>
                 </h4>
                 <p className="text-xs sm:text-sm text-slate-600">
-                  To provide personalized English learning experiences, LinguaFlow collects the following types of information:
+                  To provide personalized English learning experiences, Fluenxia collects the following types of information:
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
@@ -344,7 +344,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   <span>Google User Data Policy Compliance</span>
                 </h4>
                 <p className="text-xs sm:text-sm text-slate-600">
-                  LinguaFlow's use and transfer to any other app of information received from Google APIs adheres to the{" "}
+                  Fluenxia's use and transfer to any other app of information received from Google APIs adheres to the{" "}
                   <a
                     href="https://developers.google.com/terms/api-services-user-data-policy"
                     target="_blank"
@@ -405,7 +405,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   <li><strong>Local Progress Reset:</strong> You can reset all local grammar progress, quiz scores, and saved vocabulary directly from the Progress Tracker tab at any time.</li>
                   <li><strong>Account Deletion Request:</strong> You can request full deletion of your registered Gmail profile, XP history, and stored session logs by emailing{" "}
                   <a
-                    href="mailto:kondala.muralikrishna@gmail.com?subject=LinguaFlow%20Data%20Deletion%20Request"
+                    href="mailto:kondala.muralikrishna@gmail.com?subject=Fluenxia%20Data%20Deletion%20Request"
                     className="text-indigo-600 font-bold hover:underline"
                   >
                     kondala.muralikrishna@gmail.com
@@ -423,7 +423,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                   For any privacy questions or data compliance inquiries, please contact our Data Protection representative:
                 </p>
                 <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 space-y-0.5">
-                  <p><strong>LinguaFlow English LMS</strong></p>
+                  <p><strong>Fluenxia English LMS</strong></p>
                   <p>Attn: Muralikrishna Kondala (Platform Owner & Data Controller)</p>
                   <p>Email: <a href="mailto:kondala.muralikrishna@gmail.com" className="text-indigo-600 font-semibold hover:underline">kondala.muralikrishna@gmail.com</a></p>
                 </div>
@@ -436,7 +436,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
         <div className="px-6 py-4 border-t border-slate-200 bg-slate-50/90 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <ShieldCheck size={16} className="text-emerald-600" />
-            <span>Google API User Data Policy & GDPR / CCPA Compliant</span>
+            <span>Adheres to the Google API Services User Data Policy</span>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">

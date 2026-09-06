@@ -280,7 +280,7 @@ export const FluencySuiteHub: React.FC<FluencySuiteHubProps> = ({
               </h1>
               <p className="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
                 Most language apps treat mistakes as isolated events, provide binary right/wrong
-                scores, and ignore pragmatic register. LinguaFlow introduces dynamic error memory
+                scores, and ignore pragmatic register. Fluenxia introduces dynamic error memory
                 re-testing, deep acoustic prosody modeling, cultural register calibration, high-stakes
                 domain friction, and post-session After-Action Audits.
               </p>
