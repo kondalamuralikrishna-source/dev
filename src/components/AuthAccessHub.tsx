@@ -770,7 +770,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
           {/* Student Hub View */}
           {activePortal === "student" ? (
             <div className={!isModalMode ? "lg:grid lg:grid-cols-2" : undefined}>
-              {/* LEFT COLUMN: Branded content panel — logo, headline, feature highlights, illustration */}
+              {/* LEFT COLUMN: Branded content panel — logo, headline, feature highlights. */}
               <div
                 className={
                   !isModalMode
@@ -825,18 +825,6 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                   <LanguageSelector variant="header" />
                 </div>
 
-                {/* Simple illustration placeholder (icon-based — no illustration assets exist in the
-                    codebase yet; swap for real artwork if the client provides it) */}
-                {!isModalMode && (
-                  <div className="hidden lg:flex mt-auto pt-6 items-end gap-3">
-                    <div className="w-16 h-16 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shrink-0">
-                      <GraduationCap size={30} />
-                    </div>
-                    <div className="bg-white rounded-2xl rounded-bl-none px-4 py-2.5 shadow-sm border border-blue-100">
-                      <p className="text-xs font-bold text-slate-700 italic">Small steps make big progress!</p>
-                    </div>
-                  </div>
-                )}
               </div>
 
               {/* RIGHT COLUMN: Sign In / Create Account form — scrolls independently so the left
