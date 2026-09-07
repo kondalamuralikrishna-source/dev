@@ -107,6 +107,12 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
   const [selectedLevel, setSelectedLevel] = useState<CEFRLevel>("B1");
   const [rememberMe, setRememberMe] = useState<boolean>(true);
 
+  // Consent (Sign-Up only) — required box gates account creation; the other two are optional
+  // opt-ins recorded alongside the account. See the Consent Form in the Legal & Trust Center.
+  const [agreeAgeAndTerms, setAgreeAgeAndTerms] = useState<boolean>(false);
+  const [agreeAiTraining, setAgreeAiTraining] = useState<boolean>(false);
+  const [agreeMarketing, setAgreeMarketing] = useState<boolean>(false);
+
   // Password Visibility
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
@@ -351,6 +357,11 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
       return;
     }
 
+    if (authIntent === "signup" && !agreeAgeAndTerms) {
+      triggerErrorShake("Please confirm you're 18+ (or have guardian consent) and agree to the Terms of Usage & Privacy Policy to continue.");
+      return;
+    }
+
     setIsLoading(true);
     sendTelemetry("auth_method_selected", { method: "native_email", intent: authIntent });
 
@@ -367,6 +378,15 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
           name: fullName || cleanEmail.split("@")[0],
           targetLevel: selectedLevel,
           guestProgress: currentGuestProgress,
+          ...(authIntent === "signup"
+            ? {
+                consent: {
+                  ageAndTermsAccepted: agreeAgeAndTerms,
+                  aiTrainingOptIn: agreeAiTraining,
+                  marketingOptIn: agreeMarketing,
+                },
+              }
+            : {}),
         }),
       });
 
@@ -1014,7 +1034,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                   <div className="relative">
                     <input
                       id="input_password_field"
-                      type={showPassword ? "text military" : "password"}
+                      type={showPassword ? "text" : "password"}
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
@@ -1087,6 +1107,68 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                   </div>
                 )}
 
+                {/* Consent (Sign-Up only) — required age/terms box gates submission; the other
+                    two are optional opt-ins recorded with the account. */}
+                {authIntent === "signup" && (
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-start gap-2">
+                      <input
+                        id="checkbox_agree_age_terms"
+                        type="checkbox"
+                        required
+                        checked={agreeAgeAndTerms}
+                        onChange={(e) => setAgreeAgeAndTerms(e.target.checked)}
+                        className="w-4 h-4 mt-0.5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 shrink-0"
+                      />
+                      <label htmlFor="checkbox_agree_age_terms" className="text-xs font-medium text-slate-600 cursor-pointer">
+                        I confirm I'm 18+ (or have parent/guardian consent) and agree to the{" "}
+                        <button
+                          type="button"
+                          onClick={() => onOpenLegalModal?.("terms")}
+                          className="text-blue-600 font-bold hover:underline"
+                        >
+                          Terms of Usage
+                        </button>{" "}
+                        and{" "}
+                        <button
+                          type="button"
+                          onClick={() => onOpenLegalModal?.("privacy")}
+                          className="text-blue-600 font-bold hover:underline"
+                        >
+                          Privacy Policy
+                        </button>
+                        , including AI-generated feedback and voice/audio processing.
+                      </label>
+                    </div>
+
+                    <div className="flex items-start gap-2">
+                      <input
+                        id="checkbox_agree_ai_training"
+                        type="checkbox"
+                        checked={agreeAiTraining}
+                        onChange={(e) => setAgreeAiTraining(e.target.checked)}
+                        className="w-4 h-4 mt-0.5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 shrink-0"
+                      />
+                      <label htmlFor="checkbox_agree_ai_training" className="text-xs font-medium text-slate-600 cursor-pointer">
+                        (Optional) Use my anonymized voice & interaction data to improve Fluenxia's AI models
+                      </label>
+                    </div>
+
+                    <div className="flex items-start gap-2">
+                      <input
+                        id="checkbox_agree_marketing"
+                        type="checkbox"
+                        checked={agreeMarketing}
+                        onChange={(e) => setAgreeMarketing(e.target.checked)}
+                        className="w-4 h-4 mt-0.5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 shrink-0"
+                      />
+                      <label htmlFor="checkbox_agree_marketing" className="text-xs font-medium text-slate-600 cursor-pointer">
+                        (Optional) Send me product updates and learning tips by email
+                      </label>
+                    </div>
+                  </div>
+                )}
+
                 {/* Remember Device Checkbox */}
                 <div className="flex items-center gap-2 pt-1">
                   <input
@@ -1105,7 +1187,7 @@ export const AuthAccessHub: React.FC<AuthAccessHubProps> = ({
                 <button
                   id="btn_auth_submit"
                   type="submit"
-                  disabled={isLoading || cooldownRemaining > 0}
+                  disabled={isLoading || cooldownRemaining > 0 || (authIntent === "signup" && !agreeAgeAndTerms)}
                   className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-2xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.99] disabled:opacity-50 mt-2"
                 >
                   {isLoading ? (

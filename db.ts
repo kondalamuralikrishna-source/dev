@@ -32,6 +32,11 @@ export interface UserDoc extends Document {
   emailVerified?: boolean;
   isGuest?: boolean;
   passwordHash?: string;
+  consent?: {
+    ageAndTermsAcceptedAt?: string;
+    aiTrainingOptIn?: boolean;
+    marketingOptIn?: boolean;
+  };
 }
 
 const userSchema = new Schema<UserDoc>(
@@ -53,6 +58,11 @@ const userSchema = new Schema<UserDoc>(
     emailVerified: Boolean,
     isGuest: Boolean,
     passwordHash: String,
+    consent: {
+      ageAndTermsAcceptedAt: String,
+      aiTrainingOptIn: Boolean,
+      marketingOptIn: Boolean,
+    },
   },
   { versionKey: false }
 );

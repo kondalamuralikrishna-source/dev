@@ -4043,6 +4043,11 @@ interface ServerUserAccount {
   authProvider?: "google" | "email" | "phone" | "apple" | "guest";
   emailVerified?: boolean;
   isGuest?: boolean;
+  consent?: {
+    ageAndTermsAcceptedAt?: string;
+    aiTrainingOptIn?: boolean;
+    marketingOptIn?: boolean;
+  };
 }
 
 interface ServerActivityItem {
@@ -5524,7 +5529,7 @@ app.post("/api/auth/student/signin", async (req, res) => {
 // 2g. Native Email & Password Registration (with Guest Progress Continuity Migration)
 app.post("/api/auth/register", async (req, res) => {
   try {
-    const { email, password, name, targetLevel = "B1", guestProgress } = req.body;
+    const { email, password, name, targetLevel = "B1", guestProgress, consent } = req.body;
     const cleanEmail = String(email || "").trim().toLowerCase();
     const cleanPassword = String(password || "").trim();
     const cleanName = String(name || "").trim();
@@ -5534,6 +5539,11 @@ app.post("/api/auth/register", async (req, res) => {
     }
     if (!cleanPassword || cleanPassword.length < 6) {
       return res.status(400).json({ error: "Password must be at least 6 characters long." });
+    }
+    if (!consent || consent.ageAndTermsAccepted !== true) {
+      return res.status(400).json({
+        error: "You must confirm you're 18+ (or have guardian consent) and accept the Terms of Usage & Privacy Policy to create an account.",
+      });
     }
 
     // Check if account already exists
@@ -5595,6 +5605,11 @@ app.post("/api/auth/register", async (req, res) => {
       lastLoginAt: new Date().toISOString(),
       status: "active",
       progress: initialProgress,
+      consent: {
+        ageAndTermsAcceptedAt: new Date().toISOString(),
+        aiTrainingOptIn: consent.aiTrainingOptIn === true,
+        marketingOptIn: consent.marketingOptIn === true,
+      },
     };
 
     await userStore.upsert(newUser);
