@@ -29,6 +29,8 @@ import { EnglishAccent, getSavedAccent } from "../utils/speechUtils";
 import { isLevelUnlocked, CEFR_LEVEL_ORDER } from "../utils/storageUtils";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
 import { RegionalConceptHelper } from "./RegionalConceptHelper";
+import { AutoText, useAutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 interface GrammarHubProps {
   progress: UserProgress;
@@ -47,6 +49,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
   onOpenAssessment,
   onOpenAdvancementExam,
 }) => {
+  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedLevel, setSelectedLevel] = useState<string>("all");
   const [selectedModule, setSelectedModule] = useState<number | "all">("all");
@@ -58,6 +61,9 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
   const [quizScore, setQuizScore] = useState<number | null>(null);
 
   const activeLesson = GRAMMAR_LESSONS.find((l) => l.id === activeLessonId);
+  // Hooks must run unconditionally (before the early `if (activeLesson)` return below), so this
+  // resolves to "" via useAutoText's own null-handling whenever no lesson is open.
+  const translatedActiveLessonTitle = useAutoText(activeLesson?.title, "grammar_lesson_title");
 
   // Filter lessons
   const filteredLessons = GRAMMAR_LESSONS.filter((lesson) => {
@@ -159,7 +165,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
             className="inline-flex items-center gap-1.5 text-sm font-bold text-slate-600 hover:text-indigo-600 transition-colors cursor-pointer"
           >
             <ArrowLeft size={16} />
-            <span>Back to All Grammar Lessons</span>
+            <span>{t("grammar.back_to_lessons", "Back to All Grammar Lessons")}</span>
           </button>
 
           <div className="flex items-center gap-2 flex-wrap">
@@ -169,7 +175,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
               size="sm"
             />
             <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 font-bold text-xs rounded-lg border border-indigo-200">
-              Level {activeLesson.level}
+              {t("common.level", "Level")} {activeLesson.level}
             </span>
             <span className="px-2.5 py-1 bg-amber-50 text-amber-800 font-bold text-xs rounded-lg border border-amber-200 flex items-center gap-1">
               <Zap size={14} className="text-amber-500 fill-amber-500" />
@@ -177,7 +183,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
             </span>
             {isAlreadyCompleted && (
               <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 font-bold text-xs rounded-lg border border-emerald-200 flex items-center gap-1">
-                <CheckCircle2 size={14} /> Completed
+                <CheckCircle2 size={14} /> {t("common.completed", "Completed")}
               </span>
             )}
           </div>
@@ -188,11 +194,11 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
           <div className="flex items-center justify-between flex-wrap gap-2">
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs uppercase tracking-wider font-bold text-indigo-300">
-                {activeLesson.category}
+                <AutoText text={activeLesson.category} context="grammar_category_label" />
               </span>
               {activeLesson.moduleTitle && (
                 <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-white/10 text-indigo-200 border border-white/15">
-                  {activeLesson.moduleTitle}
+                  <AutoText text={activeLesson.moduleTitle} context="grammar_module_title" />
                 </span>
               )}
               {activeLesson.classicalChapterRef && (
@@ -207,17 +213,17 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
             </span>
           </div>
           <h1 className="text-2xl sm:text-3xl font-black text-white">
-            {activeLesson.title}
+            {translatedActiveLessonTitle}
           </h1>
           <p className="text-indigo-100 text-sm sm:text-base leading-relaxed max-w-2xl">
-            {activeLesson.summary}
+            <AutoText text={activeLesson.summary} context="grammar_lesson_summary" />
           </p>
 
           {/* Key Rule & Formula Box */}
           <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/15 space-y-2">
             <div className="flex items-center gap-2 text-amber-300 font-bold text-xs uppercase tracking-wide">
               <Sparkles size={16} />
-              <span>Core Grammar Rule & Syntax Formula</span>
+              <span>{t("grammar.core_rule_formula", "Core Grammar Rule & Syntax Formula")}</span>
             </div>
             <p className="text-sm font-medium text-white">
               {activeLesson.keyRule}
@@ -245,7 +251,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
               className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4"
             >
               <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <span>{section.heading}</span>
+                <AutoText as="span" text={section.heading} context="grammar_section_heading" />
               </h2>
 
               <p className="text-sm text-slate-700 leading-relaxed">
@@ -264,10 +270,10 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-2">
                     <span className="text-xs uppercase font-extrabold text-indigo-600 tracking-wider flex items-center gap-1.5">
                       <Volume2 size={14} />
-                      <span>Contextual Examples & Interactive Pronunciation</span>
+                      <span>{t("grammar.contextual_examples", "Contextual Examples & Interactive Pronunciation")}</span>
                     </span>
                     <span className="text-[11px] text-slate-500 bg-indigo-50/70 border border-indigo-100/80 px-2.5 py-0.5 rounded-full">
-                      👆 Click <strong>any individual word</strong> to hear its pronunciation
+                      {t("grammar.click_word_hint", "👆 Click any individual word to hear its pronunciation")}
                     </span>
                   </div>
 
@@ -304,7 +310,9 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
               {section.notes && section.notes.length > 0 && (
                 <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 space-y-1">
                   {section.notes.map((note, nIdx) => (
-                    <p key={nIdx}>📌 {note}</p>
+                    <p key={nIdx}>
+                      📌 <AutoText as="span" text={note} context="grammar_section_note" />
+                    </p>
                   ))}
                 </div>
               )}
@@ -317,7 +325,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs space-y-4">
             <div className="flex items-center gap-2 text-rose-600 font-bold text-base">
               <AlertTriangle size={20} />
-              <h3>Common Learner Traps & How to Avoid Them</h3>
+              <h3>{t("grammar.common_traps", "Common Learner Traps & How to Avoid Them")}</h3>
             </div>
 
             <div className="space-y-3">
@@ -328,7 +336,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                 >
                   <div className="space-y-1">
                     <span className="text-[11px] font-bold uppercase text-rose-700 bg-rose-100 px-2 py-0.5 rounded">
-                      ❌ Incorrect
+                      ❌ {t("grammar.incorrect", "Incorrect")}
                     </span>
                     <p className="text-sm font-medium text-slate-800 line-through">
                       "{mistake.incorrect}"
@@ -336,13 +344,13 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                   </div>
                   <div className="space-y-1">
                     <span className="text-[11px] font-bold uppercase text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
-                      ✓ Correct
+                      ✓ {t("grammar.correct", "Correct")}
                     </span>
                     <p className="text-sm font-bold text-emerald-900">
                       "{mistake.correct}"
                     </p>
                     <p className="text-xs text-slate-600 pt-1">
-                      {mistake.explanation}
+                      <AutoText text={mistake.explanation} context="grammar_mistake_explanation" />
                     </p>
                   </div>
                 </div>
@@ -361,10 +369,10 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-base">
-                    Quick Check & Mastery Check
+                    {t("grammar.quick_check_mastery", "Quick Check & Mastery Check")}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Test what you've learned to earn your +{activeLesson.xpReward} XP.
+                    {t("grammar.quiz_earn_xp", "Test what you've learned to earn your XP.")} (+{activeLesson.xpReward} XP)
                   </p>
                 </div>
               </div>
@@ -395,7 +403,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                     }`}
                   >
                     <p className="font-semibold text-slate-900 text-sm mb-3">
-                      {qIndex + 1}. {q.question}
+                      {qIndex + 1}. <AutoText as="span" text={q.question} context="grammar_quiz_question" />
                     </p>
 
                     {q.type === "multiple-choice" && q.options && (
@@ -422,7 +430,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                       <input
                         type="text"
                         disabled={quizSubmitted}
-                        placeholder="Type your answer..."
+                        placeholder={t("grammar.type_answer", "Type your answer...")}
                         value={userAns}
                         onChange={(e) => handleAnswerQuiz(q.id, e.target.value)}
                         className="w-full max-w-sm px-3 py-2 text-sm bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
@@ -433,11 +441,13 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                       <div className="mt-2 text-xs">
                         {isCorrect ? (
                           <p className="text-emerald-700 font-bold flex items-center gap-1">
-                            <CheckCircle2 size={13} /> Correct! {q.explanation}
+                            <CheckCircle2 size={13} /> {t("grammar.correct_bang", "Correct!")}{" "}
+                            <AutoText as="span" text={q.explanation} context="grammar_quiz_explanation" />
                           </p>
                         ) : (
                           <p className="text-rose-700 font-medium">
-                            Expected answer: <strong>{q.correctAnswer}</strong>. {q.explanation}
+                            {t("grammar.expected_answer", "Expected answer:")} <strong>{q.correctAnswer}</strong>.{" "}
+                            <AutoText as="span" text={q.explanation} context="grammar_quiz_explanation" />
                           </p>
                         )}
                       </div>
@@ -453,18 +463,18 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                 onClick={handleSubmitQuiz}
                 className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-sm rounded-xl shadow-md transition-all cursor-pointer"
               >
-                Submit Answers & Check Mastery
+                {t("grammar.submit_answers", "Submit Answers & Check Mastery")}
               </button>
             ) : (
               <div className="p-4 bg-indigo-50 rounded-xl border border-indigo-200 flex items-center justify-between">
                 <div>
                   <span className="text-xs font-bold text-indigo-900 block">
-                    Mastery Score: {quizScore}%
+                    {t("grammar.mastery_score", "Mastery Score:")} {quizScore}%
                   </span>
                   <span className="text-xs text-slate-600">
                     {quizScore && quizScore >= 50
-                      ? "🎉 Excellent work! Lesson marked as completed."
-                      : "Review the lesson materials and try again to improve your score."}
+                      ? t("grammar.quiz_pass_msg", "🎉 Excellent work! Lesson marked as completed.")
+                      : t("grammar.quiz_fail_msg", "Review the lesson materials and try again to improve your score.")}
                   </span>
                 </div>
                 <button
@@ -475,7 +485,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                   }}
                   className="px-4 py-2 bg-white text-indigo-700 font-bold text-xs rounded-lg border border-indigo-200 hover:bg-slate-50 cursor-pointer"
                 >
-                  Retake Check
+                  {t("grammar.retake_check", "Retake Check")}
                 </button>
               </div>
             )}
@@ -527,14 +537,18 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
           <div className="space-y-1 max-w-2xl">
             <div className="flex items-center gap-2">
               <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                Grammar Hub & Syntax Curriculum
+                {t("grammar.hub_title", "Grammar Hub & Syntax Curriculum")}
               </h1>
               <span className="text-xs px-2.5 py-0.5 bg-indigo-50 text-indigo-700 font-extrabold rounded-md border border-indigo-200">
                 CEFR A1–C1
               </span>
             </div>
             <p className="text-sm text-slate-600 leading-relaxed">
-              <strong>Intended Purpose:</strong> The Grammar Hub is your core structural learning engine. It systematically breaks down English sentence construction, verb tense timelines, modal auxiliaries, and real-life conversational rules.
+              <AutoText
+                as="span"
+                text="Intended Purpose: The Grammar Hub is your core structural learning engine. It systematically breaks down English sentence construction, verb tense timelines, modal auxiliaries, and real-life conversational rules."
+                context="grammar_hub_purpose_banner"
+              />
             </p>
           </div>
 
@@ -552,30 +566,42 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
           <div className="p-3.5 bg-indigo-50/60 rounded-2xl border border-indigo-100/80 space-y-1">
             <div className="flex items-center gap-2 text-indigo-900 font-extrabold text-xs">
               <Sparkles size={14} className="text-indigo-600" />
-              <span>Formulas & Key Rules</span>
+              <AutoText as="span" text="Formulas & Key Rules" context="grammar_pillar_title" />
             </div>
             <p className="text-[11px] text-slate-600">
-              Clear syntactic blueprints for every CEFR level from A1 to C1 with visual formulas.
+              <AutoText
+                as="span"
+                text="Clear syntactic blueprints for every CEFR level from A1 to C1 with visual formulas."
+                context="grammar_pillar_desc"
+              />
             </p>
           </div>
 
           <div className="p-3.5 bg-emerald-50/60 rounded-2xl border border-emerald-100/80 space-y-1">
             <div className="flex items-center gap-2 text-emerald-900 font-extrabold text-xs">
               <Volume2 size={14} className="text-emerald-600" />
-              <span>Interactive Word Audio</span>
+              <AutoText as="span" text="Interactive Word Audio" context="grammar_pillar_title" />
             </div>
             <p className="text-[11px] text-slate-600">
-              Click individual words or listen to complete sentences in British 🇬🇧, American 🇺🇸, or Australian 🇦🇺 accents.
+              <AutoText
+                as="span"
+                text="Click individual words or listen to complete sentences in British 🇬🇧, American 🇺🇸, or Australian 🇦🇺 accents."
+                context="grammar_pillar_desc"
+              />
             </p>
           </div>
 
           <div className="p-3.5 bg-rose-50/60 rounded-2xl border border-rose-100/80 space-y-1">
             <div className="flex items-center gap-2 text-rose-900 font-extrabold text-xs">
               <AlertTriangle size={14} className="text-rose-600" />
-              <span>Trap Prevention & Quizzes</span>
+              <AutoText as="span" text="Trap Prevention & Quizzes" context="grammar_pillar_title" />
             </div>
             <p className="text-[11px] text-slate-600">
-              Avoid common learner mistakes with quick check mastery tests that award XP.
+              <AutoText
+                as="span"
+                text="Avoid common learner mistakes with quick check mastery tests that award XP."
+                context="grammar_pillar_desc"
+              />
             </p>
           </div>
         </div>
@@ -583,7 +609,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
         {/* Search & Level Filters */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
           <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-1">
-            <span className="text-xs font-extrabold text-slate-400 mr-1">Level:</span>
+            <span className="text-xs font-extrabold text-slate-400 mr-1">{t("common.level", "Level")}:</span>
             {(["all", "A1", "A2", "B1", "B2", "C1", "C2"] as const).map((lvl) => {
               const isLvlUnlocked = lvl === "all" || isLevelUnlocked(lvl as CEFRLevel, progress);
               const isCurrent = lvl === progress.selectedLevel;
@@ -604,7 +630,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                   {isCurrent && lvl !== "all" && (
                     <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
                   )}
-                  <span>{lvl === "all" ? "All Levels" : `Level ${lvl}`}</span>
+                  <span>{lvl === "all" ? t("common.all_levels", "All Levels") : `${t("common.level", "Level")} ${lvl}`}</span>
                 </button>
               );
             })}
@@ -617,7 +643,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
             />
             <input
               type="text"
-              placeholder="Search grammar lessons..."
+              placeholder={t("common.search_placeholder_grammar", "Search grammar lessons...")}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-1.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -636,11 +662,11 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                 <span>Wren & Martin Classical Syllabus</span>
               </span>
               <span className="text-xs text-slate-400 font-medium">
-                High School English Grammar & Composition
+                <AutoText as="span" text="High School English Grammar & Composition" context="grammar_module_navigator" />
               </span>
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-              5 Comprehensive Core Modules
+              <AutoText as="span" text="5 Comprehensive Core Modules" context="grammar_module_navigator" />
             </h2>
           </div>
 
@@ -651,7 +677,9 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
               className="self-start md:self-auto px-3.5 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer flex items-center gap-1.5 border border-white/10"
             >
               <ArrowLeft size={13} />
-              <span>Show All Lessons ({GRAMMAR_LESSONS.length})</span>
+              <span>
+                <AutoText as="span" text="Show All Lessons" context="grammar_module_navigator" /> ({GRAMMAR_LESSONS.length})
+              </span>
             </button>
           )}
         </div>
@@ -669,13 +697,15 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
           >
             <div className="flex items-center justify-between">
               <span className="text-[10px] uppercase font-black tracking-wider text-slate-300">
-                All Modules
+                <AutoText as="span" text="All Modules" context="grammar_module_navigator" />
               </span>
               <Layers size={13} className="text-indigo-300" />
             </div>
-            <span className="text-xs font-black truncate mt-1">Full Curriculum</span>
+            <span className="text-xs font-black truncate mt-1">
+              <AutoText as="span" text="Full Curriculum" context="grammar_module_navigator" />
+            </span>
             <span className="text-[10px] text-slate-300 mt-1 font-mono">
-              {GRAMMAR_LESSONS.length} Units
+              {GRAMMAR_LESSONS.length} <AutoText as="span" text="Units" context="grammar_module_navigator" />
             </span>
           </button>
 
@@ -704,7 +734,11 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                   </span>
                 </div>
                 <span className="text-xs font-black line-clamp-1 mt-1">
-                  {mod.title.replace(`Module ${mod.moduleNumber}: `, "")}
+                  <AutoText
+                    as="span"
+                    text={mod.title.replace(`Module ${mod.moduleNumber}: `, "")}
+                    context="grammar_module_card_title"
+                  />
                 </span>
                 <span className="text-[10px] text-slate-300 mt-1 font-mono">
                   {mod.cefrSpan}
@@ -728,19 +762,21 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-black text-amber-300 uppercase tracking-wide">
-                      {mod.classicalFocus}
+                      <AutoText as="span" text={mod.classicalFocus} context="grammar_module_focus" />
                     </span>
                     <span className="text-xs text-slate-400">•</span>
                     <span className="text-xs font-bold text-indigo-300">{mod.cefrSpan}</span>
                   </div>
-                  <h3 className="text-base font-black text-white mt-0.5">{mod.title}</h3>
+                  <h3 className="text-base font-black text-white mt-0.5">
+                    <AutoText as="span" text={mod.title} context="grammar_module_title" />
+                  </h3>
                   <p className="text-xs text-slate-300 leading-relaxed max-w-2xl mt-1">
-                    {mod.description}
+                    <AutoText as="span" text={mod.description} context="grammar_module_description" />
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
                   <span className="text-xs font-bold text-slate-300 block">
-                    Module Mastery: {pct}%
+                    <AutoText as="span" text="Module Mastery:" context="grammar_module_navigator" /> {pct}%
                   </span>
                   <div className="w-32 bg-slate-700 h-2 rounded-full mt-1.5 overflow-hidden">
                     <div
@@ -765,24 +801,27 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
             <div className="space-y-0.5">
               <div className="flex items-center gap-2">
                 <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-amber-500 text-slate-950 rounded-md">
-                  Active Course: Level {progress.selectedLevel}
+                  <AutoText as="span" text="Active Course:" context="grammar_end_of_level_banner" /> {t("common.level", "Level")} {progress.selectedLevel}
                 </span>
                 <span className="text-xs font-bold text-slate-500">•</span>
                 <span className="text-xs font-bold text-slate-600">
                   {progress.completedLessonIds.filter((id) =>
                     GRAMMAR_LESSONS.some((l) => l.id === id && l.level === progress.selectedLevel)
                   ).length}{" "}
-                  of{" "}
-                  {GRAMMAR_LESSONS.filter((l) => l.level === progress.selectedLevel).length} lessons
-                  completed
+                  <AutoText as="span" text="of" context="grammar_end_of_level_banner" />{" "}
+                  {GRAMMAR_LESSONS.filter((l) => l.level === progress.selectedLevel).length}{" "}
+                  <AutoText as="span" text="lessons completed" context="grammar_end_of_level_banner" />
                 </span>
               </div>
               <h3 className="text-sm sm:text-base font-black text-slate-900">
-                End-of-Level Written & Spoken Assessment Layer
+                <AutoText as="span" text="End-of-Level Written & Spoken Assessment Layer" context="grammar_end_of_level_banner" />
               </h3>
               <p className="text-xs text-slate-600 max-w-xl">
-                Ready to test your improvement post-session? Complete the Level {progress.selectedLevel}{" "}
-                written benchmark and live voice performance assessment to evaluate your real-world oral fluency and unlock the next CEFR Level!
+                <AutoText
+                  as="span"
+                  text={`Ready to test your improvement post-session? Complete the Level ${progress.selectedLevel} written benchmark and live voice performance assessment to evaluate your real-world oral fluency and unlock the next CEFR Level!`}
+                  context="grammar_end_of_level_banner"
+                />
               </p>
             </div>
           </div>
@@ -799,7 +838,10 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
             className="w-full sm:w-auto px-5 py-2.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs rounded-xl shadow-md shadow-amber-500/20 flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap transition-all active:scale-[0.98] shrink-0"
           >
             <Sparkles size={14} />
-            <span>Take Level {progress.selectedLevel} Assessment</span>
+            <span>
+              <AutoText as="span" text="Take Level" context="grammar_end_of_level_banner" /> {progress.selectedLevel}{" "}
+              <AutoText as="span" text="Assessment" context="grammar_end_of_level_banner" />
+            </span>
             <ChevronRight size={14} />
           </button>
         </div>
@@ -830,7 +872,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                   <div className="flex items-center justify-between gap-1 flex-wrap">
                     <div className="flex items-center gap-1.5 flex-wrap">
                       <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-500 bg-slate-200 px-2.5 py-0.5 rounded-lg">
-                        {lesson.level} • {lesson.category}
+                        {lesson.level} • <AutoText as="span" text={lesson.category} context="grammar_category_label" />
                       </span>
                       {lesson.moduleNumber && (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-200 text-slate-600">
@@ -839,7 +881,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                       )}
                     </div>
                     <span className="flex items-center gap-1 text-xs font-bold text-slate-600 bg-slate-200/80 px-2.5 py-0.5 rounded-full">
-                      <Lock size={12} className="text-slate-500" /> Locked Level
+                      <Lock size={12} className="text-slate-500" /> {t("common.locked_level", "Locked Level")}
                     </span>
                   </div>
 
@@ -851,20 +893,20 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                   )}
 
                   <h3 className="font-extrabold text-slate-700 text-base">
-                    {lesson.title}
+                    <AutoText as="span" text={lesson.title} context="grammar_lesson_title" />
                   </h3>
 
                   <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                    {lesson.summary}
+                    <AutoText as="span" text={lesson.summary} context="grammar_lesson_summary" />
                   </p>
                 </div>
 
                 <div className="pt-3 border-t border-slate-200/60 flex items-center justify-between text-xs font-bold text-amber-700">
                   <span className="flex items-center gap-1">
-                    <Sparkles size={13} className="text-amber-500" /> Unlock via Level Test
+                    <Sparkles size={13} className="text-amber-500" /> {t("common.unlock_via_test", "Unlock via Level Test")}
                   </span>
                   <span className="flex items-center gap-0.5 group-hover:translate-x-1 transition-transform">
-                    <span>Take Test</span>
+                    <span>{t("common.take_test", "Take Test")}</span>
                     <ChevronRight size={14} />
                   </span>
                 </div>
@@ -883,7 +925,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                 <div className="flex items-center justify-between gap-1 flex-wrap">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-lg border border-indigo-100">
-                      {lesson.level} • {lesson.category}
+                      {lesson.level} • <AutoText as="span" text={lesson.category} context="grammar_category_label" />
                     </span>
                     {lesson.moduleNumber && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
@@ -893,7 +935,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                   </div>
                   {isCompleted ? (
                     <span className="flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                      <CheckCircle2 size={13} /> Completed
+                      <CheckCircle2 size={13} /> {t("common.completed", "Completed")}
                     </span>
                   ) : (
                     <span className="flex items-center gap-1 text-xs font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200">
@@ -910,11 +952,11 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                 )}
 
                 <h3 className="font-extrabold text-slate-900 text-base group-hover:text-indigo-600 transition-colors">
-                  {lesson.title}
+                  <AutoText as="span" text={lesson.title} context="grammar_lesson_title" />
                 </h3>
 
                 <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                  {lesson.summary}
+                  <AutoText as="span" text={lesson.summary} context="grammar_lesson_summary" />
                 </p>
               </div>
 
@@ -923,7 +965,7 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
                   <Clock size={13} /> {lesson.durationMins} mins
                 </span>
                 <span className="text-indigo-600 font-bold flex items-center gap-1 group-hover:translate-x-1 transition-transform">
-                  <span>Start Lesson</span>
+                  <span>{t("common.start_lesson", "Start Lesson")}</span>
                   <ChevronRight size={14} />
                 </span>
               </div>

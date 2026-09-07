@@ -22,6 +22,8 @@ import { INITIAL_ACHIEVEMENTS } from "../utils/storageUtils";
 import { AudioButton } from "./AudioButton";
 import { NavTab } from "./Header";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
+import { AutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 interface ProgressTrackerProps {
   progress: UserProgress;
@@ -36,6 +38,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
   onSelectGrammarLesson,
   onResetProgress,
 }) => {
+  const { t } = useTranslation();
   const totalLessons = GRAMMAR_LESSONS.length;
   const completedLessons = progress.completedLessonIds.length;
   const lessonProgressPercent = Math.round(
@@ -94,28 +97,28 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              Learning Analytics & Progress
+              {t("progress.title", "Learning Analytics & Progress")}
             </h1>
             <span className="text-xs px-2 py-0.5 bg-blue-50 text-blue-700 font-bold rounded">
-              Real-time Tracker
+              {t("progress.realtime_tracker", "Real-time Tracker")}
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Track your CEFR level progression, streak consistency, quiz accuracy, and earned milestone badges.
+            {t("progress.subtitle", "Track your CEFR level progression, streak consistency, quiz accuracy, and earned milestone badges.")}
           </p>
         </div>
 
         <button
           type="button"
           onClick={() => {
-            if (window.confirm("Are you sure you want to reset all learning progress?")) {
+            if (window.confirm(t("progress.reset_confirm", "Are you sure you want to reset all learning progress?"))) {
               onResetProgress();
             }
           }}
           className="px-3.5 py-1.5 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-600 font-semibold text-xs rounded-xl border border-slate-200 flex items-center gap-1.5 transition-colors self-start md:self-auto"
         >
           <RotateCcw size={13} />
-          <span>Reset Progress</span>
+          <span>{t("progress.reset_progress", "Reset Progress")}</span>
         </button>
       </div>
 
@@ -125,13 +128,13 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-blue-600">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Total XP
+              {t("progress.total_xp", "Total XP")}
             </span>
             <Zap size={18} className="fill-blue-500" />
           </div>
           <p className="text-3xl font-black text-slate-900">{progress.xp}</p>
           <span className="text-[11px] text-slate-500 block">
-            Rank Level {Math.floor(progress.xp / 500) + 1} Scholar
+            {t("progress.rank_level", "Rank Level")} {Math.floor(progress.xp / 500) + 1} {t("progress.scholar", "Scholar")}
           </span>
         </div>
 
@@ -139,7 +142,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-amber-500">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Streak & Goal
+              {t("progress.streak_goal", "Streak & Goal")}
             </span>
             <Flame size={18} className="fill-amber-500" />
           </div>
@@ -147,7 +150,13 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
             {progress.streakDays} <span className="text-sm font-bold text-slate-500">/ {progress.dailyGoalTargetStreak || 14}d</span>
           </p>
           <span className="text-[11px] text-amber-700 font-medium block">
-            {progress.todayGoalCompleted ? "✅ Today's Goal Met (+30 XP)" : `⚡ Daily Goal: ${progress.dailyGoalType === "lessons" ? `${progress.lessonsToday}/${progress.dailyGoalLessons} Lessons` : `${progress.minutesToday}/${progress.dailyGoalMinutes} Mins`}`}
+            {progress.todayGoalCompleted
+              ? t("progress.goal_met", "✅ Today's Goal Met (+30 XP)")
+              : `⚡ ${t("progress.daily_goal_label", "Daily Goal:")} ${
+                  progress.dailyGoalType === "lessons"
+                    ? `${progress.lessonsToday}/${progress.dailyGoalLessons} ${t("progress.lessons_unit", "Lessons")}`
+                    : `${progress.minutesToday}/${progress.dailyGoalMinutes} ${t("progress.mins_unit", "Mins")}`
+                }`}
           </span>
         </div>
 
@@ -155,7 +164,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-emerald-600">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Curriculum Done
+              {t("progress.curriculum_done", "Curriculum Done")}
             </span>
             <CheckCircle2 size={18} />
           </div>
@@ -163,7 +172,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
             {lessonProgressPercent}%
           </p>
           <span className="text-[11px] text-slate-500 block">
-            {completedLessons} of {totalLessons} Grammar Lessons
+            {completedLessons} {t("common.of", "of")} {totalLessons} {t("progress.grammar_lessons_unit", "Grammar Lessons")}
           </span>
         </div>
 
@@ -171,13 +180,13 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-xs space-y-2">
           <div className="flex items-center justify-between text-purple-600">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
-              Quiz Accuracy
+              {t("progress.quiz_accuracy", "Quiz Accuracy")}
             </span>
             <Award size={18} />
           </div>
           <p className="text-3xl font-black text-slate-900">{avgQuizScore}%</p>
           <span className="text-[11px] text-purple-600 font-medium block">
-            {progress.completedQuizIds.length} Quizzes Attempted
+            {progress.completedQuizIds.length} {t("progress.quizzes_attempted", "Quizzes Attempted")}
           </span>
         </div>
       </div>
@@ -187,10 +196,10 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
             <TrendingUp size={18} className="text-blue-600" />
-            <span>CEFR Skill Distribution & Mastery</span>
+            <span>{t("progress.cefr_skill_distribution", "CEFR Skill Distribution & Mastery")}</span>
           </h2>
           <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg">
-            Current Level: {progress.selectedLevel}
+            {t("c2.current_level", "Current Level:")} {progress.selectedLevel}
           </span>
         </div>
 
@@ -198,7 +207,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
           {/* Grammar & Syntax */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-bold text-slate-700">
-              <span>Grammar & Syntax Rules</span>
+              <span>{t("progress.grammar_syntax_rules", "Grammar & Syntax Rules")}</span>
               <span className="text-blue-600">
                 {Math.min(100, Math.max(30, lessonProgressPercent))}%
               </span>
@@ -214,7 +223,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
           {/* Vocabulary Breadth */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-bold text-slate-700">
-              <span>Vocabulary & Idiomatic Expressions</span>
+              <span>{t("progress.vocab_idiomatic", "Vocabulary & Idiomatic Expressions")}</span>
               <span className="text-emerald-600">
                 {Math.min(100, Math.max(40, (progress.masteredVocabIds.length / allWords.length) * 100))}%
               </span>
@@ -232,7 +241,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
           {/* Conversational Fluency */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-bold text-slate-700">
-              <span>Conversational Fluency & Roleplays</span>
+              <span>{t("progress.conversational_fluency", "Conversational Fluency & Roleplays")}</span>
               <span className="text-amber-600">75%</span>
             </div>
             <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
@@ -246,7 +255,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
           {/* Pronunciation & Phonetics */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-bold text-slate-700">
-              <span>Pronunciation Clarity & Syllable Stress</span>
+              <span>{t("progress.pronunciation_clarity", "Pronunciation Clarity & Syllable Stress")}</span>
               <span className="text-rose-600">82%</span>
             </div>
             <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
@@ -260,7 +269,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
           {/* High-Pressure Speaking & Stress Composure */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-bold text-slate-700">
-              <span>Speaking Under Pressure & Crisis Composure</span>
+              <span>{t("progress.speaking_under_pressure", "Speaking Under Pressure & Crisis Composure")}</span>
               <span className="text-rose-700 font-black">
                 {progress.stressTestsCompleted && progress.stressTestsCompleted.length > 0
                   ? `${Math.round(
@@ -297,20 +306,20 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
                 <Bookmark size={18} className="text-amber-500" />
-                <span>Saved Words Notebook ({savedWords.length})</span>
+                <span>{t("progress.saved_words_notebook", "Saved Words Notebook")} ({savedWords.length})</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setActiveTab("vocabulary")}
                 className="text-xs text-blue-600 font-bold hover:underline"
               >
-                Open Flashcards
+                {t("progress.open_flashcards", "Open Flashcards")}
               </button>
             </div>
 
             {savedWords.length === 0 ? (
               <p className="text-xs text-slate-400 italic py-6 text-center">
-                No saved words yet. Click the bookmark icon on any flashcard to build your notebook!
+                {t("progress.no_saved_words", "No saved words yet. Click the bookmark icon on any flashcard to build your notebook!")}
               </p>
             ) : (
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
@@ -329,7 +338,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
                         </span>
                       </div>
                       <p className="text-xs text-slate-500 line-clamp-1">
-                        {word.definition}
+                        <AutoText as="span" text={word.definition} context="vocab_definition" />
                       </p>
                     </div>
                     <AudioButton text={word.word} size="sm" variant="ghost" />
@@ -344,7 +353,7 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-sm space-y-4">
           <h3 className="font-bold text-slate-900 text-base flex items-center gap-2">
             <Shield size={18} className="text-blue-600" />
-            <span>Milestone Badges ({progress.achievements.length}/{INITIAL_ACHIEVEMENTS.length})</span>
+            <span>{t("progress.milestone_badges", "Milestone Badges")} ({progress.achievements.length}/{INITIAL_ACHIEVEMENTS.length})</span>
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -372,10 +381,10 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
 
                   <div className="space-y-0.5">
                     <h4 className="font-bold text-slate-900 text-xs">
-                      {ach.title}
+                      <AutoText as="span" text={ach.title} context="progress_achievement_title" />
                     </h4>
                     <p className="text-[11px] text-slate-500 leading-tight">
-                      {ach.description}
+                      <AutoText as="span" text={ach.description} context="progress_achievement_description" />
                     </p>
                   </div>
                 </div>

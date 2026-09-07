@@ -25,6 +25,8 @@ import { AudioButton } from "./AudioButton";
 import { AccentSelector } from "./AccentSelector";
 import { createSpeechRecognizer, EnglishAccent, getSavedAccent } from "../utils/speechUtils";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
+import { AutoText, useAutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 interface PronunciationStudioProps {
   progress: UserProgress;
@@ -50,6 +52,10 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
   const [micNotice, setMicNotice] = useState<string | null>(null);
 
   const recognizerRef = useRef<any>(null);
+  const { t } = useTranslation();
+  const translatedDrillTips = useAutoText(selectedDrill.tips, "pronunciation_tip");
+  const translatedIntonationNotes = useAutoText(feedbackResult?.intonationNotes, "pronunciation_intonation_notes");
+  const translatedCoachingAdvice = useAutoText(feedbackResult?.coachingAdvice, "pronunciation_coaching_advice");
 
   const targetPhrase = isCustomMode
     ? customText.trim() || "Hello, how are you today?"
@@ -94,7 +100,7 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
     );
 
     if (!recognizer) {
-      setMicNotice("Speech recognition is not supported in this browser. You can still listen to native audio models.");
+      setMicNotice(t("pronunciation.mic_unsupported", "Speech recognition is not supported in this browser. You can still listen to native audio models."));
       setTimeout(() => setMicNotice(null), 5000);
       return;
     }
@@ -198,14 +204,14 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                AI Pronunciation & Speech Studio
+                {t("pronunciation.studio_title", "AI Pronunciation & Speech Studio")}
               </h1>
               <span className="text-xs px-2.5 py-0.5 bg-rose-100 text-rose-900 font-extrabold rounded-md border border-rose-200">
-                Voice & Phonetics Coach
+                {t("pronunciation.voice_coach_badge", "Voice & Phonetics Coach")}
               </span>
             </div>
             <p className="text-sm text-slate-500 mt-1">
-              Analyze syllable stress, phonetic clarity, intonation contours, and overcome native accent friction.
+              {t("pronunciation.studio_subtitle", "Analyze syllable stress, phonetic clarity, intonation contours, and overcome native accent friction.")}
             </p>
           </div>
 
@@ -227,7 +233,7 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                Curated Drills
+                {t("pronunciation.curated_drills", "Curated Drills")}
               </button>
               <button
                 type="button"
@@ -238,7 +244,7 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
                     : "text-slate-600 hover:text-slate-900"
                 }`}
               >
-                Custom Sentence
+                {t("pronunciation.custom_sentence", "Custom Sentence")}
               </button>
             </div>
           </div>
@@ -258,7 +264,7 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
                     : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
-                <span>{drill.category}</span>
+                <AutoText as="span" text={drill.category} context="pronunciation_category" />
                 <span
                   className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
                     selectedDrill.id === drill.id
@@ -278,11 +284,17 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
       <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl space-y-6">
         <div className="flex items-center justify-between">
           <span className="text-xs uppercase font-bold tracking-wider text-amber-400">
-            {isCustomMode ? "Custom Practice Sentence" : `${selectedDrill.category} Practice`}
+            {isCustomMode ? (
+              t("pronunciation.custom_practice_sentence", "Custom Practice Sentence")
+            ) : (
+              <>
+                <AutoText as="span" text={selectedDrill.category} context="pronunciation_category" /> {t("pronunciation.practice_suffix", "Practice")}
+              </>
+            )}
           </span>
           {!isCustomMode && (
             <span className="text-xs text-indigo-300 font-mono">
-              Focus: {selectedDrill.focusSound}
+              {t("pronunciation.focus_label", "Focus:")} {selectedDrill.focusSound}
             </span>
           )}
         </div>
@@ -291,13 +303,13 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
         {isCustomMode ? (
           <div className="space-y-2">
             <label className="text-xs text-slate-300 font-medium">
-              Enter any sentence to practice pronunciation:
+              {t("pronunciation.enter_sentence_label", "Enter any sentence to practice pronunciation:")}
             </label>
             <input
               type="text"
               value={customText}
               onChange={(e) => setCustomText(e.target.value)}
-              placeholder="Type your sentence here..."
+              placeholder={t("pronunciation.type_sentence_placeholder", "Type your sentence here...")}
               className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-2xl text-white text-base font-semibold focus:outline-none focus:ring-2 focus:ring-amber-400"
             />
           </div>
@@ -311,7 +323,7 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
             </p>
             {selectedDrill.tips && (
               <p className="text-xs text-indigo-200 italic max-w-2xl leading-relaxed">
-                💡 {selectedDrill.tips}
+                💡 {translatedDrillTips}
               </p>
             )}
           </div>
@@ -351,12 +363,12 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
               {isRecording ? (
                 <>
                   <MicOff size={18} />
-                  <span>Stop Recording & Analyze</span>
+                  <span>{t("pronunciation.stop_and_analyze", "Stop Recording & Analyze")}</span>
                 </>
               ) : (
                 <>
                   <Mic size={18} />
-                  <span>Record & Evaluate Speaking</span>
+                  <span>{t("pronunciation.record_and_evaluate", "Record & Evaluate Speaking")}</span>
                 </>
               )}
             </button>
@@ -367,7 +379,7 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
         {recognizedTranscript && (
           <div className="p-4 bg-white/5 rounded-2xl border border-white/10 text-sm space-y-1">
             <span className="text-[11px] uppercase font-bold text-slate-400">
-              Live Speech Captured:
+              {t("pronunciation.live_speech_captured", "Live Speech Captured:")}
             </span>
             <p className="text-amber-200 font-medium italic">
               "{recognizedTranscript}"
@@ -381,10 +393,10 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
         <div className="bg-white rounded-3xl p-8 border border-slate-200 text-center space-y-3">
           <Loader2 size={32} className="mx-auto text-indigo-600 animate-spin" />
           <h3 className="font-bold text-slate-800 text-base">
-            Analyzing Syllable Stress & Articulation...
+            {t("pronunciation.analyzing", "Analyzing Syllable Stress & Articulation...")}
           </h3>
           <p className="text-xs text-slate-500">
-            Comparing your voice recording against phonemic benchmarks and acoustic clarity models.
+            {t("pronunciation.analyzing_desc", "Comparing your voice recording against phonemic benchmarks and acoustic clarity models.")}
           </p>
         </div>
       )}
@@ -395,10 +407,10 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
             <div>
               <span className="text-xs font-bold uppercase tracking-wider text-indigo-600">
-                Acoustic Analysis Results
+                {t("pronunciation.acoustic_analysis_results", "Acoustic Analysis Results")}
               </span>
               <h3 className="text-xl font-black text-slate-900 mt-0.5">
-                Pronunciation Mastery Report
+                {t("pronunciation.mastery_report", "Pronunciation Mastery Report")}
               </h3>
             </div>
 
@@ -414,7 +426,7 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
               >
                 {feedbackResult.score}%
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                  Acoustic Score
+                  {t("pronunciation.acoustic_score", "Acoustic Score")}
                 </span>
               </div>
             </div>
@@ -423,7 +435,7 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
           {/* Word by word breakdown */}
           <div className="space-y-3">
             <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">
-              Word-by-Word Articulation Breakdown:
+              {t("pronunciation.word_breakdown_label", "Word-by-Word Articulation Breakdown:")}
             </span>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {feedbackResult.wordBreakdown.map((item, idx) => (
@@ -442,11 +454,11 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
                     <span className="font-mono text-xs opacity-75">{item.ipa}</span>
                   </div>
                   <div className="text-[11px] font-mono mt-1 opacity-90">
-                    Syllables: {item.syllables}
+                    {t("pronunciation.syllables_label", "Syllables:")} {item.syllables}
                   </div>
                   {item.tip && (
                     <p className="text-xs mt-1.5 pt-1.5 border-t border-black/5 leading-relaxed">
-                      💡 {item.tip}
+                      💡 <AutoText as="span" text={item.tip} context="pronunciation_word_tip" />
                     </p>
                   )}
                 </div>
@@ -459,20 +471,20 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
             <div className="p-4 bg-indigo-50/70 rounded-2xl border border-indigo-100 space-y-1 text-xs">
               <span className="font-bold text-indigo-900 block flex items-center gap-1.5">
                 <Sparkles size={14} className="text-indigo-600" />
-                Intonation & Pitch Contour:
+                {t("pronunciation.intonation_label", "Intonation & Pitch Contour:")}
               </span>
               <p className="text-slate-700 leading-relaxed">
-                {feedbackResult.intonationNotes}
+                {translatedIntonationNotes}
               </p>
             </div>
 
             <div className="p-4 bg-amber-50/70 rounded-2xl border border-amber-100 space-y-1 text-xs">
               <span className="font-bold text-amber-900 block flex items-center gap-1.5">
                 <Lightbulb size={14} className="text-amber-600" />
-                Coaching Tip to Level Up:
+                {t("pronunciation.coaching_tip_label", "Coaching Tip to Level Up:")}
               </span>
               <p className="text-slate-700 leading-relaxed">
-                {feedbackResult.coachingAdvice}
+                {translatedCoachingAdvice}
               </p>
             </div>
           </div>

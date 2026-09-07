@@ -19,6 +19,8 @@ import { CEFRLevel, QuizQuestion, QuizSet, UserProgress } from "../types";
 import { PRESET_QUIZ_SETS } from "../data/curriculumData";
 import { AudioButton } from "./AudioButton";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
+import { AutoText, useAutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 interface QuizEngineProps {
   progress: UserProgress;
@@ -43,6 +45,7 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
   const [aiLevel, setAiLevel] = useState<CEFRLevel>("B1");
   const [isGeneratingAiQuiz, setIsGeneratingAiQuiz] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   const startQuiz = (quiz: QuizSet) => {
     setActiveQuizSet(quiz);
@@ -56,6 +59,9 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
 
   const currentQ: QuizQuestion | undefined =
     activeQuizSet?.questions[currentQuestionIndex];
+  const translatedQuestion = useAutoText(currentQ?.question, "quiz_question");
+  const translatedHint = useAutoText(currentQ?.hint, "quiz_hint");
+  const translatedExplanation = useAutoText(currentQ?.explanation, "quiz_explanation");
 
   const handleSelectAnswer = (qId: string, answer: string) => {
     if (showExplanation) return;
@@ -199,14 +205,14 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              Interactive Quiz Arena
+              {t("quiz.arena_title", "Interactive Quiz Arena")}
             </h1>
             <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-900 font-bold rounded">
-              Multi-Format Engine
+              {t("quiz.multi_format_engine", "Multi-Format Engine")}
             </span>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Test grammar, vocabulary, listening comprehension, and sentence construction.
+            {t("quiz.arena_subtitle", "Test grammar, vocabulary, listening comprehension, and sentence construction.")}
           </p>
         </div>
 
@@ -217,7 +223,7 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
           className="px-4 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md flex items-center gap-2 active:scale-95 transition-all self-start md:self-auto"
         >
           <Sparkles size={16} className="text-amber-300" />
-          <span>Generate Custom AI Quiz</span>
+          <span>{t("quiz.generate_custom_ai", "Generate Custom AI Quiz")}</span>
         </button>
       </div>
 
@@ -228,10 +234,10 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
               <span className="font-bold text-indigo-600 uppercase tracking-wide">
-                {activeQuizSet.title}
+                <AutoText as="span" text={activeQuizSet.title} context="quiz_set_title" />
               </span>
               <span>
-                Question {currentQuestionIndex + 1} of {activeQuizSet.questions.length}
+                {t("quiz.question_of", "Question")} {currentQuestionIndex + 1} {t("common.of", "of")} {activeQuizSet.questions.length}
               </span>
             </div>
 
@@ -255,7 +261,7 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
                   {currentQ.type.replace("-", " ")}
                 </span>
                 <h2 className="text-lg sm:text-xl font-bold text-slate-900 leading-snug">
-                  {currentQ.question}
+                  {translatedQuestion}
                 </h2>
               </div>
 
@@ -263,7 +269,7 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
               {currentQ.audioPrompt && (
                 <div className="flex flex-col items-center gap-1">
                   <AudioButton text={currentQ.audioPrompt} size="lg" variant="primary" />
-                  <span className="text-[10px] font-semibold text-indigo-600">Listen</span>
+                  <span className="text-[10px] font-semibold text-indigo-600">{t("quiz.listen", "Listen")}</span>
                 </div>
               )}
             </div>
@@ -313,7 +319,7 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
                 <input
                   type="text"
                   disabled={showExplanation}
-                  placeholder="Type your answer here..."
+                  placeholder={t("quiz.type_answer_placeholder", "Type your answer here...")}
                   value={userAnswers[currentQ.id] || ""}
                   onChange={(e) => handleSelectAnswer(currentQ.id, e.target.value)}
                   className="w-full px-4 py-3 text-base bg-slate-50 border-2 border-slate-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-indigo-500 font-medium text-slate-900"
@@ -321,7 +327,7 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
                 {currentQ.hint && (
                   <p className="text-xs text-slate-500 flex items-center gap-1.5">
                     <Lightbulb size={14} className="text-amber-500" />
-                    <span>Hint: {currentQ.hint}</span>
+                    <span>{t("quiz.hint_label", "Hint:")} {translatedHint}</span>
                   </p>
                 )}
               </div>
@@ -343,7 +349,7 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
                   {(!scrambleSelections[currentQ.id] ||
                     scrambleSelections[currentQ.id].length === 0) && (
                     <span className="text-xs text-slate-400 italic">
-                      Click the word chips below in the correct order...
+                      {t("quiz.click_chips_hint", "Click the word chips below in the correct order...")}
                     </span>
                   )}
                 </div>
@@ -383,7 +389,7 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
                     className="p-2 text-slate-400 hover:text-slate-700 text-xs font-semibold flex items-center gap-1"
                   >
                     <RotateCcw size={14} />
-                    <span>Reset</span>
+                    <span>{t("quiz.reset", "Reset")}</span>
                   </button>
                 </div>
               </div>
@@ -394,14 +400,14 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
               <div className="p-4 bg-indigo-50/80 rounded-2xl border border-indigo-200 text-xs space-y-1.5 animate-in fade-in duration-200">
                 <div className="flex items-center gap-1.5 text-indigo-900 font-bold text-sm">
                   <Lightbulb size={16} className="text-amber-500" />
-                  <span>Grammar Rule & Explanation</span>
+                  <span>{t("quiz.grammar_rule_explanation", "Grammar Rule & Explanation")}</span>
                 </div>
                 <p className="text-slate-800 leading-relaxed font-medium">
-                  {currentQ.explanation}
+                  {translatedExplanation}
                 </p>
                 {currentQ.correctSentence && (
                   <p className="text-emerald-800 font-bold">
-                    Target: "{currentQ.correctSentence}"
+                    {t("quiz.target_label", "Target:")} "{currentQ.correctSentence}"
                   </p>
                 )}
               </div>
@@ -415,7 +421,7 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
               onClick={() => setActiveQuizSet(null)}
               className="text-xs font-semibold text-slate-500 hover:text-slate-800"
             >
-              Exit Quiz
+              {t("quiz.exit_quiz", "Exit Quiz")}
             </button>
 
             {!showExplanation ? (
@@ -426,7 +432,7 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
                 onClick={handleCheckAnswer}
                 className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-bold text-xs sm:text-sm rounded-xl shadow-md active:scale-95 transition-all"
               >
-                Check Answer
+                {t("quiz.check_answer", "Check Answer")}
               </button>
             ) : (
               <button
@@ -437,8 +443,8 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
               >
                 <span>
                   {currentQuestionIndex < activeQuizSet.questions.length - 1
-                    ? "Next Question"
-                    : "Complete Quiz"}
+                    ? t("quiz.next_question", "Next Question")
+                    : t("quiz.complete_quiz", "Complete Quiz")}
                 </span>
                 <ArrowRight size={16} />
               </button>
@@ -454,24 +460,24 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
 
           <div className="space-y-2">
             <h2 className="text-2xl font-black text-slate-900">
-              Quiz Completed!
+              {t("quiz.completed", "Quiz Completed!")}
             </h2>
-            <p className="text-sm text-slate-500">{activeQuizSet.title}</p>
+            <p className="text-sm text-slate-500"><AutoText as="span" text={activeQuizSet.title} context="quiz_set_title" /></p>
           </div>
 
           <div className="p-6 bg-indigo-50/50 rounded-2xl border border-indigo-100 space-y-2">
             <span className="text-xs uppercase font-bold text-indigo-600 tracking-wider">
-              Accuracy Score
+              {t("quiz.accuracy_score", "Accuracy Score")}
             </span>
             <div className="text-4xl font-black text-indigo-900">
               {finalScore}%
             </div>
             <p className="text-xs text-slate-600">
               {finalScore >= 80
-                ? "🌟 Outstanding mastery! You demonstrated great accuracy."
+                ? t("quiz.result_outstanding", "🌟 Outstanding mastery! You demonstrated great accuracy.")
                 : finalScore >= 50
-                ? "👍 Good effort! Review your weak topics to achieve full fluency."
-                : "💡 Keep practicing! Review the grammar rules in the Grammar Hub."}
+                ? t("quiz.result_good_effort", "👍 Good effort! Review your weak topics to achieve full fluency.")
+                : t("quiz.result_keep_practicing", "💡 Keep practicing! Review the grammar rules in the Grammar Hub.")}
             </p>
           </div>
 
@@ -482,7 +488,7 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
               className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors"
             >
               <RotateCcw size={14} />
-              <span>Retake Quiz</span>
+              <span>{t("quiz.retake_quiz", "Retake Quiz")}</span>
             </button>
 
             <button
@@ -490,7 +496,7 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
               onClick={() => setActiveQuizSet(null)}
               className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-sm transition-colors"
             >
-              Back to Arena
+              {t("quiz.back_to_arena", "Back to Arena")}
             </button>
           </div>
         </div>
@@ -509,26 +515,26 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs uppercase font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded">
-                      Level {quiz.level} • {quiz.category}
+                      {t("common.level", "Level")} {quiz.level} • <AutoText as="span" text={quiz.category} context="quiz_category" />
                     </span>
                     {isCompleted && prevScore !== undefined && (
                       <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                        Score: {prevScore}%
+                        {t("quiz.score_label", "Score:")} {prevScore}%
                       </span>
                     )}
                   </div>
 
                   <h3 className="text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                    {quiz.title}
+                    <AutoText as="span" text={quiz.title} context="quiz_set_title" />
                   </h3>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    {quiz.description}
+                    <AutoText as="span" text={quiz.description} context="quiz_set_description" />
                   </p>
                 </div>
 
                 <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
                   <span className="text-xs text-slate-400 font-medium">
-                    {quiz.questions.length} Interactive Questions
+                    {quiz.questions.length} {t("quiz.interactive_questions", "Interactive Questions")}
                   </span>
                   <button
                     id={`btn-start-quiz-${quiz.id}`}
@@ -536,7 +542,7 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
                     onClick={() => startQuiz(quiz)}
                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-colors"
                   >
-                    <span>{isCompleted ? "Practice Again" : "Start Quiz"}</span>
+                    <span>{isCompleted ? t("quiz.practice_again", "Practice Again") : t("quiz.start_quiz", "Start Quiz")}</span>
                     <ArrowRight size={14} />
                   </button>
                 </div>
@@ -556,7 +562,7 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
                   <Sparkles size={18} />
                 </div>
                 <h3 className="font-black text-lg text-slate-900">
-                  AI Quiz Generator
+                  {t("quiz.ai_generator_title", "AI Quiz Generator")}
                 </h3>
               </div>
               <button
@@ -569,26 +575,26 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
             </div>
 
             <p className="text-xs text-slate-500">
-              Gemini will craft a customized 5-question test with multiple question formats and explanations.
+              {t("quiz.ai_generator_desc", "Gemini will craft a customized 5-question test with multiple question formats and explanations.")}
             </p>
 
             <div className="space-y-4">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-700">
-                  Topic or Grammar Focus:
+                  {t("quiz.topic_focus_label", "Topic or Grammar Focus:")}
                 </label>
                 <input
                   type="text"
                   value={aiTopic}
                   onChange={(e) => setAiTopic(e.target.value)}
-                  placeholder="e.g., Conditionals, Phrasal verbs with 'get', Business Idioms"
+                  placeholder={t("quiz.topic_focus_placeholder", "e.g., Conditionals, Phrasal verbs with 'get', Business Idioms")}
                   className="w-full px-3.5 py-2.5 text-sm bg-slate-50 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
 
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-700">
-                  Target CEFR Level:
+                  {t("quiz.target_cefr_label", "Target CEFR Level:")}
                 </label>
                 <div className="grid grid-cols-5 gap-2">
                   {(["A1", "A2", "B1", "B2", "C1"] as CEFRLevel[]).map((lvl) => (
@@ -622,7 +628,7 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
                 onClick={() => setShowAiModal(false)}
                 className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-800"
               >
-                Cancel
+                {t("quiz.cancel", "Cancel")}
               </button>
               <button
                 id="btn-generate-ai-quiz-submit"
@@ -634,12 +640,12 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
                 {isGeneratingAiQuiz ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    <span>Generating Quiz...</span>
+                    <span>{t("quiz.generating_quiz", "Generating Quiz...")}</span>
                   </>
                 ) : (
                   <>
                     <Sparkles size={16} />
-                    <span>Generate & Start</span>
+                    <span>{t("quiz.generate_and_start", "Generate & Start")}</span>
                   </>
                 )}
               </button>

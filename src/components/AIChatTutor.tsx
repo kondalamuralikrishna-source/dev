@@ -23,6 +23,8 @@ import { AudioButton } from "./AudioButton";
 import { AccentSelector } from "./AccentSelector";
 import { createSpeechRecognizer, stopSpeaking, EnglishAccent, getSavedAccent } from "../utils/speechUtils";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
+import { AutoText, useAutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 interface AIChatTutorProps {
   progress: UserProgress;
@@ -60,6 +62,10 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
 
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const recognizerRef = useRef<any>(null);
+  const { t } = useTranslation();
+  const translatedUserRole = useAutoText(selectedScenario.userRole, "chat_user_role");
+  const translatedTutorRole = useAutoText(selectedScenario.tutorRole, "chat_tutor_role");
+  const translatedLearningGoal = useAutoText(selectedScenario.learningGoal, "chat_learning_goal");
 
   // Auto scroll to latest message
   useEffect(() => {
@@ -187,7 +193,7 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
     );
 
     if (!recognizer) {
-      setMicNotice("Voice recognition isn't supported in this browser. You can type your message below.");
+      setMicNotice(t("chat.mic_unsupported", "Voice recognition isn't supported in this browser. You can type your message below."));
       setTimeout(() => setMicNotice(null), 5000);
       return;
     }
@@ -238,14 +244,14 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                AI Conversational Practice & Roleplay
+                {t("chat.tutor_title", "AI Conversational Practice & Roleplay")}
               </h1>
               <span className="text-xs px-2.5 py-0.5 bg-amber-100 text-amber-900 font-extrabold rounded-md border border-amber-200">
-                Live Grammar Coach
+                {t("chat.live_grammar_coach", "Live Grammar Coach")}
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Practice real-time dialogue with live pronunciation audio, contextual vocabulary highlights, and instant feedback.
+              {t("chat.tutor_subtitle", "Practice real-time dialogue with live pronunciation audio, contextual vocabulary highlights, and instant feedback.")}
             </p>
           </div>
 
@@ -258,16 +264,16 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
             />
 
             <div className="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
-              <span className="text-[11px] font-bold text-slate-500 pl-2 whitespace-nowrap">Persona:</span>
+              <span className="text-[11px] font-bold text-slate-500 pl-2 whitespace-nowrap">{t("chat.persona_label", "Persona:")}</span>
               <select
                 value={tutorPersonality}
                 onChange={(e) => setTutorPersonality(e.target.value)}
                 className="text-xs font-bold bg-white text-slate-800 py-1 px-2.5 rounded-lg border-0 shadow-xs focus:outline-none cursor-pointer"
               >
-                <option value="Encouraging & Detail-Oriented">Encouraging & Supportive</option>
-                <option value="Strict Cambridge Examiner">Strict Cambridge Examiner</option>
-                <option value="Casual Native Friend">Casual Native Friend</option>
-                <option value="Executive Business Mentor">Executive Business Mentor</option>
+                <option value="Encouraging & Detail-Oriented">{t("chat.persona_encouraging", "Encouraging & Supportive")}</option>
+                <option value="Strict Cambridge Examiner">{t("chat.persona_examiner", "Strict Cambridge Examiner")}</option>
+                <option value="Casual Native Friend">{t("chat.persona_casual", "Casual Native Friend")}</option>
+                <option value="Executive Business Mentor">{t("chat.persona_executive", "Executive Business Mentor")}</option>
               </select>
             </div>
           </div>
@@ -286,7 +292,7 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
             >
-              <span>{sc.title}</span>
+              <AutoText as="span" text={sc.title} context="chat_scenario_title" />
               <span className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
                 selectedScenario.id === sc.id ? "bg-white/20 text-white" : "bg-slate-200 text-slate-600"
               }`}>
@@ -301,11 +307,11 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
       <div className="bg-indigo-50/70 border border-indigo-100 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
         <div className="space-y-1">
           <p className="text-indigo-950 font-bold">
-            🎭 <span className="font-semibold text-slate-600">Your Role:</span> {selectedScenario.userRole} •{" "}
-            <span className="font-semibold text-slate-600">Tutor's Role:</span> {selectedScenario.tutorRole}
+            🎭 <span className="font-semibold text-slate-600">{t("chat.your_role_label", "Your Role:")}</span> {translatedUserRole} •{" "}
+            <span className="font-semibold text-slate-600">{t("chat.tutor_role_label", "Tutor's Role:")}</span> {translatedTutorRole}
           </p>
           <p className="text-indigo-800">
-            🎯 <span className="font-bold">Goal:</span> {selectedScenario.learningGoal}
+            🎯 <span className="font-bold">{t("chat.goal_label", "Goal:")}</span> {translatedLearningGoal}
           </p>
         </div>
 
@@ -315,7 +321,7 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
           className="px-3 py-1.5 bg-white text-indigo-700 font-bold text-xs rounded-xl border border-indigo-200 hover:bg-indigo-50 shadow-xs flex items-center gap-1.5 transition-colors self-end sm:self-auto cursor-pointer"
         >
           <RefreshCw size={13} />
-          <span>Reset Chat</span>
+          <span>{t("chat.reset_chat", "Reset Chat")}</span>
         </button>
       </div>
 
@@ -366,7 +372,7 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
                     <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs space-y-1.5 animate-in fade-in duration-200">
                       <div className="flex items-center gap-1.5 text-amber-900 font-bold">
                         <AlertCircle size={14} className="text-amber-600" />
-                        <span>Grammar & Natural Phrasing Coaching:</span>
+                        <span>{t("chat.grammar_coaching_label", "Grammar & Natural Phrasing Coaching:")}</span>
                       </div>
                       {msg.corrections.map((cor, cIdx) => (
                         <div key={cIdx} className="space-y-0.5 pt-1">
@@ -382,7 +388,7 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
                               className="p-1"
                             />
                           </p>
-                          <p className="text-slate-600 italic">💡 {cor.explanation}</p>
+                          <p className="text-slate-600 italic">💡 <AutoText as="span" text={cor.explanation} context="chat_correction_explanation" /></p>
                         </div>
                       ))}
                     </div>
@@ -394,10 +400,10 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
                       <div className="flex items-center justify-between">
                         <span className="font-extrabold text-indigo-900 flex items-center gap-1.5">
                           <Sparkles size={14} className="text-indigo-600" />
-                          <span>Vocabulary in Context:</span>
+                          <span>{t("chat.vocab_in_context", "Vocabulary in Context:")}</span>
                         </span>
                         <span className="text-[10px] text-slate-500 font-medium">
-                          Click speaker to pronounce in {currentAccent === "en-GB" ? "British 🇬🇧" : currentAccent === "en-AU" ? "Australian 🇦🇺" : "American 🇺🇸"}
+                          {t("chat.click_speaker_prefix", "Click speaker to pronounce in")} {currentAccent === "en-GB" ? "British 🇬🇧" : currentAccent === "en-AU" ? "Australian 🇦🇺" : "American 🇺🇸"}
                         </span>
                       </div>
 
@@ -416,7 +422,9 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
                                   </span>
                                 )}
                               </div>
-                              <p className="text-slate-600 text-[11px] leading-relaxed mt-0.5">{v.definition}</p>
+                              <p className="text-slate-600 text-[11px] leading-relaxed mt-0.5">
+                                <AutoText as="span" text={v.definition} context="chat_vocab_definition" />
+                              </p>
                             </div>
                             <AudioButton
                               text={v.word}
@@ -437,7 +445,13 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
                     <div className="px-3.5 py-2 bg-rose-50 rounded-xl border border-rose-100 text-xs text-rose-900 flex items-center gap-2">
                       <span className="text-base">🗣️</span>
                       <div>
-                        <strong>Pronunciation Tip:</strong> {msg.pronunciationTips.join(" • ")}
+                        <strong>{t("chat.pronunciation_tip_label", "Pronunciation Tip:")}</strong>{" "}
+                        {msg.pronunciationTips.map((tip, tIdx) => (
+                          <React.Fragment key={tIdx}>
+                            {tIdx > 0 && " • "}
+                            <AutoText as="span" text={tip} context="chat_pronunciation_tip" />
+                          </React.Fragment>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -446,7 +460,7 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
                   {msg.suggestedReplies && msg.suggestedReplies.length > 0 && (
                     <div className="space-y-1.5 pt-1">
                       <span className="text-[10px] uppercase font-bold text-slate-400">
-                        Suggested Replies (Click to speak):
+                        {t("chat.suggested_replies_label", "Suggested Replies (Click to speak):")}
                       </span>
                       <div className="flex flex-wrap gap-1.5">
                         {msg.suggestedReplies.map((reply, rIdx) => (
@@ -478,14 +492,14 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
               <div className="w-8 h-8 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xs">
                 <Loader2 size={16} className="animate-spin" />
               </div>
-              <span className="italic font-medium">Tutor is analyzing your sentence and drafting feedback...</span>
+              <span className="italic font-medium">{t("chat.analyzing_message", "Tutor is analyzing your sentence and drafting feedback...")}</span>
             </div>
           )}
 
           {speechInterim && (
             <div className="p-3 bg-indigo-50/50 rounded-xl border border-indigo-100 text-xs text-indigo-700 italic flex items-center gap-2 animate-pulse">
               <Mic size={14} className="text-rose-500 animate-bounce" />
-              <span>Listening: "{speechInterim}..."</span>
+              <span>{t("chat.listening_label", "Listening:")} "{speechInterim}..."</span>
             </div>
           )}
 
@@ -513,7 +527,7 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
               id="btn-toggle-mic"
               type="button"
               onClick={handleToggleRecord}
-              title={isRecording ? "Stop recording" : "Speak your message"}
+              title={isRecording ? t("chat.stop_recording_title", "Stop recording") : t("chat.speak_message_title", "Speak your message")}
               className={`p-2.5 rounded-xl border transition-all cursor-pointer ${
                 isRecording
                   ? "bg-rose-600 text-white border-rose-600 animate-pulse"
@@ -526,7 +540,7 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
             <input
               id="input-chat-message"
               type="text"
-              placeholder={isRecording ? "Listening to your voice..." : "Type your English message or question..."}
+              placeholder={isRecording ? t("chat.listening_placeholder", "Listening to your voice...") : t("chat.type_message_placeholder", "Type your English message or question...")}
               value={inputVal}
               onChange={(e) => setInputVal(e.target.value)}
               disabled={isLoading}

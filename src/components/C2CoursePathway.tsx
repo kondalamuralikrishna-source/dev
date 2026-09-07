@@ -24,6 +24,8 @@ import {
 import { CEFRLevel, PersonalizedC2Course, C2CourseMilestone, UserProgress } from "../types";
 import { LinguaFlowLogo } from "./LinguaFlowLogo";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
+import { AutoText, useAutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 interface C2CoursePathwayProps {
   course?: PersonalizedC2Course | null;
@@ -44,6 +46,7 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
   onRetakeAssessment,
   onUpdateLevel,
 }) => {
+  const { t } = useTranslation();
   const diagnosedLevel: CEFRLevel = course?.diagnosedBand || progress.selectedLevel || "B1";
   const [selectedMilestoneLevel, setSelectedMilestoneLevel] = useState<CEFRLevel>(diagnosedLevel);
   const [isGeneratingCustomDrill, setIsGeneratingCustomDrill] = useState(false);
@@ -145,6 +148,15 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
 
   const milestones: C2CourseMilestone[] = course?.milestones?.length ? course.milestones : defaultMilestones;
   const activeMilestone = milestones.find((m) => m.level === selectedMilestoneLevel) || milestones[0];
+  const translatedSummaryPitch = useAutoText(
+    course?.summaryPitch ||
+      `Based on your spoken oral proficiency diagnostic, your structured curriculum adapts step-by-step from ${diagnosedLevel} until you achieve effortless C2 native-level oratorical precision.`,
+    "c2_summary_pitch"
+  );
+  const translatedLevelName = useAutoText(activeMilestone.levelName, "c2_level_name");
+  const translatedTagline = useAutoText(activeMilestone.tagline, "c2_tagline");
+  const translatedBenchmarkRequirement = useAutoText(activeMilestone.benchmarkExamRequirement, "c2_benchmark_requirement");
+  const translatedCustomDrillPitch = useAutoText(customDrillResult?.summaryPitch, "c2_custom_drill_pitch");
 
   // Overall path calculation
   const levelsOrder: CEFRLevel[] = ["A1", "A2", "B1", "B2", "C1", "C2"];
@@ -182,32 +194,31 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
           <div className="space-y-3 max-w-2xl">
             <div className="flex flex-wrap items-center gap-3">
               <span className="px-3 py-1 bg-teal-500/20 text-teal-300 border border-teal-400/30 rounded-full text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
-                <Trophy size={14} /> CEFR C2 Roadmap
+                <Trophy size={14} /> {t("c2.roadmap_badge", "CEFR C2 Roadmap")}
               </span>
               <span className="px-3 py-1 bg-indigo-500/20 text-indigo-200 border border-indigo-400/30 rounded-full text-xs font-semibold">
-                Current Level: <strong className="text-white font-extrabold">{diagnosedLevel}</strong>
+                {t("c2.current_level", "Current Level:")} <strong className="text-white font-extrabold">{diagnosedLevel}</strong>
               </span>
               <span className="px-3 py-1 bg-amber-500/20 text-amber-300 border border-amber-400/30 rounded-full text-xs font-semibold flex items-center gap-1">
-                <Target size={13} /> Target: <strong className="text-white font-extrabold">C2 Mastery</strong>
+                <Target size={13} /> {t("c2.target_label", "Target:")} <strong className="text-white font-extrabold">{t("c2.c2_mastery", "C2 Mastery")}</strong>
               </span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
-              Personalized Pathway to <span className="text-teal-400">CEFR C2 Mastery</span>
+              {t("c2.hero_title_prefix", "Personalized Pathway to")} <span className="text-teal-400">{t("c2.hero_title_highlight", "CEFR C2 Mastery")}</span>
             </h1>
             <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-              {course?.summaryPitch ||
-                `Based on your spoken oral proficiency diagnostic, your structured curriculum adapts step-by-step from ${diagnosedLevel} until you achieve effortless C2 native-level oratorical precision.`}
+              {translatedSummaryPitch}
             </p>
           </div>
 
           {/* Quick Metrics Badge */}
           <div className="flex flex-row md:flex-col gap-3 bg-white/5 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/10 shrink-0">
             <div>
-              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Overall C2 Readiness</p>
+              <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">{t("c2.overall_readiness", "Overall C2 Readiness")}</p>
               <div className="flex items-baseline gap-2 mt-1">
                 <span className="text-2xl sm:text-3xl font-black text-teal-400">{overallC2Progress}%</span>
-                <span className="text-xs text-slate-400">to C2 Mastery</span>
+                <span className="text-xs text-slate-400">{t("c2.to_c2_mastery", "to C2 Mastery")}</span>
               </div>
               <div className="w-full bg-slate-800 h-2 rounded-full mt-2 overflow-hidden">
                 <div
@@ -224,7 +235,7 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
                 className="mt-2 w-full px-3 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
               >
                 <RotateCcw size={14} />
-                <span>Retake Diagnostic</span>
+                <span>{t("c2.retake_diagnostic", "Retake Diagnostic")}</span>
               </button>
             )}
           </div>
@@ -266,8 +277,8 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
 
       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
         <h2 className="text-sm uppercase font-bold text-slate-500 tracking-wider mb-4 flex items-center justify-between">
-          <span>6-Tier CEFR Progression Stepper</span>
-          <span className="text-xs font-normal text-slate-400">Click any tier to view focused curriculum</span>
+          <span>{t("c2.progression_stepper", "6-Tier CEFR Progression Stepper")}</span>
+          <span className="text-xs font-normal text-slate-400">{t("c2.click_tier_hint", "Click any tier to view focused curriculum")}</span>
         </h2>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -320,18 +331,18 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
                 <div>
                   <p className="text-xs font-bold text-slate-900 truncate mt-2">
                     {m.level === "A1"
-                      ? "Foundations"
+                      ? t("c2.tier_a1", "Foundations")
                       : m.level === "A2"
-                      ? "Waystage"
+                      ? t("c2.tier_a2", "Waystage")
                       : m.level === "B1"
-                      ? "Threshold"
+                      ? t("c2.tier_b1", "Threshold")
                       : m.level === "B2"
-                      ? "Vantage"
+                      ? t("c2.tier_b2", "Vantage")
                       : m.level === "C1"
-                      ? "Operational"
-                      : "Mastery"}
+                      ? t("c2.tier_c1", "Operational")
+                      : t("c2.tier_c2", "Mastery")}
                   </p>
-                  <p className="text-[10px] text-slate-500">{m.estimatedHours} hrs</p>
+                  <p className="text-[10px] text-slate-500">{m.estimatedHours} {t("c2.hrs", "hrs")}</p>
                 </div>
 
                 {/* Readiness mini bar */}
@@ -356,22 +367,22 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 <span className="px-3 py-1 bg-indigo-100 text-indigo-800 text-xs font-black rounded-lg">
-                  Level {activeMilestone.level}
+                  {t("common.level", "Level")} {activeMilestone.level}
                 </span>
-                <h3 className="text-lg font-bold text-slate-900">{activeMilestone.levelName}</h3>
+                <h3 className="text-lg font-bold text-slate-900">{translatedLevelName}</h3>
               </div>
               <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-full flex items-center gap-1">
-                <Clock size={13} /> Est. {activeMilestone.estimatedHours} Hours of Training
+                <Clock size={13} /> {t("c2.est_hours_of_training", "Est.")} {activeMilestone.estimatedHours} {t("c2.hours_of_training", "Hours of Training")}
               </span>
             </div>
-            <p className="text-sm text-slate-600">{activeMilestone.tagline}</p>
+            <p className="text-sm text-slate-600">{translatedTagline}</p>
 
             {/* Benchmark Goal Callout */}
             <div className="p-4 bg-teal-50 border border-teal-200 rounded-xl flex items-start gap-3">
               <Award className="text-teal-700 shrink-0 mt-0.5" size={20} />
               <div>
-                <p className="text-xs font-bold text-teal-900">Milestone Unlock Requirement</p>
-                <p className="text-xs text-teal-700 mt-0.5">{activeMilestone.benchmarkExamRequirement}</p>
+                <p className="text-xs font-bold text-teal-900">{t("c2.milestone_unlock_requirement", "Milestone Unlock Requirement")}</p>
+                <p className="text-xs text-teal-700 mt-0.5">{translatedBenchmarkRequirement}</p>
               </div>
             </div>
           </div>
@@ -381,9 +392,9 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
                 <BookOpen size={16} className="text-indigo-600" />
-                Targeted Grammar & Syntax Modules
+                {t("c2.targeted_grammar_modules", "Targeted Grammar & Syntax Modules")}
               </h4>
-              <span className="text-xs text-slate-400">High-leverage structures</span>
+              <span className="text-xs text-slate-400">{t("c2.high_leverage_structures", "High-leverage structures")}</span>
             </div>
 
             <div className="space-y-3">
@@ -398,14 +409,14 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
                       {i + 1}
                     </span>
                     <span className="text-xs sm:text-sm font-bold text-slate-900 group-hover:text-indigo-700">
-                      {grammarTitle}
+                      <AutoText as="span" text={grammarTitle} context="c2_grammar_focus" />
                     </span>
                   </div>
                   <button
                     type="button"
                     className="px-2.5 py-1 bg-white group-hover:bg-indigo-600 text-slate-700 group-hover:text-white border border-slate-200 group-hover:border-indigo-600 rounded-lg text-xs font-bold transition-colors flex items-center gap-1"
                   >
-                    <span>Practice</span>
+                    <span>{t("c2.practice", "Practice")}</span>
                     <ArrowRight size={12} />
                   </button>
                 </div>
@@ -418,16 +429,16 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
                 <GraduationCap size={16} className="text-teal-600" />
-                Lexical Resource & Collocation Themes
+                {t("c2.lexical_resource_themes", "Lexical Resource & Collocation Themes")}
               </h4>
-              <span className="text-xs text-slate-400">CEFR {activeMilestone.level} Lexicon</span>
+              <span className="text-xs text-slate-400">CEFR {activeMilestone.level} {t("c2.lexicon", "Lexicon")}</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {activeMilestone.keyVocabularyFocus.map((vocabTheme, i) => (
                 <div key={i} className="p-3 bg-teal-50/50 border border-teal-100 rounded-xl">
-                  <p className="text-xs font-bold text-teal-900">{vocabTheme}</p>
-                  <p className="text-[11px] text-teal-700 mt-1">High-frequency {activeMilestone.level} vocabulary & phrases</p>
+                  <p className="text-xs font-bold text-teal-900"><AutoText as="span" text={vocabTheme} context="c2_vocab_theme" /></p>
+                  <p className="text-[11px] text-teal-700 mt-1">{t("c2.high_frequency_vocab", "High-frequency")} {activeMilestone.level} {t("c2.vocab_and_phrases", "vocabulary & phrases")}</p>
                 </div>
               ))}
             </div>
@@ -440,7 +451,7 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-4">
             <h4 className="text-sm font-bold uppercase tracking-wider text-slate-700 flex items-center gap-2">
               <Mic size={16} className="text-rose-600" />
-              Interactive Spoken Drills
+              {t("c2.interactive_spoken_drills", "Interactive Spoken Drills")}
             </h4>
 
             <div className="space-y-3">
@@ -454,18 +465,22 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
                       {drill.type.replace("_", " ")}
                     </span>
                     <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
-                      <Clock size={12} /> {drill.durationMinutes} mins
+                      <Clock size={12} /> {drill.durationMinutes} {t("c2.mins", "mins")}
                     </span>
                   </div>
-                  <h5 className="text-xs sm:text-sm font-bold text-slate-900">{drill.title}</h5>
-                  <p className="text-xs text-slate-600 leading-relaxed">{drill.description}</p>
+                  <h5 className="text-xs sm:text-sm font-bold text-slate-900">
+                    <AutoText as="span" text={drill.title} context="c2_drill_title" />
+                  </h5>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    <AutoText as="span" text={drill.description} context="c2_drill_description" />
+                  </p>
                   <button
                     type="button"
                     onClick={() => onStartSpokenDrill && onStartSpokenDrill(drill)}
                     className="w-full mt-2 px-3 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                   >
                     <Play size={13} className="fill-white" />
-                    <span>Launch Spoken Drill</span>
+                    <span>{t("c2.launch_spoken_drill", "Launch Spoken Drill")}</span>
                   </button>
                 </div>
               ))}
@@ -478,10 +493,10 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
               <Trophy size={20} />
             </div>
             <h4 className="text-base font-bold text-slate-900">
-              Take {activeMilestone.level} Level Benchmark Exam
+              {t("c2.take_level_benchmark_prefix", "Take")} {activeMilestone.level} {t("c2.take_level_benchmark_suffix", "Level Benchmark Exam")}
             </h4>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Verify your oral fluency, grammar accuracy, and vocabulary depth to unlock the next milestone towards C2.
+              {t("c2.benchmark_cta_desc", "Verify your oral fluency, grammar accuracy, and vocabulary depth to unlock the next milestone towards C2.")}
             </p>
             <button
               type="button"
@@ -489,7 +504,7 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
               className="w-full px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer shadow-sm"
             >
               <Award size={15} />
-              <span>Start {activeMilestone.level} Benchmark Test</span>
+              <span>{t("c2.start_benchmark_prefix", "Start")} {activeMilestone.level} {t("c2.start_benchmark_suffix", "Benchmark Test")}</span>
             </button>
           </div>
 
@@ -497,10 +512,10 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm space-y-3">
             <div className="flex items-center gap-2 text-indigo-600 font-bold text-xs uppercase tracking-wider">
               <Sparkles size={16} />
-              <span>AI Dynamic Module Generator</span>
+              <span>{t("c2.ai_dynamic_generator", "AI Dynamic Module Generator")}</span>
             </div>
             <p className="text-xs text-slate-600 leading-relaxed">
-              Have Gemini craft a personalized, high-intensity C2 drill tailored directly to your recent speaking weaknesses.
+              {t("c2.ai_generator_desc", "Have Gemini craft a personalized, high-intensity C2 drill tailored directly to your recent speaking weaknesses.")}
             </p>
             <button
               type="button"
@@ -511,12 +526,12 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
               {isGeneratingCustomDrill ? (
                 <>
                   <Sparkles size={14} className="animate-spin text-indigo-600" />
-                  <span>Synthesizing C2 Blueprint...</span>
+                  <span>{t("c2.synthesizing_blueprint", "Synthesizing C2 Blueprint...")}</span>
                 </>
               ) : (
                 <>
                   <Sparkles size={14} className="text-indigo-600" />
-                  <span>Generate Custom AI Drill</span>
+                  <span>{t("c2.generate_custom_drill", "Generate Custom AI Drill")}</span>
                 </>
               )}
             </button>
@@ -524,13 +539,14 @@ export const C2CoursePathway: React.FC<C2CoursePathwayProps> = ({
             {/* Display generated dynamic AI content */}
             {customDrillResult && (
               <div className="p-3.5 bg-indigo-50 border border-indigo-200 rounded-xl space-y-2 mt-3 animate-in fade-in">
-                <p className="text-xs font-bold text-indigo-900">Custom Dynamic C2 Drill Ready:</p>
-                <p className="text-xs text-indigo-800">{customDrillResult.summaryPitch}</p>
+                <p className="text-xs font-bold text-indigo-900">{t("c2.custom_drill_ready", "Custom Dynamic C2 Drill Ready:")}</p>
+                <p className="text-xs text-indigo-800">{translatedCustomDrillPitch}</p>
                 {customDrillResult.phases && (
                   <div className="space-y-1.5 pt-1">
                     {customDrillResult.phases.slice(0, 2).map((phase: any, pIdx: number) => (
                       <div key={pIdx} className="text-[11px] text-slate-700 bg-white/80 p-2 rounded-lg border border-indigo-100">
-                        <strong>{phase.phaseTitle}:</strong> {phase.coreMilestone}
+                        <strong><AutoText as="span" text={phase.phaseTitle} context="c2_phase_title" />:</strong>{" "}
+                        <AutoText as="span" text={phase.coreMilestone} context="c2_phase_milestone" />
                       </div>
                     ))}
                   </div>

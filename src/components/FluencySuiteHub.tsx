@@ -21,6 +21,8 @@ import { AfterActionAuditStudio } from "./AfterActionAuditStudio";
 import { AntiGamingAseEngineStudio } from "./AntiGamingAseEngineStudio";
 import { PsychometricALAEvaluatorStudio } from "./PsychometricALAEvaluatorStudio";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
+import { AutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 export type FluencySubModule =
   | "overview"
@@ -46,6 +48,7 @@ export const FluencySuiteHub: React.FC<FluencySuiteHubProps> = ({
   initialModule = "overview",
 }) => {
   const [activeModule, setActiveModule] = useState<FluencySubModule>(initialModule);
+  const { t } = useTranslation();
 
   const errorBankCount = progress.errorMemoryBank?.length || 0;
   const auditCount = progress.afterActionAudits?.length || 0;
@@ -170,7 +173,7 @@ export const FluencySuiteHub: React.FC<FluencySuiteHubProps> = ({
           }`}
         >
           <Sparkles size={14} className="text-amber-400" />
-          <span>Workshop Overview</span>
+          <span>{t("fluency.workshop_overview", "Workshop Overview")}</span>
         </button>
 
         <div className="h-5 w-px bg-slate-200 my-auto shrink-0" />
@@ -185,7 +188,7 @@ export const FluencySuiteHub: React.FC<FluencySuiteHubProps> = ({
           }`}
         >
           <Brain size={14} />
-          <span>Revision Bank</span>
+          <span>{t("fluency.revision_bank", "Revision Bank")}</span>
           <span className="text-[10px] bg-indigo-100 text-indigo-900 px-1.5 rounded-full font-bold">
             {errorBankCount}
           </span>
@@ -201,7 +204,7 @@ export const FluencySuiteHub: React.FC<FluencySuiteHubProps> = ({
           }`}
         >
           <Activity size={14} />
-          <span>Rhythm & Intonation</span>
+          <span>{t("fluency.rhythm_intonation", "Rhythm & Intonation")}</span>
         </button>
 
         <button
@@ -214,7 +217,7 @@ export const FluencySuiteHub: React.FC<FluencySuiteHubProps> = ({
           }`}
         >
           <Globe size={14} />
-          <span>Tone & Styles</span>
+          <span>{t("fluency.tone_styles", "Tone & Styles")}</span>
         </button>
 
         <button
@@ -227,7 +230,7 @@ export const FluencySuiteHub: React.FC<FluencySuiteHubProps> = ({
           }`}
         >
           <Briefcase size={14} />
-          <span>Professional Scenarios</span>
+          <span>{t("fluency.professional_scenarios", "Professional Scenarios")}</span>
         </button>
 
         <button
@@ -240,7 +243,7 @@ export const FluencySuiteHub: React.FC<FluencySuiteHubProps> = ({
           }`}
         >
           <BarChart3 size={14} />
-          <span>Performance Audits</span>
+          <span>{t("fluency.performance_audits", "Performance Audits")}</span>
         </button>
 
         <button
@@ -253,9 +256,9 @@ export const FluencySuiteHub: React.FC<FluencySuiteHubProps> = ({
           }`}
         >
           <ShieldAlert size={14} className={activeModule === "ase_engine" ? "text-white" : "text-teal-600"} />
-          <span>Acoustic Diagnostics</span>
+          <span>{t("fluency.acoustic_diagnostics", "Acoustic Diagnostics")}</span>
           <span className="text-[9px] bg-teal-200 text-teal-950 font-black px-1.5 py-0.2 rounded-full uppercase">
-            VOICE
+            {t("fluency.voice_badge", "VOICE")}
           </span>
         </button>
       </div>
@@ -268,21 +271,18 @@ export const FluencySuiteHub: React.FC<FluencySuiteHubProps> = ({
             <div className="relative z-10 max-w-3xl">
               <div className="flex items-center gap-2 mb-3">
                 <span className="px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-gradient-to-r from-amber-400 to-rose-400 text-slate-950 shadow-xs">
-                  REAL-WORLD FLUENCY ARCHITECTURE
+                  {t("fluency.architecture_badge", "REAL-WORLD FLUENCY ARCHITECTURE")}
                 </span>
                 <span className="text-xs text-slate-300 font-medium">
-                  6 Core Structural Market Differentiators
+                  {t("fluency.differentiators_count", "6 Core Structural Market Differentiators")}
                 </span>
               </div>
 
               <h1 className="text-3xl sm:text-4xl font-black font-serif tracking-tight text-white mb-3">
-                Bridging Guided Practice to Real-World Spoken Fluency
+                {t("fluency.hero_title", "Bridging Guided Practice to Real-World Spoken Fluency")}
               </h1>
               <p className="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
-                Most language apps treat mistakes as isolated events, provide binary right/wrong
-                scores, and ignore pragmatic register. Fluenxia introduces dynamic error memory
-                re-testing, deep acoustic prosody modeling, cultural register calibration, high-stakes
-                domain friction, and post-session After-Action Audits.
+                {t("fluency.hero_desc", "Most language apps treat mistakes as isolated events, provide binary right/wrong scores, and ignore pragmatic register. Fluenxia introduces dynamic error memory re-testing, deep acoustic prosody modeling, cultural register calibration, high-stakes domain friction, and post-session After-Action Audits.")}
               </p>
 
               <div className="flex flex-wrap items-center gap-3">
@@ -292,7 +292,7 @@ export const FluencySuiteHub: React.FC<FluencySuiteHubProps> = ({
                   className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-black rounded-xl shadow-md transition-all flex items-center gap-2"
                 >
                   <Brain size={15} />
-                  <span>Explore Error Memory Bank</span>
+                  <span>{t("fluency.explore_error_bank", "Explore Error Memory Bank")}</span>
                   <ArrowRight size={14} />
                 </button>
 
@@ -302,7 +302,7 @@ export const FluencySuiteHub: React.FC<FluencySuiteHubProps> = ({
                   className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-black rounded-xl border border-slate-700 transition-all flex items-center gap-2"
                 >
                   <BarChart3 size={15} className="text-emerald-400" />
-                  <span>View After-Action Audit</span>
+                  <span>{t("fluency.view_after_action_audit", "View After-Action Audit")}</span>
                 </button>
               </div>
             </div>
@@ -323,18 +323,18 @@ export const FluencySuiteHub: React.FC<FluencySuiteHubProps> = ({
                         <Icon size={22} />
                       </div>
                       <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full ${diff.badgeColor}`}>
-                        {diff.badge}
+                        <AutoText as="span" text={diff.badge} context="fluency_differentiator_badge" />
                       </span>
                     </div>
 
                     <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                      {diff.tag}
+                      <AutoText as="span" text={diff.tag} context="fluency_differentiator_tag" />
                     </span>
                     <h3 className="text-base font-black text-slate-900 mt-0.5 mb-2">
-                      {diff.title}
+                      <AutoText as="span" text={diff.title} context="fluency_differentiator_title" />
                     </h3>
                     <p className="text-xs text-slate-600 leading-relaxed mb-6">
-                      {diff.desc}
+                      <AutoText as="span" text={diff.desc} context="fluency_differentiator_desc" />
                     </p>
                   </div>
 
@@ -343,7 +343,7 @@ export const FluencySuiteHub: React.FC<FluencySuiteHubProps> = ({
                     onClick={() => setActiveModule(diff.id)}
                     className="w-full py-2.5 bg-slate-50 hover:bg-indigo-50 text-slate-800 hover:text-indigo-700 text-xs font-bold rounded-xl border border-slate-200 hover:border-indigo-200 transition-all flex items-center justify-center gap-1.5"
                   >
-                    <span>Launch Studio</span>
+                    <span>{t("fluency.launch_studio", "Launch Studio")}</span>
                     <ArrowRight size={13} />
                   </button>
                 </div>

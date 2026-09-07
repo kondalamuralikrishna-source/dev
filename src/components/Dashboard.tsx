@@ -33,6 +33,8 @@ import { LevelProgressionBanner } from "./LevelProgressionBanner";
 import { DailyStudyGoalCard } from "./DailyStudyGoalCard";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
 import { LanguageSelector } from "./LanguageSelector";
+import { AutoText, useAutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 interface DashboardProps {
   progress: UserProgress;
@@ -86,8 +88,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const goalPercent = Math.min(100, Math.round((currentVal / targetVal) * 100));
 
   const hourOfDay = new Date().getHours();
-  const timeGreeting = hourOfDay < 12 ? "Good morning" : hourOfDay < 17 ? "Good afternoon" : "Good evening";
-  const firstName = learnerName?.split(" ")[0] || "Learner";
+  const { t } = useTranslation();
+  const timeGreeting =
+    hourOfDay < 12
+      ? t("dashboard.good_morning", "Good morning")
+      : hourOfDay < 17
+      ? t("dashboard.good_afternoon", "Good afternoon")
+      : t("dashboard.good_evening", "Good evening");
+  const firstName = learnerName?.split(" ")[0] || t("dashboard.learner_fallback", "Learner");
+  const translatedNextLessonTitle = useAutoText(nextLesson?.title, "dashboard_next_lesson_title");
+  const translatedDailyWordDefinition = useAutoText(dailyWord?.definition, "vocab_definition");
 
   return (
     <div className="space-y-8 pb-12 animate-in fade-in duration-300">
@@ -97,23 +107,23 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <h1 className="text-xl font-black text-slate-900">
             {timeGreeting}, {firstName}! 👋
           </h1>
-          <p className="text-sm text-slate-500 mt-0.5">Small steps every day lead to big progress.</p>
+          <p className="text-sm text-slate-500 mt-0.5">{t("dashboard.motivation_subtitle", "Small steps every day lead to big progress.")}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-white border border-orange-200 rounded-2xl px-4 py-2 shadow-xs">
             <Flame size={18} className="fill-orange-500 text-orange-500" />
             <div>
               <p className="text-sm font-black text-slate-900 leading-none">{progress.streakDays}</p>
-              <p className="text-[10px] text-slate-500 font-semibold">Day Streak</p>
+              <p className="text-[10px] text-slate-500 font-semibold">{t("dashboard.day_streak", "Day Streak")}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 bg-white border border-emerald-200 rounded-2xl px-4 py-2 shadow-xs">
             <CheckCircle size={18} className="text-emerald-500" />
             <div>
               <p className="text-sm font-black text-slate-900 leading-none">
-                {goalPercent >= 100 ? "Complete" : `${goalPercent}%`}
+                {goalPercent >= 100 ? t("dashboard.complete", "Complete") : `${goalPercent}%`}
               </p>
-              <p className="text-[10px] text-slate-500 font-semibold">Today's Goal</p>
+              <p className="text-[10px] text-slate-500 font-semibold">{t("dashboard.todays_goal", "Today's Goal")}</p>
             </div>
           </div>
         </div>
@@ -132,14 +142,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="lg:col-span-2 space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-blue-200 text-xs font-semibold tracking-wide border border-white/15">
               <Sparkles size={14} className="text-amber-400" />
-              <span>Active CEFR Level {progress.selectedLevel} LMS Portal</span>
+              <span>{t("dashboard.active_level_badge", "Active CEFR Level")} {progress.selectedLevel} {t("dashboard.lms_portal", "LMS Portal")}</span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Ready to elevate your English today?
+              {t("dashboard.hero_title", "Ready to elevate your English today?")}
             </h1>
             <p className="text-blue-200 text-sm sm:text-base max-w-xl leading-relaxed">
-              Complete your level tutorials, build vocabulary fluency, and pass benchmark exams to unlock advanced CEFR levels.
+              {t("dashboard.hero_desc", "Complete your level tutorials, build vocabulary fluency, and pass benchmark exams to unlock advanced CEFR levels.")}
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-2">
@@ -152,7 +162,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 }}
                 className="px-5 py-2.5 bg-blue-500 hover:bg-blue-400 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-600/30 flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
               >
-                <span>Continue: {nextLesson.title}</span>
+                <span>{t("dashboard.continue_label", "Continue:")} {translatedNextLessonTitle}</span>
                 <ArrowRight size={16} />
               </button>
 
@@ -163,9 +173,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 className="px-4 py-2.5 bg-gradient-to-r from-teal-500 via-emerald-400 to-blue-500 hover:from-teal-400 hover:to-blue-400 text-slate-950 font-black text-sm rounded-xl shadow-lg shadow-teal-500/25 flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
               >
                 <Sparkles size={16} className="text-slate-950" />
-                <span>Speaking Coach</span>
+                <span>{t("dashboard.speaking_coach", "Speaking Coach")}</span>
                 <span className="text-[10px] bg-slate-950 text-amber-300 px-1.5 py-0.2 rounded font-black">
-                  INTERACTIVE
+                  {t("dashboard.badge_interactive", "INTERACTIVE")}
                 </span>
               </button>
 
@@ -176,7 +186,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 className="px-4 py-2.5 bg-white/15 hover:bg-white/25 text-white font-bold text-sm rounded-xl border border-white/20 flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
               >
                 <Radio size={16} className="text-teal-300 animate-pulse" />
-                <span>Live Voice Chat</span>
+                <span>{t("dashboard.live_voice_chat", "Live Voice Chat")}</span>
               </button>
 
               <button
@@ -186,9 +196,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 className="px-4 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-400 hover:to-pink-400 text-white font-black text-sm rounded-xl shadow-lg shadow-purple-500/25 flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
               >
                 <Brain size={16} className="text-amber-300" />
-                <span>Fluency Workshop</span>
+                <span>{t("dashboard.fluency_workshop", "Fluency Workshop")}</span>
                 <span className="text-[10px] bg-slate-950 text-amber-300 px-1.5 py-0.2 rounded font-black">
-                  WORKSHOP
+                  {t("dashboard.badge_workshop", "WORKSHOP")}
                 </span>
               </button>
 
@@ -199,7 +209,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold text-sm rounded-xl border border-white/20 flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
               >
                 <MessageSquare size={16} className="text-amber-300" />
-                <span>Roleplay Scenarios</span>
+                <span>{t("dashboard.roleplay_scenarios", "Roleplay Scenarios")}</span>
               </button>
 
               <button
@@ -209,7 +219,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold text-sm rounded-xl border border-white/20 flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
               >
                 <Mic size={16} className="text-rose-300" />
-                <span>Pronunciation Lab</span>
+                <span>{t("dashboard.pronunciation_lab", "Pronunciation Lab")}</span>
               </button>
 
               <button
@@ -219,7 +229,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 className="px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-semibold text-sm rounded-xl border border-white/20 flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
               >
                 <ShieldAlert size={16} className="text-amber-300" />
-                <span>Timed Drills</span>
+                <span>{t("dashboard.timed_drills", "Timed Drills")}</span>
               </button>
             </div>
           </div>
@@ -228,7 +238,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/15 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs uppercase tracking-wider font-bold text-blue-200">
-                Daily Goal • {goalType === "minutes" ? "Minutes" : "Lessons"}
+                {t("dashboard.daily_goal_prefix", "Daily Goal")} • {goalType === "minutes" ? t("dashboard.minutes_unit", "Minutes") : t("progress.lessons_unit", "Lessons")}
               </span>
               <span
                 className={`text-xs font-bold px-2 py-0.5 rounded-full ${
@@ -237,7 +247,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     : "bg-amber-400 text-slate-950"
                 }`}
               >
-                {goalPercent}% {goalPercent >= 100 ? "Goal Met!" : "Done"}
+                {goalPercent}% {goalPercent >= 100 ? t("dashboard.goal_met_bang", "Goal Met!") : t("dashboard.done", "Done")}
               </span>
             </div>
 
@@ -246,7 +256,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 {currentVal}
               </span>
               <span className="text-blue-200 text-sm">
-                / {targetVal} {goalType === "minutes" ? "active mins" : "lessons"}
+                / {targetVal} {goalType === "minutes" ? t("dashboard.active_mins", "active mins") : t("dashboard.lessons_lower", "lessons")}
               </span>
             </div>
 
@@ -263,13 +273,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
             <div className="grid grid-cols-2 gap-2 pt-1 text-center">
               <div className="bg-white/5 rounded-xl p-2 border border-white/10">
-                <span className="text-xs text-blue-200 block">Streak</span>
+                <span className="text-xs text-blue-200 block">{t("dashboard.streak", "Streak")}</span>
                 <span className="text-lg font-bold text-amber-300 flex items-center justify-center gap-1">
                   <Flame size={16} className="fill-amber-400" /> {progress.streakDays} / {progress.dailyGoalTargetStreak || 14}d
                 </span>
               </div>
               <div className="bg-white/5 rounded-xl p-2 border border-white/10">
-                <span className="text-xs text-blue-200 block">Earned XP</span>
+                <span className="text-xs text-blue-200 block">{t("dashboard.earned_xp", "Earned XP")}</span>
                 <span className="text-lg font-bold text-blue-100 flex items-center justify-center gap-1">
                   <Zap size={16} className="fill-blue-400 text-blue-400" /> {progress.xp}
                 </span>
@@ -332,7 +342,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       <div className="space-y-3">
         <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
           <Layers size={18} className="text-blue-600" />
-          <span>Core English Learning Pillars</span>
+          <span>{t("dashboard.core_pillars_title", "Core English Learning Pillars")}</span>
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -347,17 +357,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <div className="flex items-center gap-1.5">
               <h3 className="font-bold text-white text-base group-hover:text-purple-300 transition-colors">
-                Mastery Pathway
+                {t("dashboard.pillar_mastery_pathway", "Mastery Pathway")}
               </h3>
               <span className="text-[9px] font-black px-1.5 py-0.2 bg-amber-400 text-slate-950 rounded uppercase tracking-wider">
-                MILESTONES
+                {t("dashboard.badge_milestones", "MILESTONES")}
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-              Step-by-step progression roadmap tailored to guide your overall English development towards fluent proficiency.
+              {t("dashboard.pillar_mastery_pathway_desc", "Step-by-step progression roadmap tailored to guide your overall English development towards fluent proficiency.")}
             </p>
             <div className="mt-4 flex items-center justify-between text-xs font-bold text-purple-300">
-              <span>Personalized Progression Track</span>
+              <span>{t("dashboard.pillar_mastery_pathway_footer", "Personalized Progression Track")}</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -373,17 +383,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <div className="flex items-center gap-1.5">
               <h3 className="font-bold text-white text-base group-hover:text-teal-300 transition-colors">
-                Speaking Coach
+                {t("dashboard.speaking_coach", "Speaking Coach")}
               </h3>
               <span className="text-[9px] font-black px-1.5 py-0.2 bg-gradient-to-r from-amber-400 to-teal-400 text-slate-950 rounded uppercase tracking-wider">
-                INTERACTIVE
+                {t("dashboard.badge_interactive", "INTERACTIVE")}
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-              Spontaneous speaking practice with real-time feedback, communicative coaching, and contextual vocabulary guidance.
+              {t("dashboard.pillar_speaking_coach_desc", "Spontaneous speaking practice with real-time feedback, communicative coaching, and contextual vocabulary guidance.")}
             </p>
             <div className="mt-4 flex items-center justify-between text-xs font-bold text-teal-300">
-              <span>Interactive Dialogue Drills</span>
+              <span>{t("dashboard.pillar_speaking_coach_footer", "Interactive Dialogue Drills")}</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -399,17 +409,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <div className="flex items-center gap-1.5">
               <h3 className="font-bold text-white text-base group-hover:text-teal-300 transition-colors">
-                Live Voice Chat
+                {t("dashboard.live_voice_chat", "Live Voice Chat")}
               </h3>
               <span className="text-[9px] font-black px-1.5 py-0.2 bg-teal-400 text-slate-950 rounded uppercase tracking-wider">
-                VOICE
+                {t("dashboard.badge_voice", "VOICE")}
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-              Interactive conversational audio practice designed for smooth turn-taking and natural fluency building.
+              {t("dashboard.pillar_live_voice_desc", "Interactive conversational audio practice designed for smooth turn-taking and natural fluency building.")}
             </p>
             <div className="mt-4 flex items-center justify-between text-xs font-bold text-teal-300">
-              <span>Real-Time Voice Interaction</span>
+              <span>{t("dashboard.pillar_live_voice_footer", "Real-Time Voice Interaction")}</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -425,17 +435,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <div className="flex items-center gap-1.5">
               <h3 className="font-bold text-white text-base group-hover:text-purple-300 transition-colors">
-                Fluency Workshop
+                {t("dashboard.fluency_workshop", "Fluency Workshop")}
               </h3>
               <span className="text-[9px] font-black px-1.5 py-0.2 bg-gradient-to-r from-amber-400 to-rose-400 text-slate-950 rounded uppercase tracking-wider">
-                WORKSHOP
+                {t("dashboard.badge_workshop", "WORKSHOP")}
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-              Deep-dive modules focusing on phonetic rhythm, contextual tone, industry topics, and post-session audits.
+              {t("dashboard.pillar_fluency_workshop_desc", "Deep-dive modules focusing on phonetic rhythm, contextual tone, industry topics, and post-session audits.")}
             </p>
             <div className="mt-4 flex items-center justify-between text-xs font-bold text-amber-300">
-              <span>Comprehensive Fluency Modules</span>
+              <span>{t("dashboard.pillar_fluency_workshop_footer", "Comprehensive Fluency Modules")}</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -450,13 +460,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <Layers size={24} />
             </div>
             <h3 className="font-bold text-slate-900 text-base group-hover:text-blue-600 transition-colors">
-              Grammar Hub
+              {t("tab.grammar", "Grammar Hub")}
             </h3>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-              Step-by-step rules, verb tense timelines, and common pitfalls explained simply.
+              {t("dashboard.pillar_grammar_desc", "Step-by-step rules, verb tense timelines, and common pitfalls explained simply.")}
             </p>
             <div className="mt-4 flex items-center justify-between text-xs font-semibold text-blue-600">
-              <span>{completedLessonsCount}/{totalLessonsCount} Completed</span>
+              <span>{completedLessonsCount}/{totalLessonsCount} {t("common.completed", "Completed")}</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -471,13 +481,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <BookOpen size={24} />
             </div>
             <h3 className="font-bold text-slate-900 text-base group-hover:text-emerald-600 transition-colors">
-              Vocabulary Deck
+              {t("tab.vocabulary", "Vocabulary Deck")}
             </h3>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-              Thematic flashcards with native audio, phonetic IPA, idioms, and spaced repetition.
+              {t("dashboard.pillar_vocab_desc", "Thematic flashcards with native audio, phonetic IPA, idioms, and spaced repetition.")}
             </p>
             <div className="mt-4 flex items-center justify-between text-xs font-semibold text-emerald-600">
-              <span>{VOCABULARY_COLLECTIONS.length} Collections</span>
+              <span>{VOCABULARY_COLLECTIONS.length} {t("dashboard.collections", "Collections")}</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -493,17 +503,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <div className="flex items-center gap-1.5">
               <h3 className="font-bold text-slate-900 text-base group-hover:text-amber-600 transition-colors">
-                Roleplay Scenarios
+                {t("dashboard.roleplay_scenarios", "Roleplay Scenarios")}
               </h3>
               <span className="text-[10px] font-bold px-1.5 py-0.2 bg-amber-100 text-amber-800 rounded">
-                PRACTICE
+                {t("dashboard.badge_practice", "PRACTICE")}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-              Conversational roleplays (job interview, cafe, travel) with live feedback and suggestions.
+              {t("dashboard.pillar_roleplay_desc", "Conversational roleplays (job interview, cafe, travel) with live feedback and suggestions.")}
             </p>
             <div className="mt-4 flex items-center justify-between text-xs font-semibold text-amber-600">
-              <span>5 Interactive Scenarios</span>
+              <span>{t("dashboard.pillar_roleplay_footer", "5 Interactive Scenarios")}</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -519,17 +529,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <div className="flex items-center gap-1.5">
               <h3 className="font-bold text-slate-900 text-base group-hover:text-rose-600 transition-colors">
-                Pronunciation Lab
+                {t("dashboard.pronunciation_lab", "Pronunciation Lab")}
               </h3>
               <span className="text-[10px] font-bold px-1.5 py-0.2 bg-rose-100 text-rose-800 rounded">
-                AUDIO
+                {t("dashboard.badge_audio", "AUDIO")}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-              Speech analysis, syllable stress markers, phonetic breakdowns, and practice drills.
+              {t("dashboard.pillar_pronunciation_desc", "Speech analysis, syllable stress markers, phonetic breakdowns, and practice drills.")}
             </p>
             <div className="mt-4 flex items-center justify-between text-xs font-semibold text-rose-600">
-              <span>Speech Coach</span>
+              <span>{t("dashboard.pillar_pronunciation_footer", "Speech Coach")}</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -545,17 +555,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <div className="flex items-center gap-1.5">
               <h3 className="font-bold text-white text-base group-hover:text-rose-300 transition-colors">
-                Timed Drills
+                {t("dashboard.timed_drills", "Timed Drills")}
               </h3>
               <span className="text-[10px] font-black px-1.5 py-0.2 bg-rose-500 text-white rounded">
-                RAPID
+                {t("dashboard.badge_rapid", "RAPID")}
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-              Fast-paced speaking challenges with countdown timers to build spontaneous conversational agility.
+              {t("dashboard.pillar_stress_desc", "Fast-paced speaking challenges with countdown timers to build spontaneous conversational agility.")}
             </p>
             <div className="mt-4 flex items-center justify-between text-xs font-bold text-amber-300">
-              <span>Timed Agility Simulator</span>
+              <span>{t("dashboard.pillar_stress_footer", "Timed Agility Simulator")}</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -571,17 +581,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
             <div className="flex items-center gap-1.5">
               <h3 className="font-bold text-white text-base group-hover:text-blue-300 transition-colors">
-                Writing Assistant
+                {t("tab.doctor", "Writing Assistant")}
               </h3>
               <span className="text-[10px] font-black px-1.5 py-0.2 bg-blue-500 text-white rounded">
-                AI DIAGNOSIS
+                {t("dashboard.badge_ai_diagnosis", "AI DIAGNOSIS")}
               </span>
             </div>
             <p className="text-xs text-slate-300 mt-1 leading-relaxed">
-              Analyze sentences for CEFR nuance, grammatical correctness, syntax improvements, and natural phrasing.
+              {t("dashboard.pillar_doctor_desc", "Analyze sentences for CEFR nuance, grammatical correctness, syntax improvements, and natural phrasing.")}
             </p>
             <div className="mt-4 flex items-center justify-between text-xs font-bold text-blue-300">
-              <span>Instant Grammar Diagnosis</span>
+              <span>{t("dashboard.pillar_doctor_footer", "Instant Grammar Diagnosis")}</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -595,7 +605,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Target size={18} className="text-blue-600" />
-              <span>Recommended Quick Practice</span>
+              <span>{t("dashboard.recommended_quick_practice", "Recommended Quick Practice")}</span>
             </h2>
             <button
               id="btn-see-all-quizzes"
@@ -603,7 +613,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               onClick={() => setActiveTab("quizzes")}
               className="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1"
             >
-              <span>Explore All Quizzes</span>
+              <span>{t("dashboard.explore_all_quizzes", "Explore All Quizzes")}</span>
               <ArrowRight size={14} />
             </button>
           </div>
@@ -614,15 +624,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-bold rounded">
-                    Quiz Challenge
+                    {t("dashboard.quiz_challenge_badge", "Quiz Challenge")}
                   </span>
-                  <span className="text-xs text-slate-400">• 5 Questions</span>
+                  <span className="text-xs text-slate-400">• 5 {t("dashboard.questions_unit", "Questions")}</span>
                 </div>
                 <h4 className="font-bold text-slate-900 text-base">
-                  English Grammar Core Diagnostic
+                  {t("dashboard.diagnostic_quiz_title", "English Grammar Core Diagnostic")}
                 </h4>
                 <p className="text-xs text-slate-500">
-                  Assess your mastery of tenses, subject-verb agreement, and error identification.
+                  {t("dashboard.diagnostic_quiz_desc", "Assess your mastery of tenses, subject-verb agreement, and error identification.")}
                 </p>
               </div>
 
@@ -633,7 +643,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 className="w-full py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-xl border border-blue-200 flex items-center justify-center gap-1.5 transition-colors"
               >
                 <Award size={14} />
-                <span>Start Practice Quiz (+50 XP)</span>
+                <span>{t("dashboard.start_practice_quiz", "Start Practice Quiz (+50 XP)")}</span>
               </button>
             </div>
 
@@ -642,15 +652,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span className="px-2 py-0.5 bg-purple-50 text-purple-700 text-xs font-bold rounded">
-                    AI Doctor
+                    {t("dashboard.ai_doctor_badge", "AI Doctor")}
                   </span>
-                  <span className="text-xs text-slate-400">• Instant Analysis</span>
+                  <span className="text-xs text-slate-400">• {t("dashboard.instant_analysis", "Instant Analysis")}</span>
                 </div>
                 <h4 className="font-bold text-slate-900 text-base">
-                  Sentence & Grammar Doctor
+                  {t("doctor.title_short", "Sentence & Grammar Doctor")}
                 </h4>
                 <p className="text-xs text-slate-500">
-                  Paste any complex English sentence to analyze parts of speech, tenses, and natural improvements.
+                  {t("dashboard.grammar_doctor_desc", "Paste any complex English sentence to analyze parts of speech, tenses, and natural improvements.")}
                 </p>
               </div>
 
@@ -661,7 +671,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 className="w-full py-2 bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold text-xs rounded-xl border border-purple-200 flex items-center justify-center gap-1.5 transition-colors"
               >
                 <Sparkles size={14} />
-                <span>Analyze Any Sentence</span>
+                <span>{t("dashboard.analyze_any_sentence", "Analyze Any Sentence")}</span>
               </button>
             </div>
           </div>
@@ -673,10 +683,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-[11px] uppercase font-bold tracking-wider text-amber-400 px-2 py-0.5 bg-amber-400/10 rounded-full border border-amber-400/20">
-                  Word of the Day
+                  {t("dashboard.word_of_the_day", "Word of the Day")}
                 </span>
                 <span className="text-xs text-slate-400 font-mono">
-                  {dailyWord.level} Level
+                  {dailyWord.level} {t("common.level", "Level")}
                 </span>
               </div>
 
@@ -693,7 +703,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
 
               <p className="text-xs text-slate-300 leading-relaxed">
-                {dailyWord.definition}
+                {translatedDailyWordDefinition}
               </p>
 
               <div className="p-3 bg-white/5 rounded-xl border border-white/10 text-xs text-blue-100 italic">
@@ -711,7 +721,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               className="w-full py-2 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl border border-white/15 flex items-center justify-center gap-1.5 transition-colors"
             >
               <BookOpen size={14} />
-              <span>Practice in Flashcards Deck</span>
+              <span>{t("dashboard.practice_in_flashcards", "Practice in Flashcards Deck")}</span>
             </button>
           </div>
         )}

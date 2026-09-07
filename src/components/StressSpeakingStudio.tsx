@@ -40,6 +40,8 @@ import { soundFx } from "../utils/soundSynthesizer";
 import { AudioButton } from "./AudioButton";
 import { createSpeechRecognizer } from "../utils/speechUtils";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
+import { AutoText, useAutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 interface StressSpeakingStudioProps {
   progress: UserProgress;
@@ -267,7 +269,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
 
     if (!spokenContent) {
       setEvalError(
-        "No speech or text was detected during the time limit. Try speaking clearly into your microphone or switch to text mode."
+        t("stress.no_speech_detected", "No speech or text was detected during the time limit. Try speaking clearly into your microphone or switch to text mode.")
       );
       setStage("results");
       return;
@@ -326,7 +328,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
       }
     } catch (err: any) {
       console.error("Stress evaluation error:", err);
-      setEvalError("Could not connect to AI evaluation. Please try again.");
+      setEvalError(t("stress.eval_connection_error", "Could not connect to AI evaluation. Please try again."));
       setStage("results");
     }
   };
@@ -355,7 +357,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
       handleSelectScenario(newScenario);
     } catch (e) {
       console.error("Custom scenario generation error:", e);
-      setCustomGenError("Failed to generate custom scenario. Please try a different topic or check connection.");
+      setCustomGenError(t("stress.custom_gen_error", "Failed to generate custom scenario. Please try a different topic or check connection."));
     } finally {
       setIsGeneratingCustom(false);
     }
@@ -365,6 +367,13 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
   const timePercent = Math.round((timeLeft / selectedScenario.timeLimitSeconds) * 100);
   const isTimeCritical = timeLeft <= 10;
   const isTimeWarning = timeLeft <= 20 && !isTimeCritical;
+  const { t } = useTranslation();
+  const translatedScenarioBriefing = useAutoText(selectedScenario.briefing, "stress_scenario_briefing");
+  const translatedInterlocutorRole = useAutoText(selectedScenario.interlocutorRole, "stress_interlocutor_role");
+  const translatedComposureBadge = useAutoText(evaluation?.composureBadge, "stress_composure_badge");
+  const translatedStressGrade = useAutoText(evaluation?.stressGrade, "stress_grade");
+  const translatedIntonationFeedback = useAutoText(evaluation?.intonationFeedback, "stress_intonation_feedback");
+  const translatedCalmModelExplanation = useAutoText(evaluation?.calmModelExplanation, "stress_calm_model_explanation");
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 pb-16 animate-in fade-in duration-300">
@@ -411,25 +420,25 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
           <div className="space-y-3 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-rose-500/20 border border-rose-400/30 rounded-full text-rose-300 text-xs font-bold tracking-wide">
               <ShieldAlert size={14} className="text-rose-400 animate-pulse" />
-              <span>Crisis Speaking Simulator • Real-Time Pressure</span>
+              <span>{t("stress.simulator_badge", "Crisis Speaking Simulator • Real-Time Pressure")}</span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
-              Speaking Stress Test & Adrenaline Coach
+              {t("stress.hero_title", "Speaking Stress Test & Adrenaline Coach")}
             </h1>
             <p className="text-sm text-slate-300 leading-relaxed">
-              Master the art of articulate English speech under extreme pressure. Overcome panic freezes, maintain grammatical precision, eliminate filler words, and project unshakeable executive composure.
+              {t("stress.hero_subtitle", "Master the art of articulate English speech under extreme pressure. Overcome panic freezes, maintain grammatical precision, eliminate filler words, and project unshakeable executive composure.")}
             </p>
 
             <div className="flex flex-wrap items-center gap-3 pt-1 text-xs">
               <span className="flex items-center gap-1.5 text-amber-300 font-semibold bg-white/10 px-3 py-1 rounded-lg">
-                <Clock size={14} /> Countdown Timer
+                <Clock size={14} /> {t("stress.countdown_timer", "Countdown Timer")}
               </span>
               <span className="flex items-center gap-1.5 text-rose-300 font-semibold bg-white/10 px-3 py-1 rounded-lg">
-                <Activity size={14} /> Synthesized Heartbeat Audio
+                <Activity size={14} /> {t("stress.synthesized_heartbeat", "Synthesized Heartbeat Audio")}
               </span>
               <span className="flex items-center gap-1.5 text-indigo-300 font-semibold bg-white/10 px-3 py-1 rounded-lg">
-                <Sparkles size={14} /> Gemini 5-Axis Diagnostic
+                <Sparkles size={14} /> {t("stress.gemini_diagnostic", "Gemini 5-Axis Diagnostic")}
               </span>
             </div>
           </div>
@@ -443,21 +452,21 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
               className="px-4 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all"
             >
               <Sparkles size={15} />
-              <span>Create AI Custom Crisis</span>
+              <span>{t("stress.create_custom_crisis", "Create AI Custom Crisis")}</span>
             </button>
 
             <div className="flex items-center justify-between gap-2 p-2 bg-white/10 rounded-xl border border-white/15 text-xs">
-              <span className="text-slate-300 font-medium">Sound Effects:</span>
+              <span className="text-slate-300 font-medium">{t("stress.sound_effects_label", "Sound Effects:")}</span>
               <button
                 type="button"
                 onClick={handleToggleMute}
                 className={`p-1.5 rounded-lg flex items-center gap-1 text-xs font-bold transition-colors ${
                   isMuted ? "bg-rose-500/30 text-rose-300" : "bg-emerald-500/30 text-emerald-300"
                 }`}
-                title={isMuted ? "Unmute sound effects" : "Mute heartbeat and ticks"}
+                title={isMuted ? t("stress.unmute_title", "Unmute sound effects") : t("stress.mute_title", "Mute heartbeat and ticks")}
               >
                 {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
-                <span>{isMuted ? "Muted" : "Active"}</span>
+                <span>{isMuted ? t("stress.muted", "Muted") : t("stress.active", "Active")}</span>
               </button>
             </div>
           </div>
@@ -472,10 +481,10 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
             <div className="flex items-center justify-between">
               <h2 className="font-bold text-slate-900 text-sm flex items-center gap-2">
                 <Layers size={16} className="text-indigo-600" />
-                <span>Crisis Situations ({STRESS_SCENARIOS.length})</span>
+                <span>{t("stress.crisis_situations", "Crisis Situations")} ({STRESS_SCENARIOS.length})</span>
               </h2>
               <span className="text-[11px] font-semibold text-slate-400">
-                Pick Scenario
+                {t("stress.pick_scenario", "Pick Scenario")}
               </span>
             </div>
 
@@ -492,7 +501,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                       : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                   }`}
                 >
-                  {cat === "All" ? "All Situations" : cat.split(" ")[0]}
+                  {cat === "All" ? t("stress.all_situations", "All Situations") : <AutoText as="span" text={cat.split(" ")[0]} context="stress_category_short" />}
                 </button>
               ))}
             </div>
@@ -524,7 +533,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                             : "bg-blue-100 text-blue-800"
                         }`}
                       >
-                        {sc.urgencyLevel} Stakes
+                        {sc.urgencyLevel} {t("stress.stakes_suffix", "Stakes")}
                       </span>
                       <div className="flex items-center gap-1.5 text-xs text-slate-500 font-mono">
                         <Clock size={12} />
@@ -540,11 +549,11 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                         isSelected ? "text-indigo-950" : "text-slate-900"
                       }`}
                     >
-                      {sc.title}
+                      <AutoText as="span" text={sc.title} context="stress_scenario_title" />
                     </h4>
 
                     <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
-                      {sc.stressorType}
+                      <AutoText as="span" text={sc.stressorType} context="stress_scenario_stressor_type" />
                     </p>
                   </div>
                 );
@@ -556,9 +565,9 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
           {progress.stressTestsCompleted && progress.stressTestsCompleted.length > 0 && (
             <div className="bg-white rounded-2xl p-4 border border-slate-200 space-y-3">
               <h4 className="text-xs font-bold text-slate-900 flex items-center justify-between">
-                <span>Recent Stress Drills</span>
+                <span>{t("stress.recent_drills", "Recent Stress Drills")}</span>
                 <span className="text-[11px] text-indigo-600 font-semibold">
-                  {progress.stressTestsCompleted.length} Completed
+                  {progress.stressTestsCompleted.length} {t("common.completed", "Completed")}
                 </span>
               </h4>
               <div className="space-y-2">
@@ -569,7 +578,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                   >
                     <div className="truncate max-w-[170px]">
                       <span className="font-bold text-slate-800 block truncate">
-                        {item.scenarioTitle}
+                        <AutoText as="span" text={item.scenarioTitle} context="stress_scenario_title" />
                       </span>
                       <span className="text-[10px] text-slate-500">
                         {item.stressGrade} • {item.wpm} WPM
@@ -602,21 +611,21 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
                     <span className="text-xs uppercase font-bold tracking-wider text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">
-                      {selectedScenario.category}
+                      <AutoText as="span" text={selectedScenario.category} context="stress_category" />
                     </span>
                     <span className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-md border border-indigo-200">
-                      Level {selectedScenario.level}
+                      {t("common.level", "Level")} {selectedScenario.level}
                     </span>
                   </div>
                   <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                    {selectedScenario.title}
+                    <AutoText as="span" text={selectedScenario.title} context="stress_scenario_title" />
                   </h2>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <div className="text-right">
                     <span className="text-[10px] text-slate-400 block uppercase font-bold">
-                      Pressure Limit
+                      {t("stress.pressure_limit", "Pressure Limit")}
                     </span>
                     <span className="text-xl font-black text-rose-600 flex items-center gap-1 justify-end">
                       <Clock size={18} />
@@ -630,14 +639,14 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
               <div className="p-4 bg-slate-900 rounded-2xl text-white space-y-3 shadow-inner">
                 <div className="flex items-center justify-between">
                   <span className="text-xs uppercase font-bold tracking-wider text-amber-400">
-                    Emergency Situation Briefing
+                    {t("stress.emergency_briefing", "Emergency Situation Briefing")}
                   </span>
                   <span className="text-xs text-rose-300 font-bold flex items-center gap-1">
-                    <AlertTriangle size={14} /> {selectedScenario.urgencyLevel} Urgency
+                    <AlertTriangle size={14} /> {selectedScenario.urgencyLevel} {t("stress.urgency_suffix", "Urgency")}
                   </span>
                 </div>
                 <p className="text-sm text-slate-200 leading-relaxed">
-                  {selectedScenario.briefing}
+                  {translatedScenarioBriefing}
                 </p>
               </div>
 
@@ -646,13 +655,13 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-rose-900 flex items-center gap-1.5">
                     <ShieldAlert size={15} className="text-rose-600" />
-                    <span>Confronting Role: {selectedScenario.interlocutorRole}</span>
+                    <span>{t("stress.confronting_role", "Confronting Role:")} {translatedInterlocutorRole}</span>
                   </span>
                   <AudioButton
                     text={selectedScenario.interlocutorVoicePrompt}
                     size="sm"
                     variant="primary"
-                    label="Listen Prompt"
+                    label={t("stress.listen_prompt", "Listen Prompt")}
                   />
                 </div>
                 <p className="text-base font-bold text-rose-950 italic">
@@ -664,7 +673,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
               <div className="space-y-2.5">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
                   <Award size={15} className="text-indigo-600" />
-                  <span>Required Target Structures to Include Under Pressure:</span>
+                  <span>{t("stress.required_structures", "Required Target Structures to Include Under Pressure:")}</span>
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {selectedScenario.requiredTargetStructures.map((struct, idx) => (
@@ -675,7 +684,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                       <span className="w-4 h-4 rounded-full bg-indigo-200 text-indigo-800 text-[10px] font-bold flex items-center justify-center shrink-0 mt-0.5">
                         {idx + 1}
                       </span>
-                      <span>{struct}</span>
+                      <AutoText as="span" text={struct} context="stress_required_structure" />
                     </div>
                   ))}
                 </div>
@@ -685,7 +694,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
               <div className="pt-2 border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
-                    Input Method:
+                    {t("stress.input_method_label", "Input Method:")}
                   </label>
                   <div className="flex items-center gap-2">
                     <button
@@ -698,7 +707,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                       }`}
                     >
                       <Mic size={14} />
-                      <span>Live Voice Mic (Recommended)</span>
+                      <span>{t("stress.live_voice_mic", "Live Voice Mic (Recommended)")}</span>
                     </button>
                     <button
                       type="button"
@@ -710,24 +719,24 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                       }`}
                     >
                       <Send size={14} />
-                      <span>Keyboard Input</span>
+                      <span>{t("stress.keyboard_input", "Keyboard Input")}</span>
                     </button>
                   </div>
                 </div>
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
-                    Ambient Background Tension:
+                    {t("stress.ambient_tension_label", "Ambient Background Tension:")}
                   </label>
                   <select
                     value={ambientSoundType}
                     onChange={(e) => setAmbientSoundType(e.target.value as any)}
                     className="w-full text-xs font-semibold bg-slate-50 border border-slate-200 rounded-xl py-2 px-3 text-slate-800 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   >
-                    <option value="silent">Silent (No ambient noise)</option>
-                    <option value="airport">Airport Terminal Background</option>
-                    <option value="office">Executive Boardroom Murmurs</option>
-                    <option value="emergency">Emergency Sirens / High Urgency</option>
+                    <option value="silent">{t("stress.ambient_silent", "Silent (No ambient noise)")}</option>
+                    <option value="airport">{t("stress.ambient_airport", "Airport Terminal Background")}</option>
+                    <option value="office">{t("stress.ambient_office", "Executive Boardroom Murmurs")}</option>
+                    <option value="emergency">{t("stress.ambient_emergency", "Emergency Sirens / High Urgency")}</option>
                   </select>
                 </div>
               </div>
@@ -741,7 +750,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                   className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-rose-600 via-rose-500 to-amber-500 hover:from-rose-500 hover:to-amber-400 text-white font-extrabold text-base rounded-2xl shadow-lg shadow-rose-600/30 flex items-center justify-center gap-2 active:scale-95 transition-all"
                 >
                   <Flame size={20} className="fill-amber-300 text-amber-300" />
-                  <span>Start Stress Test ({selectedScenario.timeLimitSeconds}s)</span>
+                  <span>{t("stress.start_stress_test", "Start Stress Test")} ({selectedScenario.timeLimitSeconds}s)</span>
                   <ArrowRight size={18} />
                 </button>
               </div>
@@ -764,7 +773,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                 <div className="space-y-1">
                   <span className="text-xs uppercase font-bold tracking-wider text-rose-400 flex items-center gap-1.5">
                     <Activity size={14} className="animate-spin text-rose-400" />
-                    <span>RAPID DRILL ACTIVE • {selectedScenario.interlocutorRole}</span>
+                    <span>{t("stress.rapid_drill_active", "RAPID DRILL ACTIVE")} • {translatedInterlocutorRole}</span>
                   </span>
                   <h3 className="text-lg font-bold text-white">
                     "{selectedScenario.interlocutorVoicePrompt}"
@@ -794,14 +803,14 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                 <div className="p-4 bg-rose-600/90 border-2 border-rose-300 rounded-2xl text-white shadow-lg animate-bounce space-y-1">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-1">
-                      <AlertTriangle size={16} /> SURPRISE INTERRUPT!
+                      <AlertTriangle size={16} /> {t("stress.surprise_interrupt", "SURPRISE INTERRUPT!")}
                     </span>
                     <span className="text-[11px] font-bold bg-black/40 px-2 py-0.5 rounded">
-                      Answer directly!
+                      {t("stress.answer_directly", "Answer directly!")}
                     </span>
                   </div>
                   <p className="text-sm font-black text-white">
-                    {selectedScenario.surpriseInterruption.message}
+                    <AutoText as="span" text={selectedScenario.surpriseInterruption.message} context="stress_surprise_message" />
                   </p>
                 </div>
               )}
@@ -812,16 +821,16 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                   <div className="flex items-center justify-between text-xs text-indigo-200 font-medium">
                     <span className="flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
-                      Listening to speech transcript...
+                      {t("stress.listening_transcript", "Listening to speech transcript...")}
                     </span>
-                    <span>Speak clearly with steady volume</span>
+                    <span>{t("stress.speak_steady_volume", "Speak clearly with steady volume")}</span>
                   </div>
 
                   <div className="min-h-[120px] p-5 bg-white/10 rounded-2xl border border-white/15 backdrop-blur-md flex flex-col justify-between">
                     <p className="text-base font-bold text-white leading-relaxed">
                       {liveTranscript || (
                         <span className="text-slate-400 italic font-normal">
-                          Start speaking into your microphone immediately... Speak in complete sentences!
+                          {t("stress.start_speaking_hint", "Start speaking into your microphone immediately... Speak in complete sentences!")}
                         </span>
                       )}
                     </p>
@@ -845,13 +854,13 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
               ) : (
                 <div className="space-y-2">
                   <label className="text-xs text-slate-300 font-bold block">
-                    Type your crisis response before time runs out:
+                    {t("stress.type_response_label", "Type your crisis response before time runs out:")}
                   </label>
                   <textarea
                     rows={4}
                     value={manualText}
                     onChange={(e) => setManualText(e.target.value)}
-                    placeholder="Type your rapid response here under pressure..."
+                    placeholder={t("stress.type_response_placeholder", "Type your rapid response here under pressure...")}
                     autoFocus
                     className="w-full p-4 bg-white/10 border border-white/20 rounded-2xl text-white text-base focus:ring-2 focus:ring-amber-400 focus:outline-none placeholder-slate-400"
                   />
@@ -860,13 +869,13 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
 
               {/* Target check reminder pills */}
               <div className="flex flex-wrap items-center gap-2 pt-2 text-xs">
-                <span className="text-slate-400 font-bold">Remember to include:</span>
+                <span className="text-slate-400 font-bold">{t("stress.remember_to_include", "Remember to include:")}</span>
                 {selectedScenario.requiredTargetStructures.map((st, i) => (
                   <span
                     key={i}
                     className="px-2 py-0.5 bg-white/10 rounded-lg text-indigo-200 border border-white/10 text-[11px]"
                   >
-                    ✓ {st.slice(0, 32)}...
+                    ✓ <AutoText as="span" text={st.slice(0, 32)} context="stress_required_structure" />...
                   </span>
                 ))}
               </div>
@@ -878,7 +887,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                   onClick={handleAbortTest}
                   className="px-4 py-2 bg-white/10 hover:bg-white/20 text-slate-300 text-xs font-bold rounded-xl transition-colors"
                 >
-                  Cancel / Abort
+                  {t("stress.cancel_abort", "Cancel / Abort")}
                 </button>
 
                 <button
@@ -887,7 +896,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                   className="px-6 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl shadow-lg flex items-center gap-1.5 transition-all"
                 >
                   <CheckCircle2 size={16} />
-                  <span>Done Speaking (Submit Early)</span>
+                  <span>{t("stress.done_speaking_submit", "Done Speaking (Submit Early)")}</span>
                 </button>
               </div>
             </div>
@@ -899,10 +908,10 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
               <Loader2 size={40} className="animate-spin text-rose-600 mx-auto" />
               <div className="space-y-1 max-w-md mx-auto">
                 <h3 className="text-lg font-black text-slate-900">
-                  Analyzing Stress Speech Metrics...
+                  {t("stress.analyzing_metrics", "Analyzing Stress Speech Metrics...")}
                 </h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Gemini is calculating Words Per Minute (WPM), pinpointing stress-induced grammar slips, evaluating phonetic clarity, and grading tactical crisis resolution.
+                  {t("stress.analyzing_metrics_desc", "Gemini is calculating Words Per Minute (WPM), pinpointing stress-induced grammar slips, evaluating phonetic clarity, and grading tactical crisis resolution.")}
                 </p>
               </div>
             </div>
@@ -920,7 +929,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                     onClick={() => setStage("briefing")}
                     className="px-5 py-2 bg-rose-600 text-white font-bold text-xs rounded-xl"
                   >
-                    Try Again
+                    {t("stress.try_again", "Try Again")}
                   </button>
                 </div>
               ) : evaluation ? (
@@ -930,28 +939,28 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
                         <span className="px-2.5 py-0.5 bg-rose-500/30 border border-rose-400/40 text-rose-300 text-xs font-bold rounded-full">
-                          {evaluation.composureBadge}
+                          {translatedComposureBadge}
                         </span>
                         <span className="text-xs text-indigo-300 font-mono">
-                          {selectedScenario.title}
+                          <AutoText as="span" text={selectedScenario.title} context="stress_scenario_title" />
                         </span>
                       </div>
                       <h2 className="text-2xl sm:text-3xl font-black text-white">
-                        {evaluation.stressGrade}
+                        {translatedStressGrade}
                       </h2>
                       <p className="text-xs text-slate-300">
                         {evaluation.overallScore >= 80
-                          ? "🔥 Outstanding composure! You maintained syntactic integrity and native-level fluency under pressure."
+                          ? t("stress.result_outstanding", "🔥 Outstanding composure! You maintained syntactic integrity and native-level fluency under pressure.")
                           : evaluation.overallScore >= 65
-                          ? "👍 Strong effort! Effective resolution with minor stress slips in verb inflections and cadence."
-                          : "🎯 Adrenaline caused minor hesitations. Study the tactical survival tips below."}
+                          ? t("stress.result_strong_effort", "👍 Strong effort! Effective resolution with minor stress slips in verb inflections and cadence.")
+                          : t("stress.result_minor_hesitations", "🎯 Adrenaline caused minor hesitations. Study the tactical survival tips below.")}
                       </p>
                     </div>
 
                     <div className="flex items-center gap-4">
                       <div className="text-center p-3 bg-white/10 rounded-xl border border-white/15">
                         <span className="text-[10px] uppercase font-bold text-slate-300 block">
-                          Stress Score
+                          {t("stress.stress_score", "Stress Score")}
                         </span>
                         <span className="text-3xl font-black text-amber-400">
                           {evaluation.overallScore}%
@@ -960,13 +969,13 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
 
                       <div className="text-center p-3 bg-white/10 rounded-xl border border-white/15">
                         <span className="text-[10px] uppercase font-bold text-slate-300 block">
-                          Cadence (WPM)
+                          {t("stress.cadence_wpm", "Cadence (WPM)")}
                         </span>
                         <span className="text-2xl font-black text-white font-mono">
                           {evaluation.wpm}
                         </span>
                         <span className="text-[10px] text-indigo-300 block">
-                          {evaluation.wpmStatus.split(" ")[0]}
+                          <AutoText as="span" text={evaluation.wpmStatus.split(" ")[0]} context="stress_wpm_status" />
                         </span>
                       </div>
                     </div>
@@ -976,14 +985,14 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div className="p-4 bg-indigo-50/80 rounded-2xl border border-indigo-100 space-y-1">
                       <span className="text-xs uppercase font-bold text-indigo-700 tracking-wider block">
-                        Grammar Accuracy
+                        {t("stress.grammar_accuracy", "Grammar Accuracy")}
                       </span>
                       <div className="flex items-baseline justify-between">
                         <span className="text-2xl font-black text-indigo-950">
                           {evaluation.grammarScore}%
                         </span>
                         <span className="text-[11px] font-bold text-indigo-600">
-                          {evaluation.grammarMistakes.length} slips noted
+                          {evaluation.grammarMistakes.length} {t("stress.slips_noted", "slips noted")}
                         </span>
                       </div>
                       <div className="w-full h-1.5 bg-indigo-200 rounded-full overflow-hidden">
@@ -996,14 +1005,14 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
 
                     <div className="p-4 bg-rose-50/80 rounded-2xl border border-rose-100 space-y-1">
                       <span className="text-xs uppercase font-bold text-rose-700 tracking-wider block">
-                        Phonetic Clarity
+                        {t("stress.phonetic_clarity", "Phonetic Clarity")}
                       </span>
                       <div className="flex items-baseline justify-between">
                         <span className="text-2xl font-black text-rose-950">
                           {evaluation.pronunciationScore}%
                         </span>
                         <span className="text-[11px] font-bold text-rose-600">
-                          {evaluation.pronunciationIssues.length} words flagged
+                          {evaluation.pronunciationIssues.length} {t("stress.words_flagged", "words flagged")}
                         </span>
                       </div>
                       <div className="w-full h-1.5 bg-rose-200 rounded-full overflow-hidden">
@@ -1016,14 +1025,14 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
 
                     <div className="p-4 bg-emerald-50/80 rounded-2xl border border-emerald-100 space-y-1">
                       <span className="text-xs uppercase font-bold text-emerald-700 tracking-wider block">
-                        Crisis Resolution
+                        {t("stress.crisis_resolution", "Crisis Resolution")}
                       </span>
                       <div className="flex items-baseline justify-between">
                         <span className="text-2xl font-black text-emerald-950">
                           {evaluation.crisisResolutionScore}%
                         </span>
                         <span className="text-[11px] font-bold text-emerald-600">
-                          {evaluation.fillerWordTotal} filler words
+                          {evaluation.fillerWordTotal} {t("stress.filler_words", "filler words")}
                         </span>
                       </div>
                       <div className="w-full h-1.5 bg-emerald-200 rounded-full overflow-hidden">
@@ -1039,13 +1048,13 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                   <div className="space-y-3">
                     <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                       <Layers size={16} className="text-indigo-600" />
-                      <span>Grammar Under Pressure Breakdown</span>
+                      <span>{t("stress.grammar_breakdown_title", "Grammar Under Pressure Breakdown")}</span>
                     </h3>
 
                     {evaluation.grammarMistakes.length === 0 ? (
                       <div className="p-4 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs font-semibold text-emerald-900 flex items-center gap-2">
                         <CheckCircle2 size={16} className="text-emerald-600" />
-                        <span>Flawless grammar! No tense or agreement slips detected even under severe time constraints.</span>
+                        <span>{t("stress.flawless_grammar", "Flawless grammar! No tense or agreement slips detected even under severe time constraints.")}</span>
                       </div>
                     ) : (
                       <div className="space-y-2">
@@ -1064,10 +1073,10 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                               </span>
                             </div>
                             <p className="text-slate-700 font-medium leading-relaxed">
-                              {slip.reason}
+                              <AutoText as="span" text={slip.reason} context="stress_grammar_reason" />
                             </p>
                             <p className="text-[11px] text-indigo-700 italic">
-                              💡 Stress factor: {slip.stressFactor}
+                              💡 {t("stress.stress_factor_label", "Stress factor:")} <AutoText as="span" text={slip.stressFactor} context="stress_factor" />
                             </p>
                           </div>
                         ))}
@@ -1079,7 +1088,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                   <div className="space-y-3">
                     <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
                       <Ear size={16} className="text-rose-600" />
-                      <span>Pronunciation Clarity & Slurred Words</span>
+                      <span>{t("stress.pronunciation_clarity_title", "Pronunciation Clarity & Slurred Words")}</span>
                     </h3>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -1097,10 +1106,10 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                             </span>
                           </div>
                           <p className="text-slate-700 font-medium">
-                            ⚠️ {item.spokenIssue}
+                            ⚠️ <AutoText as="span" text={item.spokenIssue} context="stress_spoken_issue" />
                           </p>
                           <p className="text-[11px] text-rose-900 font-semibold pt-1">
-                            🎯 Coaching: {item.coachingTip}
+                            🎯 {t("stress.coaching_label", "Coaching:")} <AutoText as="span" text={item.coachingTip} context="stress_coaching_tip" />
                           </p>
                         </div>
                       ))}
@@ -1109,9 +1118,9 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                     {evaluation.intonationFeedback && (
                       <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-700 space-y-1">
                         <span className="font-bold text-slate-900 block uppercase text-[10px] tracking-wider text-indigo-700">
-                          Pitch & Intonation Contour
+                          {t("stress.pitch_intonation_title", "Pitch & Intonation Contour")}
                         </span>
-                        <p>{evaluation.intonationFeedback}</p>
+                        <p>{translatedIntonationFeedback}</p>
                       </div>
                     )}
                   </div>
@@ -1120,20 +1129,20 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                   <div className="p-5 bg-gradient-to-br from-indigo-900 to-slate-900 rounded-2xl text-white space-y-3 shadow-md">
                     <div className="flex items-center justify-between">
                       <span className="text-xs uppercase font-bold tracking-wider text-amber-400 flex items-center gap-1.5">
-                        <Sparkles size={14} /> Masterful Calm Native Response
+                        <Sparkles size={14} /> {t("stress.calm_model_title", "Masterful Calm Native Response")}
                       </span>
                       <AudioButton
                         text={evaluation.calmModelResponse}
                         size="sm"
                         variant="secondary"
-                        label="Listen Model Answer"
+                        label={t("stress.listen_model_answer", "Listen Model Answer")}
                       />
                     </div>
                     <p className="text-sm font-semibold text-indigo-100 leading-relaxed italic">
                       "{evaluation.calmModelResponse}"
                     </p>
                     <p className="text-xs text-slate-300 pt-1 border-t border-white/10">
-                      💡 Strategy: {evaluation.calmModelExplanation}
+                      💡 {t("stress.strategy_label", "Strategy:")} {translatedCalmModelExplanation}
                     </p>
                   </div>
 
@@ -1141,12 +1150,12 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                   <div className="p-4 bg-amber-50/80 rounded-2xl border border-amber-200 space-y-2">
                     <span className="text-xs uppercase font-bold text-amber-900 tracking-wider flex items-center gap-1.5">
                       <Zap size={15} className="text-amber-600 fill-amber-600" />
-                      <span>3 Tactical Speaking Hacks for This Scenario:</span>
+                      <span>{t("stress.survival_hacks_title", "3 Tactical Speaking Hacks for This Scenario:")}</span>
                     </span>
                     <ul className="space-y-1 text-xs text-amber-950 font-medium list-disc list-inside">
                       {evaluation.survivalHacks.map((hack, idx) => (
                         <li key={idx} className="leading-relaxed">
-                          {hack}
+                          <AutoText as="span" text={hack} context="stress_survival_hack" />
                         </li>
                       ))}
                     </ul>
@@ -1160,7 +1169,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                       className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-colors"
                     >
                       <RotateCcw size={14} />
-                      <span>Retry Scenario</span>
+                      <span>{t("stress.retry_scenario", "Retry Scenario")}</span>
                     </button>
 
                     <button
@@ -1173,7 +1182,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                       }}
                       className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-colors"
                     >
-                      <span>Next Crisis Challenge</span>
+                      <span>{t("stress.next_crisis_challenge", "Next Crisis Challenge")}</span>
                       <ArrowRight size={14} />
                     </button>
                   </div>
@@ -1192,7 +1201,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
               <div className="flex items-center gap-2">
                 <Sparkles size={20} className="text-amber-500" />
                 <h3 className="font-black text-slate-900 text-lg">
-                  Generate Custom High-Stress Crisis
+                  {t("stress.generate_custom_crisis_title", "Generate Custom High-Stress Crisis")}
                 </h3>
               </div>
               <button
@@ -1205,36 +1214,36 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
             </div>
 
             <p className="text-xs text-slate-500 leading-relaxed">
-              Describe any high-pressure situation you want to conquer (e.g. salary negotiation with strict CEO, medical emergency abroad, product recall, hostile press question).
+              {t("stress.generate_custom_crisis_desc", "Describe any high-pressure situation you want to conquer (e.g. salary negotiation with strict CEO, medical emergency abroad, product recall, hostile press question).")}
             </p>
 
             <div className="space-y-3">
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">
-                  Crisis Topic / Scenario:
+                  {t("stress.crisis_topic_label", "Crisis Topic / Scenario:")}
                 </label>
                 <input
                   type="text"
                   value={customTopic}
                   onChange={(e) => setCustomTopic(e.target.value)}
-                  placeholder="e.g. Defending missed quarterly revenue to angry investors"
+                  placeholder={t("stress.crisis_topic_placeholder", "e.g. Defending missed quarterly revenue to angry investors")}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
 
               <div>
                 <label className="text-xs font-bold text-slate-700 block mb-1">
-                  Target CEFR Level:
+                  {t("quiz.target_cefr_label", "Target CEFR Level:")}
                 </label>
                 <select
                   value={customLevel}
                   onChange={(e) => setCustomLevel(e.target.value as CEFRLevel)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 >
-                  <option value="A2">Level A2 (Elementary Emergency)</option>
-                  <option value="B1">Level B1 (Intermediate Practical)</option>
-                  <option value="B2">Level B2 (Upper-Intermediate Professional)</option>
-                  <option value="C1">Level C1 (Advanced Executive & Nuance)</option>
+                  <option value="A2">{t("stress.level_a2_option", "Level A2 (Elementary Emergency)")}</option>
+                  <option value="B1">{t("stress.level_b1_option", "Level B1 (Intermediate Practical)")}</option>
+                  <option value="B2">{t("stress.level_b2_option", "Level B2 (Upper-Intermediate Professional)")}</option>
+                  <option value="C1">{t("stress.level_c1_option", "Level C1 (Advanced Executive & Nuance)")}</option>
                 </select>
               </div>
             </div>
@@ -1252,7 +1261,7 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                 onClick={() => setShowCustomModal(false)}
                 className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
               >
-                Cancel
+                {t("quiz.cancel", "Cancel")}
               </button>
               <button
                 type="button"
@@ -1263,12 +1272,12 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                 {isGeneratingCustom ? (
                   <>
                     <Loader2 size={14} className="animate-spin" />
-                    <span>Designing Scenario...</span>
+                    <span>{t("stress.designing_scenario", "Designing Scenario...")}</span>
                   </>
                 ) : (
                   <>
                     <Sparkles size={14} />
-                    <span>Generate & Practice</span>
+                    <span>{t("stress.generate_and_practice", "Generate & Practice")}</span>
                   </>
                 )}
               </button>

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Globe, Sparkles, ChevronDown, ChevronUp, BookOpen, Volume2 } from "lucide-react";
 import { useTranslation } from "../context/TranslationContext";
 import { DynamicTranslationResponse } from "../types";
@@ -20,29 +20,41 @@ export const RegionalConceptHelper: React.FC<RegionalConceptHelperProps> = ({
 }) => {
   const { currentLanguage, currentLanguageConfig, isRegionalActive, translateWithAI, contrastNotes } =
     useTranslation();
-  const [isExpanded, setIsExpanded] = useState(initialExpanded);
+  const [isExpanded, setIsExpanded] = useState(initialExpanded || isRegionalActive);
   const [translationResult, setTranslationResult] = useState<DynamicTranslationResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Auto-translate as soon as a regional language is active (and whenever the source text or
+  // target language changes) so switching the language selector updates this content
+  // immediately, without requiring the user to click to expand it.
+  useEffect(() => {
+    let cancelled = false;
+    setTranslationResult(null);
+    if (!isRegionalActive || !englishText) return;
+    setIsExpanded(true);
+    setIsLoading(true);
+    translateWithAI(englishText, context)
+      .then((result) => {
+        if (!cancelled) setTranslationResult(result);
+      })
+      .catch((err) => {
+        console.error("Error loading regional translation:", err);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRegionalActive, currentLanguage, englishText, context]);
 
   if (!isRegionalActive) {
     return null; // Don't show if user preferred standard English
   }
 
-  const handleToggle = async () => {
-    const nextState = !isExpanded;
-    setIsExpanded(nextState);
-
-    if (nextState && !translationResult && !isLoading) {
-      setIsLoading(true);
-      try {
-        const result = await translateWithAI(englishText, context);
-        setTranslationResult(result);
-      } catch (err) {
-        console.error("Error loading regional translation:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+  const handleToggle = () => {
+    setIsExpanded((prev) => !prev);
   };
 
   const playTTS = (text: string) => {

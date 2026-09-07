@@ -14,6 +14,8 @@ import {
 import { UserProgress } from "../types";
 import { AudioButton } from "./AudioButton";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
+import { AutoText, useAutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 interface GrammarDoctorProps {
   progress: UserProgress;
@@ -42,6 +44,9 @@ export const GrammarDoctor: React.FC<GrammarDoctorProps> = ({ progress }) => {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<GrammarExplanationResult | null>(null);
+  const { t } = useTranslation();
+  const translatedSummary = useAutoText(result?.summary, "doctor_summary");
+  const translatedTenseAndAspect = useAutoText(result?.tenseAndAspect, "doctor_tense_aspect");
 
   const sampleSentences = [
     "If I had known about the schedule change earlier, I would have notified the team.",
@@ -148,11 +153,11 @@ export const GrammarDoctor: React.FC<GrammarDoctorProps> = ({ progress }) => {
               <Sparkles size={18} />
             </div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-              AI Sentence & Grammar Doctor
+              {t("doctor.title", "AI Sentence & Grammar Doctor")}
             </h1>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Type or paste any English sentence, paragraph, or question to unpack its grammar, parts of speech, and nuances.
+            {t("doctor.subtitle", "Type or paste any English sentence, paragraph, or question to unpack its grammar, parts of speech, and nuances.")}
           </p>
         </div>
 
@@ -163,14 +168,14 @@ export const GrammarDoctor: React.FC<GrammarDoctorProps> = ({ progress }) => {
               rows={3}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Enter any English sentence to analyze..."
+              placeholder={t("doctor.input_placeholder", "Enter any English sentence to analyze...")}
               className="w-full p-4 text-sm bg-slate-50 border border-slate-300 rounded-2xl focus:outline-none focus:ring-2 focus:ring-purple-500 font-medium text-slate-900"
             />
           </div>
 
           {/* Preset sample pill buttons */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-xs font-bold text-slate-400">Try samples:</span>
+            <span className="text-xs font-bold text-slate-400">{t("doctor.try_samples", "Try samples:")}</span>
             {sampleSentences.map((sample, idx) => (
               <button
                 key={idx}
@@ -197,12 +202,12 @@ export const GrammarDoctor: React.FC<GrammarDoctorProps> = ({ progress }) => {
               {isLoading ? (
                 <>
                   <Loader2 size={16} className="animate-spin" />
-                  <span>Diagnosing Sentence...</span>
+                  <span>{t("doctor.diagnosing", "Diagnosing Sentence...")}</span>
                 </>
               ) : (
                 <>
                   <Sparkles size={16} />
-                  <span>Analyze Sentence & Grammar</span>
+                  <span>{t("doctor.analyze_button", "Analyze Sentence & Grammar")}</span>
                 </>
               )}
             </button>
@@ -217,15 +222,15 @@ export const GrammarDoctor: React.FC<GrammarDoctorProps> = ({ progress }) => {
           <div className="p-5 bg-purple-50/60 rounded-2xl border border-purple-100 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className="text-xs uppercase font-bold text-purple-700 tracking-wider">
-                Grammar Diagnosis & Structure
+                {t("doctor.diagnosis_structure", "Grammar Diagnosis & Structure")}
               </span>
               <span className="px-3 py-1 bg-purple-200/70 text-purple-900 font-bold text-xs rounded-lg">
-                Tense: {result.tenseAndAspect}
+                {t("doctor.tense_label", "Tense:")} {translatedTenseAndAspect}
               </span>
             </div>
 
             <p className="text-sm font-medium text-purple-950 leading-relaxed">
-              {result.summary}
+              {translatedSummary}
             </p>
           </div>
 
@@ -234,7 +239,7 @@ export const GrammarDoctor: React.FC<GrammarDoctorProps> = ({ progress }) => {
             <div className="space-y-3">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <Layers size={18} className="text-indigo-600" />
-                <span>Parts of Speech & Syntactic Roles</span>
+                <span>{t("doctor.parts_of_speech_title", "Parts of Speech & Syntactic Roles")}</span>
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
@@ -248,11 +253,11 @@ export const GrammarDoctor: React.FC<GrammarDoctorProps> = ({ progress }) => {
                         "{item.token}"
                       </span>
                       <span className="text-[10px] uppercase font-bold text-indigo-700 bg-indigo-50 px-1.5 py-0.5 rounded border border-indigo-100">
-                        {item.role}
+                        <AutoText as="span" text={item.role} context="doctor_pos_role" />
                       </span>
                     </div>
                     <p className="text-xs text-slate-600 leading-snug">
-                      {item.explanation}
+                      <AutoText as="span" text={item.explanation} context="doctor_pos_explanation" />
                     </p>
                   </div>
                 ))}
@@ -265,13 +270,13 @@ export const GrammarDoctor: React.FC<GrammarDoctorProps> = ({ progress }) => {
             <div className="p-5 bg-indigo-50/70 rounded-2xl border border-indigo-100 space-y-2">
               <h3 className="text-sm font-bold text-indigo-950 flex items-center gap-2">
                 <Lightbulb size={16} className="text-amber-500" />
-                <span>Underlying Rules & Principles</span>
+                <span>{t("doctor.underlying_rules_title", "Underlying Rules & Principles")}</span>
               </h3>
               <ul className="space-y-1.5 text-xs text-indigo-900 font-medium">
                 {result.keyRules.map((rule, rIdx) => (
                   <li key={rIdx} className="flex items-start gap-2">
                     <span className="text-indigo-500">•</span>
-                    <span>{rule}</span>
+                    <AutoText as="span" text={rule} context="doctor_key_rule" />
                   </li>
                 ))}
               </ul>
@@ -283,7 +288,7 @@ export const GrammarDoctor: React.FC<GrammarDoctorProps> = ({ progress }) => {
             <div className="space-y-3">
               <h3 className="text-base font-bold text-rose-700 flex items-center gap-2">
                 <AlertCircle size={18} />
-                <span>Common Mistakes with this Pattern</span>
+                <span>{t("doctor.common_mistakes_title", "Common Mistakes with this Pattern")}</span>
               </h3>
 
               <div className="space-y-3">
@@ -294,7 +299,7 @@ export const GrammarDoctor: React.FC<GrammarDoctorProps> = ({ progress }) => {
                   >
                     <div className="space-y-1">
                       <span className="text-[10px] font-bold uppercase text-rose-700 bg-rose-100 px-2 py-0.5 rounded">
-                        ❌ Incorrect
+                        ❌ {t("grammar.incorrect", "Incorrect")}
                       </span>
                       <p className="text-xs font-semibold text-slate-800 line-through">
                         "{mistake.incorrect}"
@@ -302,13 +307,13 @@ export const GrammarDoctor: React.FC<GrammarDoctorProps> = ({ progress }) => {
                     </div>
                     <div className="space-y-1">
                       <span className="text-[10px] font-bold uppercase text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded">
-                        ✓ Correct
+                        ✓ {t("grammar.correct", "Correct")}
                       </span>
                       <p className="text-xs font-bold text-emerald-900">
                         "{mistake.correct}"
                       </p>
                       <p className="text-xs text-slate-600 pt-1">
-                        {mistake.why}
+                        <AutoText as="span" text={mistake.why} context="doctor_mistake_why" />
                       </p>
                     </div>
                   </div>
@@ -322,7 +327,7 @@ export const GrammarDoctor: React.FC<GrammarDoctorProps> = ({ progress }) => {
             <div className="space-y-3">
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <BookOpen size={18} className="text-indigo-600" />
-                <span>Native Practice Variations</span>
+                <span>{t("doctor.practice_variations_title", "Native Practice Variations")}</span>
               </h3>
 
               <div className="space-y-2">

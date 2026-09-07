@@ -27,6 +27,7 @@ import { AccentSelector } from "./AccentSelector";
 import { EnglishAccent, getSavedAccent } from "../utils/speechUtils";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
 import { RegionalConceptHelper } from "./RegionalConceptHelper";
+import { AutoText, useAutoText } from "./AutoText";
 import { useTranslation } from "../context/TranslationContext";
 
 interface VocabularyHubProps {
@@ -51,7 +52,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
   const [isFlipped, setIsFlipped] = useState(false);
   const [filterSavedOnly, setFilterSavedOnly] = useState(false);
   const [currentAccent, setCurrentAccent] = useState<EnglishAccent>(getSavedAccent());
-  const { isRegionalActive, currentLanguageConfig } = useTranslation();
+  const { t, isRegionalActive, currentLanguageConfig } = useTranslation();
 
   // Flatten all words or filter
   const allWords = VOCABULARY_COLLECTIONS.flatMap((c) => c.words);
@@ -72,6 +73,8 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
   });
 
   const currentWord: VocabWord | undefined = filteredWords[currentCardIndex];
+  const translatedCurrentDefinition = useAutoText(currentWord?.definition, "vocab_definition");
+  const translatedCurrentCategory = useAutoText(currentWord?.category, "vocab_category");
 
   // Keyboard navigation for flashcards
   useEffect(() => {
@@ -166,14 +169,14 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-black text-slate-900 tracking-tight">
-                Vocabulary Vault & Flashcards
+                {t("vocabulary.hub_title", "Vocabulary Vault & Flashcards")}
               </h1>
               <span className="text-xs px-2.5 py-0.5 bg-emerald-50 text-emerald-700 font-extrabold rounded-md border border-emerald-200">
-                Spaced Repetition
+                {t("vocabulary.spaced_repetition", "Spaced Repetition")}
               </span>
             </div>
             <p className="text-sm text-slate-500 mt-1">
-              High-frequency words, professional idioms, and phrasal verbs with multi-accent audio.
+              {t("vocabulary.hub_subtitle", "High-frequency words, professional idioms, and phrasal verbs with multi-accent audio.")}
             </p>
           </div>
 
@@ -192,7 +195,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
               />
               <input
                 type="text"
-                placeholder="Search words & idioms..."
+                placeholder={t("vocabulary.search_placeholder", "Search words & idioms...")}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -211,7 +214,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
                     ? "bg-white text-indigo-600 shadow-xs font-bold"
                     : "text-slate-500 hover:text-slate-900"
                 }`}
-                title="Flashcard Deck Mode"
+                title={t("vocabulary.flashcard_mode", "Flashcard Deck Mode")}
               >
                 <Grid size={17} />
               </button>
@@ -223,7 +226,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
                     ? "bg-white text-indigo-600 shadow-xs font-bold"
                     : "text-slate-500 hover:text-slate-900"
                 }`}
-                title="Vocabulary List Mode"
+                title={t("vocabulary.list_mode", "Vocabulary List Mode")}
               >
                 <List size={17} />
               </button>
@@ -245,7 +248,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
                 : "bg-slate-100 text-slate-700 hover:bg-slate-200"
             }`}
           >
-            All Collections ({allWords.length})
+            {t("vocabulary.all_collections", "All Collections")} ({allWords.length})
           </button>
           {VOCABULARY_COLLECTIONS.map((col) => (
             <button
@@ -261,7 +264,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
                   : "bg-slate-100 text-slate-700 hover:bg-slate-200"
               }`}
             >
-              {col.title} ({col.words.length})
+              <AutoText as="span" text={col.title} context="vocab_collection_title" /> ({col.words.length})
             </button>
           ))}
 
@@ -278,7 +281,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
             }`}
           >
             <Bookmark size={13} />
-            <span>Saved ({progress.savedVocabIds.length})</span>
+            <span>{t("vocabulary.saved", "Saved")} ({progress.savedVocabIds.length})</span>
           </button>
         </div>
       </div>
@@ -286,9 +289,9 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
       {filteredWords.length === 0 ? (
         <div className="bg-white rounded-3xl p-12 text-center border border-slate-200">
           <BookOpen size={36} className="mx-auto text-slate-300 mb-3" />
-          <h3 className="text-base font-bold text-slate-800">No words found</h3>
+          <h3 className="text-base font-bold text-slate-800">{t("vocabulary.no_words_found", "No words found")}</h3>
           <p className="text-xs text-slate-500 mt-1">
-            Try adjusting your search query or collection filter.
+            {t("vocabulary.adjust_search", "Try adjusting your search query or collection filter.")}
           </p>
         </div>
       ) : viewMode === "flashcards" ? (
@@ -298,19 +301,19 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
           <div className="bg-indigo-50/70 border border-indigo-100/90 rounded-2xl px-4 py-2.5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-medium">
             <div className="flex items-center gap-2">
               <span className="font-extrabold text-indigo-950 bg-white px-2.5 py-1 rounded-lg border border-indigo-200 shadow-xs">
-                Card {currentCardIndex + 1} of {filteredWords.length}
+                {t("vocabulary.card_of", "Card")} {currentCardIndex + 1} {t("common.of", "of")} {filteredWords.length}
               </span>
               <span className="text-slate-600 hidden sm:inline">
-                • {currentWord?.category}
+                • {translatedCurrentCategory}
               </span>
             </div>
             <div className="flex items-center gap-2 text-[11px] text-slate-600">
               <span className="flex items-center gap-1 text-indigo-700 font-bold">
-                <RotateCw size={12} /> Tap Card to Flip
+                <RotateCw size={12} /> {t("vocabulary.tap_to_flip", "Tap Card to Flip")}
               </span>
               <span>•</span>
               <span className="flex items-center gap-1 text-slate-500">
-                <Keyboard size={12} /> Use [←] [→] [Space]
+                <Keyboard size={12} /> {t("vocabulary.keyboard_hint", "Use [←] [→] [Space]")}
               </span>
             </div>
           </div>
@@ -322,7 +325,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
               id="flashcard-quick-prev"
               type="button"
               onClick={handlePrevCard}
-              title="Previous Word (Left Arrow key)"
+              title={t("vocabulary.prev_word_title", "Previous Word (Left Arrow key)")}
               className="p-3 bg-white hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 rounded-2xl border border-slate-200 shadow-sm transition-all active:scale-90 cursor-pointer shrink-0 hidden sm:flex items-center justify-center"
             >
               <ChevronLeft size={22} />
@@ -344,7 +347,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
                   <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] bg-white rounded-3xl p-7 border-2 border-indigo-100 shadow-lg flex flex-col justify-between items-center text-center">
                     <div className="w-full flex items-center justify-between">
                       <span className="px-2.5 py-1 bg-indigo-50 text-indigo-700 font-extrabold text-xs rounded-lg border border-indigo-200">
-                        Level {currentWord.level}
+                        {t("common.level", "Level")} {currentWord.level}
                       </span>
                       <button
                         type="button"
@@ -388,10 +391,10 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
 
                       <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-indigo-600 font-bold px-2">
                         <span className="flex items-center gap-1">
-                          <RotateCw size={12} /> Tap to see definition & example
+                          <RotateCw size={12} /> {t("vocabulary.tap_to_see_definition", "Tap to see definition & example")}
                         </span>
                         <span className="text-slate-400 font-normal text-[11px]">
-                          Card {currentCardIndex + 1}/{filteredWords.length}
+                          {t("vocabulary.card_of", "Card")} {currentCardIndex + 1}/{filteredWords.length}
                         </span>
                       </div>
                     </div>
@@ -401,7 +404,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
                   <div className="absolute inset-0 w-full h-full [backface-visibility:hidden] [transform:rotateY(180deg)] bg-gradient-to-br from-indigo-950 via-slate-900 to-indigo-900 rounded-3xl p-7 text-white shadow-xl flex flex-col justify-between">
                     <div className="flex items-center justify-between">
                       <span className="text-xs uppercase font-extrabold text-indigo-300 tracking-wide">
-                        {currentWord.category}
+                        {translatedCurrentCategory}
                       </span>
                       <span className="text-xs text-amber-300 font-mono font-bold">
                         {currentWord.partOfSpeech}
@@ -411,17 +414,17 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
                     <div className="space-y-4 my-auto">
                       <div>
                         <span className="text-xs text-indigo-300 font-bold block mb-1">
-                          Definition:
+                          {t("vocabulary.definition_label", "Definition:")}
                         </span>
                         <p className="text-base font-bold text-white leading-snug">
-                          {currentWord.definition}
+                          {translatedCurrentDefinition}
                         </p>
                       </div>
 
                       <div className="p-3 bg-white/10 rounded-2xl border border-white/15">
                         <div className="flex items-center justify-between mb-1">
                           <span className="text-xs text-amber-300 font-bold">
-                            Contextual Example:
+                            {t("vocabulary.contextual_example_label", "Contextual Example:")}
                           </span>
                           <AudioButton
                             text={currentWord.exampleSentence}
@@ -437,7 +440,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
 
                       {currentWord.collocations && currentWord.collocations.length > 0 && (
                         <div className="text-xs text-slate-300">
-                          <span className="font-bold text-indigo-200">Collocations: </span>
+                          <span className="font-bold text-indigo-200">{t("vocabulary.collocations_label", "Collocations:")} </span>
                           {currentWord.collocations.join(" • ")}
                         </div>
                       )}
@@ -454,7 +457,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
 
                     <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs text-slate-300">
                       <span className="flex items-center gap-1 text-slate-400">
-                        <RotateCw size={12} /> Tap to flip back
+                        <RotateCw size={12} /> {t("vocabulary.tap_to_flip_back", "Tap to flip back")}
                       </span>
                       <button
                         type="button"
@@ -464,7 +467,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
                         }}
                         className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg flex items-center gap-1 shadow-xs cursor-pointer text-xs transition-colors"
                       >
-                        <span>Next Word</span>
+                        <span>{t("vocabulary.next_word", "Next Word")}</span>
                         <ChevronRight size={13} />
                       </button>
                     </div>
@@ -494,7 +497,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
               className="w-full sm:w-auto px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
             >
               <ChevronLeft size={16} />
-              <span>Previous Word</span>
+              <span>{t("vocabulary.previous_word", "Previous Word")}</span>
             </button>
 
             {currentWord && (
@@ -505,7 +508,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
                 className="w-full sm:w-auto px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl shadow-sm flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
               >
                 <CheckCircle size={15} />
-                <span>Mark Mastered (+20 XP)</span>
+                <span>{t("vocabulary.mark_mastered_xp", "Mark Mastered (+20 XP)")}</span>
               </button>
             )}
 
@@ -515,7 +518,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
               onClick={handleNextCard}
               className="w-full sm:w-auto px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm active:scale-95 transition-all cursor-pointer"
             >
-              <span>Next Word</span>
+              <span>{t("vocabulary.next_word", "Next Word")}</span>
               <ChevronRight size={16} />
             </button>
           </div>
@@ -523,7 +526,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
           {/* Mini-Carousel Dots / Index Strip */}
           <div className="bg-white p-3 rounded-2xl border border-slate-200 flex items-center gap-1.5 overflow-x-auto no-scrollbar justify-center flex-wrap">
             <span className="text-[11px] font-bold text-slate-400 mr-1 shrink-0">
-              Jump to Card:
+              {t("vocabulary.jump_to_card", "Jump to Card:")}
             </span>
             {filteredWords.map((w, idx) => {
               const isActive = idx === currentCardIndex;
@@ -576,7 +579,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
                         </span>
                       </div>
                       <span className="text-xs text-slate-400 italic">
-                        {word.partOfSpeech} • {word.category} (Level {word.level})
+                        {word.partOfSpeech} • <AutoText as="span" text={word.category} context="vocab_category" /> ({t("common.level", "Level")} {word.level})
                       </span>
                     </div>
 
@@ -603,7 +606,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
                   </div>
 
                   <p className="text-xs font-medium text-slate-700 leading-relaxed">
-                    {word.definition}
+                    <AutoText as="span" text={word.definition} context="vocab_definition" />
                   </p>
 
                   <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-xs text-slate-600 italic">
@@ -621,7 +624,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
                   {isMastered ? (
                     <span className="text-emerald-600 font-bold flex items-center gap-1">
-                      <CheckCircle size={14} /> Mastered
+                      <CheckCircle size={14} /> {t("vocabulary.mastered", "Mastered")}
                     </span>
                   ) : (
                     <button
@@ -629,7 +632,7 @@ export const VocabularyHub: React.FC<VocabularyHubProps> = ({
                       onClick={() => handleMarkMastered(word.id)}
                       className="text-indigo-600 hover:text-indigo-800 font-bold flex items-center gap-1 cursor-pointer"
                     >
-                      <CheckCircle size={14} /> Mark Mastered (+20 XP)
+                      <CheckCircle size={14} /> {t("vocabulary.mark_mastered_xp", "Mark Mastered (+20 XP)")}
                     </button>
                   )}
                   <AudioButton

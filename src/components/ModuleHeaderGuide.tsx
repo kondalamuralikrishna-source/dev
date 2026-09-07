@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   ListOrdered,
   ChevronDown,
@@ -10,6 +10,7 @@ import {
   Trophy,
   Lightbulb,
 } from "lucide-react";
+import { useTranslation } from "../context/TranslationContext";
 
 export interface GuideStep {
   title: string;
@@ -52,6 +53,63 @@ export const ModuleHeaderGuide: React.FC<ModuleHeaderGuideProps> = ({
   className = "",
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(defaultExpanded);
+  const { t, isRegionalActive, currentLanguage, translateWithAI } = useTranslation();
+
+  // Every caller of this shared card passes its own module title, steps, and completion goal as
+  // plain English literals. Rather than wiring translation into all ~19 call sites individually,
+  // translate them once here so switching the regional language updates every module's guide
+  // card automatically.
+  const [translated, setTranslated] = useState<{
+    moduleTitle: string;
+    completionGoal: string;
+    steps: GuideStep[];
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setTranslated(null);
+    if (!isRegionalActive) return;
+
+    (async () => {
+      try {
+        const [titleRes, goalRes, ...fieldResults] = await Promise.all([
+          translateWithAI(moduleTitle, "module_guide_title"),
+          translateWithAI(completionGoal, "module_guide_completion_goal"),
+          ...steps.flatMap((step) => [
+            translateWithAI(step.title, "module_guide_step_title"),
+            translateWithAI(step.instruction, "module_guide_step_instruction"),
+            step.tip
+              ? translateWithAI(step.tip, "module_guide_step_tip")
+              : Promise.resolve({ translatedText: "", targetLanguage: currentLanguage }),
+          ]),
+        ]);
+        if (cancelled) return;
+
+        const rebuiltSteps: GuideStep[] = steps.map((step, idx) => ({
+          title: fieldResults[idx * 3]?.translatedText || step.title,
+          instruction: fieldResults[idx * 3 + 1]?.translatedText || step.instruction,
+          tip: step.tip ? fieldResults[idx * 3 + 2]?.translatedText || step.tip : undefined,
+        }));
+
+        setTranslated({
+          moduleTitle: titleRes.translatedText || moduleTitle,
+          completionGoal: goalRes.translatedText || completionGoal,
+          steps: rebuiltSteps,
+        });
+      } catch (err) {
+        console.error("Error translating module guide:", err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isRegionalActive, currentLanguage, moduleTitle, completionGoal, JSON.stringify(steps)]);
+
+  const displayModuleTitle = translated?.moduleTitle || moduleTitle;
+  const displayCompletionGoal = translated?.completionGoal || completionGoal;
+  const displaySteps = translated?.steps || steps;
 
   // Theme-based class mappings
   const themeStyles = {
@@ -147,11 +205,11 @@ export const ModuleHeaderGuide: React.FC<ModuleHeaderGuideProps> = ({
         <div className="flex items-center gap-2.5 flex-wrap">
           <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider border bg-black/20">
             <Compass size={13} className={themeStyles.accentText} />
-            <span>Guide & Completion Flow</span>
+            <span>{t("guide.flow_badge", "Guide & Completion Flow")}</span>
           </div>
 
           <span className="text-xs font-bold text-white/80 hidden sm:inline-block">
-            {moduleTitle}
+            {displayModuleTitle}
           </span>
 
           {estimatedTime && (
@@ -175,7 +233,7 @@ export const ModuleHeaderGuide: React.FC<ModuleHeaderGuideProps> = ({
           aria-expanded={isOpen}
           aria-label={isOpen ? "Hide instructions" : "Show instructions"}
         >
-          <span>{isOpen ? "Hide Guide" : "How to Use"}</span>
+          <span>{isOpen ? t("guide.hide", "Hide Guide") : t("guide.show", "How to Use")}</span>
           {isOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
       </div>
@@ -185,7 +243,7 @@ export const ModuleHeaderGuide: React.FC<ModuleHeaderGuideProps> = ({
         <div className="px-3.5 pb-4 sm:px-4 space-y-3.5 pt-1 border-t border-white/10">
           {/* Steps Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-            {steps.map((step, idx) => (
+            {displaySteps.map((step, idx) => (
               <div
                 key={idx}
                 className={`p-3 rounded-xl border transition-all flex flex-col justify-between ${themeStyles.stepBox}`}
@@ -223,14 +281,14 @@ export const ModuleHeaderGuide: React.FC<ModuleHeaderGuideProps> = ({
             <div className="flex items-center gap-2">
               <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
               <div className="text-xs">
-                <span className="font-bold text-white">How to Complete Section: </span>
-                <span className="text-white/90">{completionGoal}</span>
+                <span className="font-bold text-white">{t("guide.how_to_complete", "How to Complete Section:")} </span>
+                <span className="text-white/90">{displayCompletionGoal}</span>
               </div>
             </div>
 
             <div className="flex items-center gap-1.5 text-[11px] font-bold text-white/70 self-end sm:self-center shrink-0">
               <Trophy size={13} className="text-amber-400" />
-              <span>Milestone Logged Automatically</span>
+              <span>{t("guide.milestone_logged", "Milestone Logged Automatically")}</span>
             </div>
           </div>
         </div>
