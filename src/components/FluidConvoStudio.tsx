@@ -54,6 +54,8 @@ import { ambientAudioEngine } from "../utils/ambientAudioEngine";
 import { speakText, stopSpeaking, createSpeechRecognizer } from "../utils/speechUtils";
 import { SagittalDiagramModal } from "./SagittalDiagramModal";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
+import { AutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 interface FluidConvoStudioProps {
   progress: UserProgress;
@@ -66,6 +68,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
   onAddXp,
   onLogStudyMinutes,
 }) => {
+  const { t } = useTranslation();
   // Configuration state
   const [selectedDialect, setSelectedDialect] = useState<GlobalDialectCode>("indian_english");
   const [selectedScenarioId, setSelectedScenarioId] = useState<string>("scenario_tech_sales_pitch");
@@ -488,21 +491,21 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-teal-300 text-xs font-black tracking-wide border border-teal-500/30">
               <Radio size={14} className="animate-pulse text-teal-400" />
-              <span>Real-Time Conversational Practice</span>
+              <span>{t("fluidconvo.realtime_practice", "Real-Time Conversational Practice")}</span>
               <span className="text-[10px] bg-teal-400 text-slate-950 px-1.5 py-0.2 font-black rounded-md">
-                LIVE
+                {t("fluidconvo.live_badge", "LIVE")}
               </span>
             </div>
 
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white flex items-center gap-3">
-              <span>Live Voice Conversation Studio</span>
+              <span>{t("fluidconvo.studio_title", "Live Voice Conversation Studio")}</span>
               <span className="text-sm font-bold text-slate-300 px-2.5 py-1 bg-slate-800/80 rounded-xl border border-slate-700">
-                Natural Dialogue & Fluency
+                {t("fluidconvo.studio_subtitle", "Natural Dialogue & Fluency")}
               </span>
             </h1>
 
             <p className="text-slate-300 text-xs sm:text-sm max-w-2xl leading-relaxed">
-              Practice spontaneous back-and-forth speaking in real time. Build natural conversational timing, rapid response reflexes, and acoustic clarity across everyday and professional contexts.
+              {t("fluidconvo.studio_desc", "Practice spontaneous back-and-forth speaking in real time. Build natural conversational timing, rapid response reflexes, and acoustic clarity across everyday and professional contexts.")}
             </p>
           </div>
 
@@ -510,17 +513,17 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
           <div className="flex flex-wrap lg:flex-col gap-2 shrink-0 text-xs">
             <div className="px-3 py-1.5 bg-slate-800/80 rounded-xl border border-slate-700 flex items-center gap-2">
               <Shield size={14} className="text-emerald-400" />
-              <span className="text-slate-300">Accent False-Penalty:</span>
+              <span className="text-slate-300">{t("fluidconvo.accent_false_penalty", "Accent False-Penalty:")}</span>
               <span className="font-black text-emerald-400">&lt; 5%</span>
             </div>
             <div className="px-3 py-1.5 bg-slate-800/80 rounded-xl border border-slate-700 flex items-center gap-2">
               <Zap size={14} className="text-amber-400" />
-              <span className="text-slate-300">Turn-Taking Latency:</span>
+              <span className="text-slate-300">{t("fluidconvo.turn_taking_latency", "Turn-Taking Latency:")}</span>
               <span className="font-black text-amber-400">&lt; 450ms</span>
             </div>
             <div className="px-3 py-1.5 bg-slate-800/80 rounded-xl border border-slate-700 flex items-center gap-2">
               <Activity size={14} className="text-teal-400" />
-              <span className="text-slate-300">Interruption Handling:</span>
+              <span className="text-slate-300">{t("fluidconvo.interruption_handling", "Interruption Handling:")}</span>
               <span className="font-black text-teal-400">&gt; 95%</span>
             </div>
           </div>
@@ -570,9 +573,9 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase tracking-wider text-indigo-700 flex items-center gap-1.5">
                   <Globe size={15} />
-                  <span>1. Dialect Calibration</span>
+                  <span>{t("fluidconvo.dialect_calibration_title", "1. Dialect Calibration")}</span>
                 </span>
-                <span className="text-[10px] font-bold text-slate-400">Zero False Penalty</span>
+                <span className="text-[10px] font-bold text-slate-400">{t("fluidconvo.zero_false_penalty", "Zero False Penalty")}</span>
               </div>
 
               <div className="space-y-2">
@@ -597,7 +600,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                         {isSelected && <CheckCircle2 size={15} className="text-indigo-600" />}
                       </div>
                       <p className="text-[11px] text-slate-500 mt-1 leading-snug">
-                        {dialect.description}
+                        <AutoText text={dialect.description} context="fluidconvo_dialect_description" />
                       </p>
                     </button>
                   );
@@ -610,14 +613,14 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black uppercase tracking-wider text-rose-700 flex items-center gap-1.5">
                   <Flame size={15} />
-                  <span>2. Adaptive Friction & Soundscape</span>
+                  <span>{t("fluidconvo.friction_mixer_title", "2. Adaptive Friction & Soundscape")}</span>
                 </span>
-                <span className="text-[10px] font-bold text-slate-400">Real-World Simulator</span>
+                <span className="text-[10px] font-bold text-slate-400">{t("fluidconvo.real_world_simulator", "Real-World Simulator")}</span>
               </div>
 
               {/* Friction Level */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-700 block">Friction Intensity</label>
+                <label className="text-xs font-bold text-slate-700 block">{t("fluidconvo.friction_intensity", "Friction Intensity")}</label>
                 <div className="grid grid-cols-4 gap-1.5">
                   {(["low", "moderate", "high", "hostile"] as ConversationalFrictionLevel[]).map((lvl) => (
                     <button
@@ -630,7 +633,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                           : "bg-slate-100 text-slate-600 hover:bg-slate-200"
                       }`}
                     >
-                      {lvl}
+                      {t(`fluidconvo.friction_${lvl}`, lvl)}
                     </button>
                   ))}
                 </div>
@@ -638,13 +641,13 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
 
               {/* Ambient Sound Presets */}
               <div className="space-y-2 pt-2 border-t border-slate-100">
-                <label className="text-xs font-bold text-slate-700 block">Background Ambient Sound</label>
+                <label className="text-xs font-bold text-slate-700 block">{t("fluidconvo.background_ambient", "Background Ambient Sound")}</label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { id: "coffee_shop", label: "Café Chatter", icon: Coffee },
-                    { id: "busy_airport", label: "Airport Terminal", icon: PlaneTakeoff },
-                    { id: "boardroom", label: "Executive Board", icon: Presentation },
-                    { id: "emergency_dispatch", label: "ER Triage", icon: HeartPulse },
+                    { id: "coffee_shop", label: t("fluidconvo.ambient_cafe", "Café Chatter"), icon: Coffee },
+                    { id: "busy_airport", label: t("fluidconvo.ambient_airport", "Airport Terminal"), icon: PlaneTakeoff },
+                    { id: "boardroom", label: t("fluidconvo.ambient_boardroom", "Executive Board"), icon: Presentation },
+                    { id: "emergency_dispatch", label: t("fluidconvo.ambient_er", "ER Triage"), icon: HeartPulse },
                   ].map((amb) => {
                     const Icon = amb.icon;
                     const isSelected = ambientSound === amb.id;
@@ -701,10 +704,10 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div>
                   <span className="text-xs font-black uppercase tracking-wider text-indigo-700">
-                    3. Select Dynamic Simulation Scenario
+                    {t("fluidconvo.select_scenario_label", "3. Select Dynamic Simulation Scenario")}
                   </span>
                   <h2 className="text-xl font-black text-slate-900 mt-0.5">
-                    Full-Duplex Interactive Scenarios
+                    {t("fluidconvo.scenarios_title", "Full-Duplex Interactive Scenarios")}
                   </h2>
                 </div>
                 <button
@@ -716,7 +719,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                   className="px-3.5 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-black rounded-xl border border-indigo-200 flex items-center gap-1.5 transition-all cursor-pointer"
                 >
                   <Layers size={14} />
-                  <span>Mouth/Tongue Sagittal Guide</span>
+                  <span>{t("fluidconvo.sagittal_guide", "Mouth/Tongue Sagittal Guide")}</span>
                 </button>
               </div>
 
@@ -745,15 +748,17 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                               CEFR {sc.level}
                             </span>
                             <span className="text-[11px] font-bold text-slate-500">
-                              {sc.category}
+                              <AutoText text={sc.category} context="fluidconvo_scenario_category" />
                             </span>
                           </div>
                           {isSelected && <CheckCircle2 size={16} className="text-indigo-600 shrink-0" />}
                         </div>
 
-                        <h3 className="text-sm font-black text-slate-900">{sc.title}</h3>
+                        <h3 className="text-sm font-black text-slate-900">
+                          <AutoText text={sc.title} context="fluidconvo_scenario_title" />
+                        </h3>
                         <p className="text-xs text-slate-600 line-clamp-2 leading-relaxed">
-                          {sc.briefing}
+                          <AutoText text={sc.briefing} context="fluidconvo_scenario_briefing" />
                         </p>
                       </div>
 
@@ -768,7 +773,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                             {sc.interlocutorName}
                           </span>
                           <span className="text-[10px] text-slate-500 block truncate">
-                            {sc.interlocutorRole}
+                            <AutoText text={sc.interlocutorRole} context="fluidconvo_interlocutor_role" />
                           </span>
                         </div>
                       </div>
@@ -787,21 +792,21 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                       className="w-10 h-10 rounded-xl object-cover border border-slate-700"
                     />
                     <div>
-                      <h4 className="text-sm font-black text-white">{activeScenario.title}</h4>
+                      <h4 className="text-sm font-black text-white"><AutoText text={activeScenario.title} context="fluidconvo_scenario_title" /></h4>
                       <p className="text-xs text-slate-400">
-                        Interlocutor: {activeScenario.interlocutorName} ({activeScenario.interlocutorRole})
+                        {t("fluidconvo.interlocutor_label", "Interlocutor:")} {activeScenario.interlocutorName} (<AutoText text={activeScenario.interlocutorRole} context="fluidconvo_interlocutor_role" />)
                       </p>
                     </div>
                   </div>
                   <span className="text-xs font-extrabold px-2.5 py-1 rounded-lg bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                    Dialect: {activeDialectProfile.name.split(" ")[0]}
+                    {t("fluidconvo.dialect_label", "Dialect:")} {activeDialectProfile.name.split(" ")[0]}
                   </span>
                 </div>
 
                 {/* Target Minimal Pairs to Watch */}
                 <div className="space-y-1.5">
                   <span className="text-[11px] font-black uppercase tracking-wider text-amber-400">
-                    Phonetic Intent Safeguards (Minimal Pairs Monitored):
+                    {t("fluidconvo.phonetic_safeguards", "Phonetic Intent Safeguards (Minimal Pairs Monitored):")}
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {activeScenario.minimalPairsToWatch.map((mp, idx) => (
@@ -825,7 +830,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                 <div className="pt-2 flex items-center justify-between border-t border-slate-800">
                   <div className="text-xs text-slate-400 flex items-center gap-1.5">
                     <Info size={14} className="text-indigo-400 shrink-0" />
-                    <span>Microphone will activate automatically for natural full-duplex turn-taking.</span>
+                    <span>{t("fluidconvo.mic_auto_note", "Microphone will activate automatically for natural full-duplex turn-taking.")}</span>
                   </div>
                   <button
                     id="btn-launch-fluidconvo-session"
@@ -834,7 +839,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                     className="px-6 py-3 bg-gradient-to-r from-teal-500 to-indigo-600 hover:from-teal-400 hover:to-indigo-500 text-white font-black text-sm rounded-2xl shadow-lg shadow-indigo-500/25 flex items-center gap-2 active:scale-95 transition-all cursor-pointer"
                   >
                     <Play size={16} className="fill-white" />
-                    <span>Launch Full-Duplex Simulator</span>
+                    <span>{t("fluidconvo.launch_simulator", "Launch Full-Duplex Simulator")}</span>
                   </button>
                 </div>
               </div>
@@ -868,15 +873,15 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                     <h3 className="text-sm font-black text-white flex items-center gap-1.5">
                       <span>{activeScenario.interlocutorName}</span>
                       <span className="text-[10px] font-extrabold px-2 py-0.2 rounded-md bg-slate-800 text-slate-300">
-                        {isAiSpeaking ? "Speaking..." : isAiProcessing ? "Thinking..." : "Listening..."}
+                        {isAiSpeaking ? t("fluidconvo.speaking", "Speaking...") : isAiProcessing ? t("fluidconvo.thinking", "Thinking...") : t("fluidconvo.listening", "Listening...")}
                       </span>
                     </h3>
-                    <p className="text-xs text-slate-400">{activeScenario.interlocutorRole}</p>
+                    <p className="text-xs text-slate-400"><AutoText text={activeScenario.interlocutorRole} context="fluidconvo_interlocutor_role" /></p>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Dialect Filter</span>
+                  <span className="text-[10px] uppercase font-bold text-slate-400 block">{t("fluidconvo.dialect_filter", "Dialect Filter")}</span>
                   <span className="text-xs font-black text-teal-400">{activeDialectProfile.flag} {activeDialectProfile.name.split(" ")[0]}</span>
                 </div>
               </div>
@@ -893,17 +898,17 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                 <div className="w-full flex items-center justify-between mt-2 pt-2 border-t border-slate-800/60 text-[11px]">
                   <div className="flex items-center gap-1.5 text-slate-400">
                     <Clock size={12} className="text-amber-400" />
-                    <span>Turn Latency:</span>
+                    <span>{t("fluidconvo.turn_latency", "Turn Latency:")}</span>
                     <span className="font-black text-amber-400">{liveLatencyMs}ms</span>
                     <span className="text-[9px] text-emerald-400 font-bold bg-emerald-950/60 px-1.5 py-0.2 rounded">
-                      &lt; 450ms Optimal
+                      {t("fluidconvo.optimal_450ms", "< 450ms Optimal")}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-1.5 text-slate-400">
                     <Radio size={12} className="text-teal-400" />
-                    <span>Friction:</span>
-                    <span className="font-black text-rose-400 capitalize">{frictionLevel}</span>
+                    <span>{t("fluidconvo.friction_label", "Friction:")}</span>
+                    <span className="font-black text-rose-400 capitalize">{t(`fluidconvo.friction_${frictionLevel}`, frictionLevel)}</span>
                   </div>
                 </div>
               </div>
@@ -912,14 +917,14 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
               {activeFrictionEvent && (
                 <div className="p-3 bg-rose-950/80 border border-rose-600/60 rounded-2xl text-xs text-rose-200 flex items-center gap-2 animate-in fade-in zoom-in-95">
                   <AlertCircle size={16} className="text-rose-400 shrink-0" />
-                  <span>{activeFrictionEvent}</span>
+                  <span><AutoText text={activeFrictionEvent} context="fluidconvo_friction_event" /></span>
                 </div>
               )}
 
               {/* Backchannel live token chips */}
               <div className="space-y-1.5">
                 <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
-                  Real-Time Backchanneling Cues:
+                  {t("fluidconvo.backchannel_cues_label", "Real-Time Backchanneling Cues:")}
                 </span>
                 <div className="flex flex-wrap gap-1.5">
                   {backchannelCues.length > 0 ? (
@@ -932,7 +937,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                       </span>
                     ))
                   ) : (
-                    <span className="text-xs text-slate-500 italic">Streaming natural backchannel tokens...</span>
+                    <span className="text-xs text-slate-500 italic">{t("fluidconvo.streaming_tokens", "Streaming natural backchannel tokens...")}</span>
                   )}
                 </div>
               </div>
@@ -946,7 +951,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                     className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm rounded-2xl shadow-lg shadow-emerald-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
                   >
                     <Mic size={18} className="animate-pulse" />
-                    <span>Transmitting (Click to Send Turn)</span>
+                    <span>{t("fluidconvo.transmitting", "Transmitting (Click to Send Turn)")}</span>
                   </button>
                 ) : (
                   <button
@@ -956,7 +961,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                     className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white font-black text-sm rounded-2xl shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95"
                   >
                     <Mic size={18} />
-                    <span>Activate Microphone</span>
+                    <span>{t("fluidconvo.activate_mic", "Activate Microphone")}</span>
                   </button>
                 )}
 
@@ -966,7 +971,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                   className="px-4 py-3 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 font-bold text-xs rounded-2xl border border-rose-500/40 flex items-center gap-1.5 cursor-pointer transition-all"
                 >
                   <Square size={14} className="fill-rose-400" />
-                  <span>Conclude</span>
+                  <span>{t("fluidconvo.conclude", "Conclude")}</span>
                 </button>
               </div>
             </div>
@@ -979,18 +984,18 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                 <div className="flex items-center gap-2">
                   <Activity size={16} className="text-indigo-600" />
                   <h3 className="text-sm font-black text-slate-900">
-                    Pragmatic Transcript Heatmap
+                    {t("fluidconvo.heatmap_title", "Pragmatic Transcript Heatmap")}
                   </h3>
                 </div>
                 <div className="flex items-center gap-3 text-[11px] font-bold">
                   <span className="flex items-center gap-1 text-emerald-700">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500" /> Intelligible
+                    <span className="w-2 h-2 rounded-full bg-emerald-500" /> {t("fluidconvo.legend_intelligible", "Intelligible")}
                   </span>
                   <span className="flex items-center gap-1 text-amber-700">
-                    <span className="w-2 h-2 rounded-full bg-amber-500" /> Dialect Preserved
+                    <span className="w-2 h-2 rounded-full bg-amber-500" /> {t("fluidconvo.legend_dialect_preserved", "Dialect Preserved")}
                   </span>
                   <span className="flex items-center gap-1 text-rose-700">
-                    <span className="w-2 h-2 rounded-full bg-rose-500" /> Minimal-Pair Shift
+                    <span className="w-2 h-2 rounded-full bg-rose-500" /> {t("fluidconvo.legend_minimal_pair_shift", "Minimal-Pair Shift")}
                   </span>
                 </div>
               </div>
@@ -1018,14 +1023,14 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                           {/* Turn Diagnostic Badges */}
                           <div className="flex flex-wrap items-center justify-end gap-1.5 text-[10px] font-bold">
                             <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md">
-                              Latency: {turn.turnTakingLatencyMs}ms
+                              {t("fluidconvo.latency_label", "Latency:")} {turn.turnTakingLatencyMs}ms
                             </span>
                             <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md">
-                              Semantic Score: {turn.semanticIntelligibilityScore}%
+                              {t("fluidconvo.semantic_score_label", "Semantic Score:")} {turn.semanticIntelligibilityScore}%
                             </span>
                             {turn.dialectPreservedBonus && (
                               <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 rounded-md">
-                                ✓ Dialect Calibrated
+                                ✓ {t("fluidconvo.dialect_calibrated", "Dialect Calibrated")}
                               </span>
                             )}
                           </div>
@@ -1039,7 +1044,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                                   className="flex items-center justify-between text-xs text-rose-900"
                                 >
                                   <span>
-                                    ⚠️ Shift: <strong>{shift.spokenWord}</strong> vs{" "}
+                                    ⚠️ {t("fluidconvo.shift_label", "Shift:")} <strong>{shift.spokenWord}</strong> {t("fluidconvo.vs_label", "vs")}{" "}
                                     <strong>{shift.intendedWord}</strong> ({shift.phonemicContrast})
                                   </span>
                                   <button
@@ -1047,7 +1052,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                                     onClick={() => openSagittalForShift(shift.sagittalKey)}
                                     className="text-[10px] font-black underline text-rose-700 hover:text-rose-900 cursor-pointer"
                                   >
-                                    View Tongue Diagram
+                                    {t("fluidconvo.view_tongue_diagram", "View Tongue Diagram")}
                                   </button>
                                 </div>
                               ))}
@@ -1093,7 +1098,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                   <div className="flex justify-start">
                     <div className="p-3 bg-slate-100 text-slate-600 rounded-2xl rounded-tl-none text-xs flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-indigo-600 animate-bounce" />
-                      <span>{activeScenario.interlocutorName} is formulating response...</span>
+                      <span>{activeScenario.interlocutorName} {t("fluidconvo.formulating_response", "is formulating response...")}</span>
                     </div>
                   </div>
                 )}
@@ -1112,19 +1117,19 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full text-xs font-black mb-2">
                   <Award size={14} className="text-emerald-600" />
-                  <span>FluidConvo Diagnostic Assessment Report</span>
+                  <span>{t("fluidconvo.report_badge", "FluidConvo Diagnostic Assessment Report")}</span>
                 </div>
                 <h2 className="text-2xl font-black text-slate-900">
-                  {sessionReport.scenarioTitle}
+                  <AutoText text={sessionReport.scenarioTitle} context="fluidconvo_scenario_title" />
                 </h2>
                 <p className="text-xs text-slate-500 mt-1">
-                  Dialect Calibrated: {activeDialectProfile.name} • Total Turns: {sessionReport.totalTurns}
+                  {t("fluidconvo.dialect_calibrated_label", "Dialect Calibrated:")} {activeDialectProfile.name} • {t("fluidconvo.total_turns_label", "Total Turns:")} {sessionReport.totalTurns}
                 </p>
               </div>
 
               <div className="flex items-center gap-3">
                 <div className="px-4 py-2 bg-indigo-50 border border-indigo-100 rounded-2xl text-center">
-                  <span className="text-[10px] uppercase font-extrabold text-indigo-600 block">XP Awarded</span>
+                  <span className="text-[10px] uppercase font-extrabold text-indigo-600 block">{t("fluidconvo.xp_awarded", "XP Awarded")}</span>
                   <span className="text-lg font-black text-indigo-900">+{sessionReport.xpEarned} XP</span>
                 </div>
                 <button
@@ -1132,7 +1137,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                   onClick={() => setSessionReport(null)}
                   className="px-5 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-2xl shadow-md cursor-pointer transition-all active:scale-95"
                 >
-                  Start New Session
+                  {t("fluidconvo.start_new_session", "Start New Session")}
                 </button>
               </div>
             </div>
@@ -1140,35 +1145,35 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
             {/* Core Metrics Bento Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center">
-                <span className="text-xs text-slate-500 font-bold block">Semantic Intelligibility</span>
+                <span className="text-xs text-slate-500 font-bold block">{t("fluidconvo.metric_semantic", "Semantic Intelligibility")}</span>
                 <span className="text-2xl font-black text-emerald-600 mt-1 block">
                   {sessionReport.overallIntelligibilityScore}%
                 </span>
-                <span className="text-[10px] text-slate-400">Primary Intent Passed</span>
+                <span className="text-[10px] text-slate-400">{t("fluidconvo.metric_semantic_sub", "Primary Intent Passed")}</span>
               </div>
 
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center">
-                <span className="text-xs text-slate-500 font-bold block">Accent Penalty-Free</span>
+                <span className="text-xs text-slate-500 font-bold block">{t("fluidconvo.metric_accent", "Accent Penalty-Free")}</span>
                 <span className="text-2xl font-black text-indigo-600 mt-1 block">
                   {sessionReport.accentPenaltyFreeScore}%
                 </span>
-                <span className="text-[10px] text-slate-400">Authentic Prosody Preserved</span>
+                <span className="text-[10px] text-slate-400">{t("fluidconvo.metric_accent_sub", "Authentic Prosody Preserved")}</span>
               </div>
 
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center">
-                <span className="text-xs text-slate-500 font-bold block">Turn-Taking Latency</span>
+                <span className="text-xs text-slate-500 font-bold block">{t("fluidconvo.metric_latency", "Turn-Taking Latency")}</span>
                 <span className="text-2xl font-black text-amber-600 mt-1 block">
                   {sessionReport.avgTurnTakingLatencyMs}ms
                 </span>
-                <span className="text-[10px] text-emerald-600 font-bold">Target &lt; 450ms Met</span>
+                <span className="text-[10px] text-emerald-600 font-bold">{t("fluidconvo.metric_latency_sub", "Target < 450ms Met")}</span>
               </div>
 
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 text-center">
-                <span className="text-xs text-slate-500 font-bold block">Interruption Defense</span>
+                <span className="text-xs text-slate-500 font-bold block">{t("fluidconvo.metric_interruption", "Interruption Defense")}</span>
                 <span className="text-2xl font-black text-teal-600 mt-1 block">
                   {sessionReport.interruptionHandlingRate}%
                 </span>
-                <span className="text-[10px] text-slate-400">Friction Composure</span>
+                <span className="text-[10px] text-slate-400">{t("fluidconvo.metric_interruption_sub", "Friction Composure")}</span>
               </div>
             </div>
 
@@ -1177,11 +1182,11 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
               <div className="flex items-center gap-2">
                 <Globe size={18} className="text-teal-400" />
                 <h4 className="text-sm font-black text-white">
-                  Regional Dialect Verification ({activeDialectProfile.name})
+                  {t("fluidconvo.dialect_verification", "Regional Dialect Verification")} ({activeDialectProfile.name})
                 </h4>
               </div>
               <p className="text-xs text-slate-300 leading-relaxed">
-                {sessionReport.dialectPreservationPraise}
+                <AutoText text={sessionReport.dialectPreservationPraise} context="fluidconvo_dialect_praise" />
               </p>
             </div>
 
@@ -1191,7 +1196,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
               <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-3">
                 <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-2">
                   <CheckCircle2 size={15} className="text-emerald-600" />
-                  <span>Actionable Pedagogical Takeaways</span>
+                  <span>{t("fluidconvo.actionable_takeaways", "Actionable Pedagogical Takeaways")}</span>
                 </h4>
                 <div className="space-y-2">
                   {sessionReport.pedagogicalAdvice.map((tip, idx) => (
@@ -1199,7 +1204,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                       <span className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5">
                         {idx + 1}
                       </span>
-                      <span>{tip}</span>
+                      <span><AutoText text={tip} context="fluidconvo_pedagogical_tip" /></span>
                     </div>
                   ))}
                 </div>
@@ -1210,7 +1215,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                 <div className="flex items-center justify-between">
                   <h4 className="text-xs font-black uppercase tracking-wider text-slate-900 flex items-center gap-2">
                     <Layers size={15} className="text-indigo-600" />
-                    <span>Minimal-Pair Phonetic Breakdowns</span>
+                    <span>{t("fluidconvo.minimal_pair_breakdowns", "Minimal-Pair Phonetic Breakdowns")}</span>
                   </h4>
                   <button
                     type="button"
@@ -1220,7 +1225,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                     }}
                     className="text-[11px] font-bold text-indigo-600 hover:underline cursor-pointer"
                   >
-                    Open Full Sagittal Guide →
+                    {t("fluidconvo.open_sagittal_guide", "Open Full Sagittal Guide →")}
                   </button>
                 </div>
 
@@ -1233,11 +1238,11 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
                       <div className="flex items-center justify-between">
                         <span className="font-black text-slate-900">{shift.phonemicContrast}</span>
                         <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                          {shift.severity === "acceptable-dialect-variation" ? "✓ Accepted Dialect" : "⚠️ Meaning-Altering"}
+                          {shift.severity === "acceptable-dialect-variation" ? t("fluidconvo.accepted_dialect", "✓ Accepted Dialect") : t("fluidconvo.meaning_altering", "⚠️ Meaning-Altering")}
                         </span>
                       </div>
-                      <p className="text-slate-600 text-[11px]">{shift.explanation}</p>
-                      <p className="text-indigo-700 text-[11px] font-semibold">Tip: {shift.articulatoryFix}</p>
+                      <p className="text-slate-600 text-[11px]"><AutoText text={shift.explanation} context="fluidconvo_shift_explanation" /></p>
+                      <p className="text-indigo-700 text-[11px] font-semibold">{t("fluidconvo.tip_label", "Tip:")} <AutoText text={shift.articulatoryFix} context="fluidconvo_articulatory_fix" /></p>
                     </div>
                   ))}
                 </div>

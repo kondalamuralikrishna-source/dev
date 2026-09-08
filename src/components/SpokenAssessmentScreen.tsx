@@ -30,6 +30,8 @@ import { evaluatePromptTranscriptRelevancy } from "../utils/vectorSimilarityUtil
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
 import { FlaggedPassageDrillDownModal } from "./FlaggedPassageDrillDownModal";
 import { RegionalConceptHelper } from "./RegionalConceptHelper";
+import { AutoText, useAutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 interface SpokenAssessmentScreenProps {
   currentUser: UserAccount | null;
@@ -55,6 +57,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
   onCancel,
   initialResult,
 }) => {
+  const { t } = useTranslation();
   const [currentTaskIndex, setCurrentTaskIndex] = useState<number>(0);
   const [isRecording, setIsRecording] = useState<boolean>(false);
   const [recordingSeconds, setRecordingSeconds] = useState<number>(0);
@@ -79,6 +82,9 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
   const currentTask: SpokenTaskPrompt = SPOKEN_ASSESSMENT_TASKS[currentTaskIndex] || SPOKEN_ASSESSMENT_TASKS[0];
   const totalTasks = SPOKEN_ASSESSMENT_TASKS.length;
   const currentResponse = recordedResponses[currentTask.id];
+  // Hooks must run unconditionally before the early `if (assessmentResult)` return below.
+  const translatedTaskTitle = useAutoText(currentTask.title, "spoken_assessment_task_title");
+  const translatedContextHint = useAutoText(currentTask.contextHint, "spoken_assessment_context_hint");
 
   // Initialize Speech Recognition if supported in browser for live transcript feedback
   useEffect(() => {
@@ -555,31 +561,31 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                   </div>
                   <span className="text-xs font-black uppercase tracking-widest text-teal-300 flex items-center gap-1.5 bg-teal-950/60 px-3 py-1 rounded-full border border-teal-500/30">
                     <Award className="text-amber-400" size={15} />
-                    <span>Official CEFR Oral Proficiency Diagnostic</span>
+                    <span>{t("spoken.official_diagnostic_badge", "Official CEFR Oral Proficiency Diagnostic")}</span>
                   </span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-                  Spoken English CEFR Assessment Report
+                  {t("spoken.report_title", "Spoken English CEFR Assessment Report")}
                 </h1>
                 <p className="text-sm text-slate-300 mt-1">
-                  Comprehensive Applied Linguistics diagnosis evaluated across 5 core CEFR parameters.
+                  {t("spoken.report_subtitle", "Comprehensive Applied Linguistics diagnosis evaluated across 5 core CEFR parameters.")}
                 </p>
               </div>
 
               {/* CEFR Band Spotlight Badge */}
               <div className="flex flex-col items-center justify-center p-5 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 min-w-[170px] text-center shadow-lg">
-                <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">Diagnosed CEFR Band</span>
+                <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider">{t("spoken.diagnosed_band", "Diagnosed CEFR Band")}</span>
                 <span className="text-5xl font-black text-amber-400 my-1">{band}</span>
                 <span className="text-xs font-bold text-teal-200">
-                  {band === "A1" && "A1: Breakthrough"}
-                  {band === "A2" && "A2: Waystage"}
-                  {band === "B1" && "B1: Threshold"}
-                  {band === "B2" && "B2: Vantage"}
-                  {band === "C1" && "C1: Effective Operational"}
-                  {band === "C2" && "C2: Mastery / Oratorical"}
+                  {band === "A1" && t("spoken.band_a1", "A1: Breakthrough")}
+                  {band === "A2" && t("spoken.band_a2", "A2: Waystage")}
+                  {band === "B1" && t("spoken.band_b1", "B1: Threshold")}
+                  {band === "B2" && t("spoken.band_b2", "B2: Vantage")}
+                  {band === "C1" && t("spoken.band_c1", "C1: Effective Operational")}
+                  {band === "C2" && t("spoken.band_c2", "C2: Mastery / Oratorical")}
                 </span>
                 <div className="mt-2 text-[10px] text-blue-200 bg-blue-900/50 px-2 py-0.5 rounded-full border border-blue-400/30">
-                  {confidencePct}% Confidence Score
+                  {confidencePct}% {t("spoken.confidence_score", "Confidence Score")}
                 </div>
               </div>
             </div>
@@ -606,7 +612,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                       <ShieldCheck className="text-emerald-600 dark:text-emerald-400" size={18} />
                     )}
                     <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">
-                      Phase 1: Task Relevancy & Discourse Authenticity Audit
+                      {t("spoken.phase1_audit_title", "Phase 1: Task Relevancy & Discourse Authenticity Audit")}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -618,11 +624,11 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                           : "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/60 dark:text-emerald-200"
                       }`}
                     >
-                      Relevancy Score: {assessmentResult.authenticity_audit.relevancy_score_out_of_10}/10
+                      {t("spoken.relevancy_score", "Relevancy Score:")} {assessmentResult.authenticity_audit.relevancy_score_out_of_10}/10
                     </span>
                     {assessmentResult.authenticity_audit.cap_applied && (
                       <span className="text-[11px] font-black bg-rose-600 text-white px-2.5 py-0.5 rounded-full shadow-sm">
-                        CAPPED AT A1
+                        {t("spoken.capped_at_a1", "CAPPED AT A1")}
                       </span>
                     )}
                   </div>
@@ -630,7 +636,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
 
                 {assessmentResult.authenticity_audit.cap_reason && (
                   <p className="text-xs text-rose-800 dark:text-rose-200 font-medium leading-relaxed mt-1">
-                    ⚠️ {assessmentResult.authenticity_audit.cap_reason}
+                    ⚠️ <AutoText text={assessmentResult.authenticity_audit.cap_reason} context="spoken_cap_reason" />
                   </p>
                 )}
 
@@ -679,7 +685,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                         size={18}
                       />
                       <span className="text-xs font-black uppercase tracking-wider text-slate-900 dark:text-white">
-                        Plagiarism & Academic Integrity Telemetry
+                        {t("spoken.plagiarism_telemetry_title", "Plagiarism & Academic Integrity Telemetry")}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
@@ -692,26 +698,26 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                             : "bg-emerald-100 text-emerald-800 border-emerald-300"
                         }`}
                       >
-                        Risk Level: {plag.risk_level}
+                        {t("spoken.risk_level_label", "Risk Level:")} {plag.risk_level}
                       </span>
                       <span className="text-[11px] font-semibold bg-white dark:bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-                        Similarity: {plag.estimated_similarity_score}
+                        {t("spoken.similarity_label", "Similarity:")} {plag.estimated_similarity_score}
                       </span>
                       <span className="text-[11px] font-semibold bg-white dark:bg-slate-900 px-2.5 py-0.5 rounded-full border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
-                        AI Probability: {plag.ai_generated_probability}
+                        {t("spoken.ai_probability_label", "AI Probability:")} {plag.ai_generated_probability}
                       </span>
                     </div>
                   </div>
 
                   <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
-                    {plag.integrity_verdict}
+                    <AutoText text={plag.integrity_verdict} context="spoken_integrity_verdict" />
                   </p>
 
                   {plag.flagged_passages && plag.flagged_passages.length > 0 && (
                     <div className="mt-3 space-y-2">
                       <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between">
-                        <span>Flagged Segments ({plag.flagged_passages.length})</span>
-                        <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">Click snippet to view improvement tips</span>
+                        <span>{t("spoken.flagged_segments_label", "Flagged Segments")} ({plag.flagged_passages.length})</span>
+                        <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">{t("spoken.click_snippet_hint", "Click snippet to view improvement tips")}</span>
                       </span>
                       <div className="space-y-1.5">
                         {plag.flagged_passages.map((p, idx) => (
@@ -725,12 +731,12 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                                 "{p.text_snippet}"
                               </span>
                               <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 shrink-0 group-hover:underline flex items-center gap-0.5">
-                                <span>Drill Down</span>
+                                <span>{t("spoken.drill_down", "Drill Down")}</span>
                                 <ChevronRight size={12} />
                               </span>
                             </div>
                             <span className="text-slate-600 dark:text-slate-400 text-[11px]">
-                              Reason: {p.reason}
+                              {t("spoken.reason_label", "Reason:")} {p.reason}
                             </span>
                           </div>
                         ))}
@@ -745,28 +751,28 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
                 <Mic size={14} className="text-teal-600" />
-                <span>Audio & Temporal Acoustic Metrics</span>
+                <span>{t("spoken.acoustic_metrics_title", "Audio & Temporal Acoustic Metrics")}</span>
               </h3>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div className="p-3.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <p className="text-[11px] font-bold text-slate-500 uppercase">Speech Rate</p>
+                  <p className="text-[11px] font-bold text-slate-500 uppercase">{t("spoken.speech_rate", "Speech Rate")}</p>
                   <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{metrics.speech_rate_wpm} <span className="text-xs font-semibold text-slate-500">WPM</span></p>
-                  <p className="text-[10px] text-slate-400 mt-1">Target B2-C2: 120-160 WPM</p>
+                  <p className="text-[10px] text-slate-400 mt-1">{t("spoken.target_wpm", "Target B2-C2: 120-160 WPM")}</p>
                 </div>
                 <div className="p-3.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <p className="text-[11px] font-bold text-slate-500 uppercase">Pause Density</p>
+                  <p className="text-[11px] font-bold text-slate-500 uppercase">{t("spoken.pause_density", "Pause Density")}</p>
                   <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{metrics.pause_rate_per_min} <span className="text-xs font-semibold text-slate-500">/60s</span></p>
-                  <p className="text-[10px] text-slate-400 mt-1">Natural discourse pacing</p>
+                  <p className="text-[10px] text-slate-400 mt-1">{t("spoken.natural_pacing", "Natural discourse pacing")}</p>
                 </div>
                 <div className="p-3.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <p className="text-[11px] font-bold text-slate-500 uppercase">Filler Word Ratio</p>
+                  <p className="text-[11px] font-bold text-slate-500 uppercase">{t("spoken.filler_word_ratio", "Filler Word Ratio")}</p>
                   <p className="text-xl font-black text-slate-900 dark:text-white mt-0.5">{metrics.filler_ratio_percent}%</p>
-                  <p className="text-[10px] text-slate-400 mt-1">Low hesitation density</p>
+                  <p className="text-[10px] text-slate-400 mt-1">{t("spoken.low_hesitation", "Low hesitation density")}</p>
                 </div>
                 <div className="p-3.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
-                  <p className="text-[11px] font-bold text-slate-500 uppercase">Phoneme Clarity</p>
+                  <p className="text-[11px] font-bold text-slate-500 uppercase">{t("spoken.phoneme_clarity", "Phoneme Clarity")}</p>
                   <p className="text-xl font-black text-teal-600 dark:text-teal-400 mt-0.5">{metrics.phoneme_accuracy_score}%</p>
-                  <p className="text-[10px] text-slate-400 mt-1">High intelligibility index</p>
+                  <p className="text-[10px] text-slate-400 mt-1">{t("spoken.high_intelligibility", "High intelligibility index")}</p>
                 </div>
               </div>
             </div>
@@ -775,71 +781,71 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
             <div>
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3 flex items-center gap-2">
                 <Brain size={14} className="text-blue-600" />
-                <span>5-Parameter CEFR Diagnostic Breakdown</span>
+                <span>{t("spoken.parameter_breakdown_title", "5-Parameter CEFR Diagnostic Breakdown")}</span>
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* 1. Fluency & Temporal */}
                 <div className="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">1. Fluency & Temporal</span>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{t("spoken.param_fluency", "1. Fluency & Temporal")}</span>
                     <span className="px-2 py-0.5 bg-cyan-100 dark:bg-cyan-900/50 text-cyan-800 dark:text-cyan-300 text-xs font-black rounded-md">
                       {params.fluency_and_temporal.score}
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                    {params.fluency_and_temporal.observations}
+                    <AutoText text={params.fluency_and_temporal.observations} context="spoken_param_observation" />
                   </p>
                 </div>
 
                 {/* 2. Pronunciation & Phonetics */}
                 <div className="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">2. Pronunciation & Phonetics</span>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{t("spoken.param_pronunciation", "2. Pronunciation & Phonetics")}</span>
                     <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-900/50 text-teal-800 dark:text-teal-300 text-xs font-black rounded-md">
                       {params.pronunciation_and_phonetics.score}
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                    {params.pronunciation_and_phonetics.observations}
+                    <AutoText text={params.pronunciation_and_phonetics.observations} context="spoken_param_observation" />
                   </p>
                 </div>
 
                 {/* 3. Lexical Resource */}
                 <div className="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">3. Lexical Resource</span>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{t("spoken.param_lexical", "3. Lexical Resource")}</span>
                     <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-300 text-xs font-black rounded-md">
                       {params.lexical_resource.score}
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                    {params.lexical_resource.observations}
+                    <AutoText text={params.lexical_resource.observations} context="spoken_param_observation" />
                   </p>
                 </div>
 
                 {/* 4. Grammatical Accuracy */}
                 <div className="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">4. Grammatical Accuracy</span>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{t("spoken.param_grammar", "4. Grammatical Accuracy")}</span>
                     <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900/50 text-purple-800 dark:text-purple-300 text-xs font-black rounded-md">
                       {params.grammatical_accuracy.score}
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                    {params.grammatical_accuracy.observations}
+                    <AutoText text={params.grammatical_accuracy.observations} context="spoken_param_observation" />
                   </p>
                 </div>
 
                 {/* 5. Coherence & Cohesion */}
                 <div className="p-4 bg-slate-50 dark:bg-slate-800/80 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2 md:col-span-2 lg:col-span-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">5. Coherence & Cohesion</span>
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">{t("spoken.param_coherence", "5. Coherence & Cohesion")}</span>
                     <span className="px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 text-xs font-black rounded-md">
                       {params.coherence_and_cohesion.score}
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                    {params.coherence_and_cohesion.observations}
+                    <AutoText text={params.coherence_and_cohesion.observations} context="spoken_param_observation" />
                   </p>
                 </div>
               </div>
@@ -849,10 +855,10 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
             <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 space-y-4">
               <div>
                 <h3 className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-2">
-                  Overall Linguistic Diagnosis
+                  {t("spoken.overall_diagnosis", "Overall Linguistic Diagnosis")}
                 </h3>
                 <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
-                  {assessmentResult.overall_feedback || assessmentResult.feedback_summary}
+                  <AutoText text={assessmentResult.overall_feedback || assessmentResult.feedback_summary} context="spoken_overall_feedback" />
                 </p>
               </div>
 
@@ -861,10 +867,10 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-black uppercase tracking-wider text-blue-900 dark:text-blue-200 flex items-center gap-1.5">
                     <Sparkles size={14} className="text-amber-500" />
-                    <span>Unlocked Course Pathway: Level {band} to C2 Mastery</span>
+                    <span>{t("spoken.unlocked_pathway", "Unlocked Course Pathway: Level")} {band} {t("spoken.to_c2_mastery", "to C2 Mastery")}</span>
                   </span>
                   <span className="text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-white/80 dark:bg-slate-900 px-2.5 py-0.5 rounded-full border border-blue-200 dark:border-blue-700">
-                    Active: Level {band}
+                    {t("spoken.active_level", "Active: Level")} {band}
                   </span>
                 </div>
                 <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
@@ -890,12 +896,12 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                           {isUnlocked ? (
                             <>
                               <Unlock size={10} />
-                              <span>{isCurrent ? "Active" : "Unlocked"}</span>
+                              <span>{isCurrent ? t("spoken.active", "Active") : t("spoken.unlocked", "Unlocked")}</span>
                             </>
                           ) : (
                             <>
                               <Lock size={10} />
-                              <span>Locked</span>
+                              <span>{t("spoken.locked", "Locked")}</span>
                             </>
                           )}
                         </div>
@@ -904,7 +910,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                   })}
                 </div>
                 <p className="text-[11px] text-slate-600 dark:text-slate-400">
-                  Course lessons for <strong>Level {band}</strong> are unlocked. Complete all Level {band} lessons and pass the End-of-Level Assessment with ≥ 80% to unlock the subsequent level on your path to C2!
+                  {t("spoken.roadmap_note_prefix", "Course lessons for")} <strong>{t("common.level", "Level")} {band}</strong> {t("spoken.roadmap_note_suffix", "are unlocked. Complete all Level")} {band} {t("spoken.roadmap_note_end", "lessons and pass the End-of-Level Assessment with ≥ 80% to unlock the subsequent level on your path to C2!")}
                 </p>
               </div>
             </div>
@@ -915,7 +921,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                 <div className="flex items-center gap-2 mb-3">
                   <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400" />
                   <h3 className="text-xs font-black uppercase tracking-wider text-emerald-950 dark:text-emerald-200">
-                    What You Did Well (Positive Oral Highlights)
+                    {t("spoken.positive_highlights_title", "What You Did Well (Positive Oral Highlights)")}
                   </h3>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
@@ -925,7 +931,9 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                       className="p-3 bg-white/80 dark:bg-slate-900/80 rounded-xl border border-emerald-100 dark:border-emerald-900/40 text-xs text-emerald-950 dark:text-emerald-100 flex items-start gap-2.5 shadow-sm"
                     >
                       <span className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
-                      <span className="font-medium leading-relaxed">{highlight}</span>
+                      <span className="font-medium leading-relaxed">
+                        <AutoText text={highlight} context="spoken_highlight" />
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -939,11 +947,11 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                   <div className="flex items-center gap-2">
                     <Sparkles size={16} className="text-blue-600 dark:text-blue-400" />
                     <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                      Sentence Structure & Grammar Upgrades
+                      {t("spoken.sentence_upgrades_title", "Sentence Structure & Grammar Upgrades")}
                     </h3>
                   </div>
                   <span className="text-[11px] font-bold text-slate-500">
-                    {assessmentResult.sentence_corrections.length} key linguistic corrections
+                    {assessmentResult.sentence_corrections.length} {t("spoken.key_corrections_suffix", "key linguistic corrections")}
                   </span>
                 </div>
 
@@ -955,11 +963,11 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                     >
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 rounded-md border border-blue-200 dark:border-blue-800">
-                          {corr.grammarRule || "Sentence Structure"}
+                          {corr.grammarRule ? <AutoText text={corr.grammarRule} context="spoken_grammar_rule" /> : t("spoken.sentence_structure", "Sentence Structure")}
                         </span>
                         {corr.errorType && (
                           <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400">
-                            {corr.errorType}
+                            <AutoText text={corr.errorType} context="spoken_error_type" />
                           </span>
                         )}
                       </div>
@@ -967,7 +975,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                       {/* Before / Original */}
                       <div className="p-3 bg-red-50/80 dark:bg-red-950/30 rounded-xl border border-red-200/80 dark:border-red-900/40">
                         <span className="text-[10px] font-black uppercase text-red-700 dark:text-red-400 block mb-1">
-                          Original Spoken Utterance:
+                          {t("spoken.original_utterance", "Original Spoken Utterance:")}
                         </span>
                         <p className="text-xs text-red-900 dark:text-red-200 font-medium italic">
                           "{corr.originalSentence}"
@@ -977,7 +985,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                       {/* After / Corrected */}
                       <div className="p-3 bg-emerald-50/80 dark:bg-emerald-950/30 rounded-xl border border-emerald-200/80 dark:border-emerald-900/40">
                         <span className="text-[10px] font-black uppercase text-emerald-700 dark:text-emerald-400 block mb-1">
-                          Standard CEFR Native Upgrade:
+                          {t("spoken.native_upgrade", "Standard CEFR Native Upgrade:")}
                         </span>
                         <p className="text-xs text-emerald-950 dark:text-emerald-200 font-bold">
                           "{corr.correctedSentence}"
@@ -986,7 +994,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
 
                       {/* Explanation */}
                       <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed bg-white/70 dark:bg-slate-900/60 p-2.5 rounded-lg border border-slate-200/70 dark:border-slate-700/60">
-                        💡 <strong className="text-slate-800 dark:text-slate-200">Why:</strong> {corr.explanation}
+                        💡 <strong className="text-slate-800 dark:text-slate-200">{t("spoken.why_label", "Why:")}</strong> <AutoText text={corr.explanation} context="spoken_correction_explanation" />
                       </p>
                     </div>
                   ))}
@@ -1000,7 +1008,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                 <div className="flex items-center gap-2">
                   <Layers size={16} className="text-teal-600 dark:text-teal-400" />
                   <h3 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-200">
-                    Task-by-Task Oral Assessment Breakdown
+                    {t("spoken.task_breakdown_title", "Task-by-Task Oral Assessment Breakdown")}
                   </h3>
                 </div>
 
@@ -1016,7 +1024,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                             {idx + 1}
                           </span>
                           <span className="text-xs font-bold text-slate-900 dark:text-white">
-                            {qEval.task_prompt || `Task ${idx + 1}`}
+                            {qEval.task_prompt || `${t("spoken.task_prefix", "Task")} ${idx + 1}`}
                           </span>
                         </div>
                         <span
@@ -1030,14 +1038,14 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                               : "bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-950 dark:text-blue-300"
                           }`}
                         >
-                          Task CEFR: {qEval.task_score}
+                          {t("spoken.task_cefr_label", "Task CEFR:")} {qEval.task_score}
                         </span>
                       </div>
 
                       {/* Transcribed text */}
                       <div className="p-3 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800">
                         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
-                          Recorded Transcript:
+                          {t("spoken.recorded_transcript", "Recorded Transcript:")}
                         </span>
                         <p className="text-xs text-slate-700 dark:text-slate-300 italic">
                           "{qEval.transcript}"
@@ -1048,19 +1056,19 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                         <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 rounded-xl border border-emerald-200/60 dark:border-emerald-900/30">
                           <span className="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1 mb-1">
                             <CheckCircle2 size={13} />
-                            <span>Positive Feedback:</span>
+                            <span>{t("spoken.positive_feedback_label", "Positive Feedback:")}</span>
                           </span>
                           <p className="text-slate-700 dark:text-slate-300 text-[11px] leading-relaxed">
-                            {qEval.positive_feedback}
+                            <AutoText text={qEval.positive_feedback} context="spoken_positive_feedback" />
                           </p>
                         </div>
                         <div className="p-3 bg-blue-50/60 dark:bg-blue-950/20 rounded-xl border border-blue-200/60 dark:border-blue-900/30">
                           <span className="font-bold text-blue-800 dark:text-blue-300 flex items-center gap-1 mb-1">
                             <TrendingUp size={13} />
-                            <span>Area for Improvement:</span>
+                            <span>{t("spoken.area_for_improvement_label", "Area for Improvement:")}</span>
                           </span>
                           <p className="text-slate-700 dark:text-slate-300 text-[11px] leading-relaxed">
-                            {qEval.area_for_improvement}
+                            <AutoText text={qEval.area_for_improvement} context="spoken_area_for_improvement" />
                           </p>
                         </div>
                       </div>
@@ -1069,7 +1077,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                       {qEval.model_upgraded_response && (
                         <div className="p-3 bg-amber-50/70 dark:bg-amber-950/20 rounded-xl border border-amber-200/70 dark:border-amber-900/30">
                           <span className="text-[10px] font-black uppercase text-amber-800 dark:text-amber-300 block mb-1">
-                            ✨ Fluent Native Speaker Model Example:
+                            ✨ {t("spoken.model_example", "Fluent Native Speaker Model Example:")}
                           </span>
                           <p className="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
                             "{qEval.model_upgraded_response}"
@@ -1089,14 +1097,14 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                 <div className="flex items-center gap-2 mb-3">
                   <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400" />
                   <h4 className="text-xs font-bold text-emerald-950 dark:text-emerald-200 uppercase tracking-wider">
-                    Key Spoken Strengths
+                    {t("spoken.key_strengths_title", "Key Spoken Strengths")}
                   </h4>
                 </div>
                 <ul className="space-y-2">
                   {(assessmentResult.strengths || []).map((s, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-xs text-emerald-900 dark:text-emerald-200 leading-relaxed">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
-                      <span>{s}</span>
+                      <span><AutoText text={s} context="spoken_strength" /></span>
                     </li>
                   ))}
                 </ul>
@@ -1107,14 +1115,14 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                 <div className="flex items-center gap-2 mb-3">
                   <TrendingUp size={18} className="text-blue-600 dark:text-blue-400" />
                   <h4 className="text-xs font-bold text-blue-950 dark:text-blue-200 uppercase tracking-wider">
-                    Targeted Growth Priorities to Reach C2
+                    {t("spoken.growth_priorities_title", "Targeted Growth Priorities to Reach C2")}
                   </h4>
                 </div>
                 <ul className="space-y-2">
                   {(assessmentResult.areas_for_growth || []).map((g, idx) => (
                     <li key={idx} className="flex items-start gap-2 text-xs text-blue-900 dark:text-blue-200 leading-relaxed">
                       <span className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 shrink-0" />
-                      <span>{g}</span>
+                      <span><AutoText text={g} context="spoken_growth_area" /></span>
                     </li>
                   ))}
                 </ul>
@@ -1133,7 +1141,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                 className="w-full sm:w-auto px-5 py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-bold hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center gap-2 transition-all cursor-pointer"
               >
                 <RotateCcw size={16} />
-                <span>Retake Oral Assessment</span>
+                <span>{t("spoken.retake_assessment", "Retake Oral Assessment")}</span>
               </button>
 
               <button
@@ -1142,7 +1150,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                 onClick={handleEnterLearningPath}
                 className="w-full sm:w-auto px-8 py-3.5 bg-gradient-to-r from-teal-600 via-blue-600 to-purple-600 hover:from-teal-500 hover:to-purple-500 text-white font-extrabold text-sm rounded-xl shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
               >
-                <span>Launch My C2 Course Pathway</span>
+                <span>{t("spoken.launch_pathway", "Launch My C2 Course Pathway")}</span>
                 <ArrowRight size={18} />
               </button>
             </div>
@@ -1202,10 +1210,10 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
         <div>
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">
             <Mic size={14} className="animate-pulse" />
-            <span>Screen 2: Audio-Based CEFR Spoken Assessment</span>
+            <span>{t("spoken.screen2_label", "Screen 2: Audio-Based CEFR Spoken Assessment")}</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-            Task {currentTask.taskNumber} of {totalTasks}: {currentTask.title}
+            {t("spoken.task_of", "Task")} {currentTask.taskNumber} {t("spoken.of_label", "of")} {totalTasks}: {translatedTaskTitle}
           </h2>
         </div>
 
@@ -1241,7 +1249,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
             </span>
           </div>
           <span className="text-xs font-bold text-slate-500 dark:text-slate-400">
-            Target Time: ~{currentTask.suggestedDurationSeconds} seconds
+            {t("spoken.target_time", "Target Time:")} ~{currentTask.suggestedDurationSeconds} {t("spoken.seconds", "seconds")}
           </span>
         </div>
 
@@ -1253,7 +1261,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
             </h3>
             <p className="text-xs text-slate-600 dark:text-slate-400 italic flex items-center gap-1.5">
               <Sparkles size={14} className="text-amber-500 shrink-0" />
-              <span>{currentTask.contextHint}</span>
+              <span>{translatedContextHint}</span>
             </p>
             {/* Regional Translation Scaffold */}
             <RegionalConceptHelper
@@ -1265,7 +1273,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
           {/* Target Vocabulary Suggestions */}
           <div>
             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block mb-2">
-              Recommended High-Level Vocabulary:
+              {t("spoken.recommended_vocab", "Recommended High-Level Vocabulary:")}
             </span>
             <div className="flex flex-wrap gap-1.5">
               {currentTask.suggestedTargetVocabulary.map((word, idx) => (
@@ -1284,8 +1292,8 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
             <div className="p-4 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 rounded-2xl text-xs text-red-700 dark:text-red-300 flex items-start gap-2.5">
               <AlertCircle size={18} className="shrink-0 mt-0.5" />
               <div>
-                <p className="font-bold">Microphone Required</p>
-                <p className="mt-0.5 leading-relaxed">{micPermissionError}</p>
+                <p className="font-bold">{t("spoken.mic_required", "Microphone Required")}</p>
+                <p className="mt-0.5 leading-relaxed">{t("spoken.mic_error_desc", "Microphone access was denied or is unavailable. Please grant microphone permissions in your browser to record your oral assessment.")}</p>
               </div>
             </div>
           )}
@@ -1305,16 +1313,16 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
               {isRecording ? (
                 <div className="flex items-center gap-2 px-3 py-1 bg-red-500/20 border border-red-500/40 rounded-full text-red-400 text-xs font-black animate-pulse">
                   <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
-                  <span>RECORDING LIVE: {recordingSeconds}s</span>
+                  <span>{t("spoken.recording_live", "RECORDING LIVE:")} {recordingSeconds}s</span>
                 </div>
               ) : currentResponse ? (
                 <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/40 rounded-full text-emerald-400 text-xs font-black">
                   <CheckCircle2 size={14} />
-                  <span>AUDIO CAPTURED ({currentResponse.durationSeconds}s)</span>
+                  <span>{t("spoken.audio_captured", "AUDIO CAPTURED")} ({currentResponse.durationSeconds}s)</span>
                 </div>
               ) : (
                 <span className="text-xs text-slate-400 font-bold">
-                  Click 'Record Response' and speak clearly into your microphone
+                  {t("spoken.click_record_hint", "Click 'Record Response' and speak clearly into your microphone")}
                 </span>
               )}
             </div>
@@ -1329,7 +1337,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                   className="px-6 py-3.5 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold text-sm rounded-full shadow-lg shadow-red-600/30 flex items-center gap-2.5 active:scale-95 transition-all cursor-pointer"
                 >
                   <Mic size={20} className="animate-bounce" />
-                  <span>Record Response</span>
+                  <span>{t("spoken.record_response", "Record Response")}</span>
                 </button>
               )}
 
@@ -1341,7 +1349,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                   className="px-6 py-3.5 bg-gradient-to-r from-slate-100 to-slate-200 text-slate-950 hover:bg-white font-extrabold text-sm rounded-full shadow-lg flex items-center gap-2.5 active:scale-95 transition-all cursor-pointer"
                 >
                   <Square size={18} className="fill-slate-950" />
-                  <span>Stop & Save Recording</span>
+                  <span>{t("spoken.stop_save", "Stop & Save Recording")}</span>
                 </button>
               )}
 
@@ -1358,7 +1366,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                     }`}
                   >
                     {isPlayingAudio ? <Pause size={16} /> : <Play size={16} />}
-                    <span>{isPlayingAudio ? "Pause Playback" : "Listen to Recording"}</span>
+                    <span>{isPlayingAudio ? t("spoken.pause_playback", "Pause Playback") : t("spoken.listen_recording", "Listen to Recording")}</span>
                   </button>
 
                   <button
@@ -1368,7 +1376,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                     className="px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer"
                   >
                     <RotateCcw size={14} />
-                    <span>Re-record</span>
+                    <span>{t("spoken.rerecord", "Re-record")}</span>
                   </button>
                 </>
               )}
@@ -1380,16 +1388,16 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                 <div className="flex items-center justify-between">
                   <span className="text-[10px] uppercase font-bold text-teal-400 tracking-wider flex items-center gap-1.5">
                     <Sparkles size={12} className="text-teal-400" />
-                    <span>Transcribed Spoken Language (Review / Verify):</span>
+                    <span>{t("spoken.transcribed_review", "Transcribed Spoken Language (Review / Verify):")}</span>
                   </span>
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] text-slate-400 font-mono">
-                      {(currentResponse.transcript || "").trim().split(/\s+/).filter(Boolean).length} words
+                      {(currentResponse.transcript || "").trim().split(/\s+/).filter(Boolean).length} {t("spoken.words_suffix", "words")}
                     </span>
                     {((currentResponse.transcript || "").trim().split(/\s+/).filter(Boolean).length > 0 &&
                       !/\b(is|are|am|was|were|have|has|had|do|does|did|will|would|can|could|should|went|worked|saw|helped|completed|resolved|managed|organized|built|designed|created|led)\b/i.test(currentResponse.transcript || "")) && (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                        Fragmented (A1)
+                        {t("spoken.fragmented_a1", "Fragmented (A1)")}
                       </span>
                     )}
                   </div>
@@ -1414,11 +1422,11 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                     }));
                   }}
                   rows={3}
-                  placeholder="Your transcribed spoken response will appear here. You can also edit or verify words before proceeding."
+                  placeholder={t("spoken.transcript_placeholder", "Your transcribed spoken response will appear here. You can also edit or verify words before proceeding.")}
                   className="w-full bg-slate-950/80 border border-slate-700/80 rounded-lg p-2.5 text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-teal-500 resize-none font-sans leading-relaxed"
                 />
                 <p className="text-[10px] text-slate-400 italic">
-                  Note: Evaluation rates your actual spoken grammar, sentence structure, and vocabulary breadth.
+                  {t("spoken.evaluation_note", "Note: Evaluation rates your actual spoken grammar, sentence structure, and vocabulary breadth.")}
                 </p>
               </div>
             )}
@@ -1437,7 +1445,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
               }`}
             >
               <ArrowLeft size={16} />
-              <span>Previous Task</span>
+              <span>{t("spoken.previous_task", "Previous Task")}</span>
             </button>
 
             {currentTaskIndex < totalTasks - 1 ? (
@@ -1451,7 +1459,7 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                     : "bg-blue-600 hover:bg-blue-500 text-white shadow-md cursor-pointer active:scale-95"
                 }`}
               >
-                <span>Next Task</span>
+                <span>{t("spoken.next_task", "Next Task")}</span>
                 <ArrowRight size={16} />
               </button>
             ) : (
@@ -1469,12 +1477,12 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
                 {isEvaluating ? (
                   <>
                     <Loader2 size={16} className="animate-spin" />
-                    <span>Analyzing Speech with Gemini AI...</span>
+                    <span>{t("spoken.analyzing_speech", "Analyzing Speech with Gemini AI...")}</span>
                   </>
                 ) : (
                   <>
                     <Sparkles size={16} />
-                    <span>Complete & Diagnose CEFR Band</span>
+                    <span>{t("spoken.complete_diagnose", "Complete & Diagnose CEFR Band")}</span>
                   </>
                 )}
               </button>

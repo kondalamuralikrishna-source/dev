@@ -25,6 +25,8 @@ import { CEFRLevel, UserProgress, SpokenAssessmentEvaluationResponse } from "../
 import { CEFR_MODULE_TIERS, CEFRModuleDescriptor } from "../data/spokenAssessmentData";
 import { CEFR_LEVEL_ORDER, getCEFRLevelIndex, unlockLevel, recordBenchmarkExamPassed } from "../utils/storageUtils";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
+import { AutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 interface AdaptiveModuleConfiguratorProps {
   progress: UserProgress;
@@ -41,6 +43,7 @@ export const AdaptiveModuleConfigurator: React.FC<AdaptiveModuleConfiguratorProp
   onRetakeAssessment,
   onOpenLesson,
 }) => {
+  const { t } = useTranslation();
   const diagnosedBand: CEFRLevel = progress.spokenAssessmentResult?.cefr_band || progress.selectedLevel || "B1";
   const [activeViewLevel, setActiveViewLevel] = useState<CEFRLevel>(diagnosedBand);
   const [completedDrills, setCompletedDrills] = useState<Record<string, boolean>>({});
@@ -119,14 +122,14 @@ export const AdaptiveModuleConfigurator: React.FC<AdaptiveModuleConfiguratorProp
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 bg-amber-400/20 border border-amber-400/40 text-amber-300 rounded-full text-xs font-black uppercase tracking-wider flex items-center gap-1.5">
                 <Sparkles size={13} />
-                Screen 3: Adaptive CEFR Module Configurator
+                {t("adaptive.screen3_label", "Screen 3: Adaptive CEFR Module Configurator")}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-              Personalized Spoken Curriculum for {progress.spokenAssessmentResult?.cefr_band ? `Band ${progress.spokenAssessmentResult.cefr_band}` : "Your Level"}
+              {t("adaptive.personalized_curriculum_for", "Personalized Spoken Curriculum for")} {progress.spokenAssessmentResult?.cefr_band ? `${t("adaptive.band_label", "Band")} ${progress.spokenAssessmentResult.cefr_band}` : t("adaptive.your_level", "Your Level")}
             </h1>
             <p className="text-sm text-slate-300 max-w-2xl leading-relaxed">
-              Based on your oral proficiency assessment, lower levels have been automatically marked as tested out, and your curriculum starts right at your optimal communicative threshold.
+              {t("adaptive.banner_desc", "Based on your oral proficiency assessment, lower levels have been automatically marked as tested out, and your curriculum starts right at your optimal communicative threshold.")}
             </p>
           </div>
 
@@ -134,13 +137,13 @@ export const AdaptiveModuleConfigurator: React.FC<AdaptiveModuleConfiguratorProp
           {progress.spokenAssessmentResult && (
             <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 border border-white/20 flex items-center gap-4 shrink-0 shadow-lg">
               <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 text-slate-950 flex flex-col items-center justify-center font-black shadow-inner">
-                <span className="text-xs uppercase">Band</span>
+                <span className="text-xs uppercase">{t("adaptive.band_label", "Band")}</span>
                 <span className="text-xl leading-none">{progress.spokenAssessmentResult.cefr_band}</span>
               </div>
               <div>
-                <div className="text-xs font-bold text-slate-300">Fluency: {progress.spokenAssessmentResult.fluency_score}%</div>
-                <div className="text-xs font-bold text-slate-300">Grammar: {progress.spokenAssessmentResult.grammar_score}%</div>
-                <div className="text-xs font-bold text-slate-300">Vocab: {progress.spokenAssessmentResult.vocabulary_score}%</div>
+                <div className="text-xs font-bold text-slate-300">{t("adaptive.fluency_label", "Fluency:")} {progress.spokenAssessmentResult.fluency_score}%</div>
+                <div className="text-xs font-bold text-slate-300">{t("adaptive.grammar_label", "Grammar:")} {progress.spokenAssessmentResult.grammar_score}%</div>
+                <div className="text-xs font-bold text-slate-300">{t("adaptive.vocab_label", "Vocab:")} {progress.spokenAssessmentResult.vocabulary_score}%</div>
               </div>
             </div>
           )}
@@ -155,7 +158,7 @@ export const AdaptiveModuleConfigurator: React.FC<AdaptiveModuleConfiguratorProp
               className="text-xs text-slate-400 hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
             >
               <RotateCcw size={14} />
-              <span>Retake Spoken Assessment</span>
+              <span>{t("adaptive.retake_assessment", "Retake Spoken Assessment")}</span>
             </button>
           </div>
         )}
@@ -198,9 +201,9 @@ export const AdaptiveModuleConfigurator: React.FC<AdaptiveModuleConfiguratorProp
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-extrabold text-slate-900 dark:text-white uppercase tracking-wider flex items-center gap-2">
             <Layers size={18} className="text-indigo-600 dark:text-indigo-400" />
-            <span>CEFR Proficiency Ladder (A1 to C2)</span>
+            <span>{t("adaptive.cefr_ladder_title", "CEFR Proficiency Ladder (A1 to C2)")}</span>
           </h2>
-          <span className="text-xs text-slate-500 font-medium">Click any level to view curriculum & drills</span>
+          <span className="text-xs text-slate-500 font-medium">{t("adaptive.click_level_hint", "Click any level to view curriculum & drills")}</span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -245,16 +248,16 @@ export const AdaptiveModuleConfigurator: React.FC<AdaptiveModuleConfiguratorProp
                   <div className="text-xs font-bold text-slate-900 dark:text-white line-clamp-1">{tierData.badge}</div>
                   <div className="text-[11px] font-semibold mt-1">
                     {status === "tested_out" && (
-                      <span className="text-emerald-600 dark:text-emerald-400">Tested Out ✓</span>
+                      <span className="text-emerald-600 dark:text-emerald-400">{t("adaptive.tested_out", "Tested Out ✓")}</span>
                     )}
                     {status === "active" && (
-                      <span className="text-indigo-600 dark:text-indigo-400 font-bold">Active Start ★</span>
+                      <span className="text-indigo-600 dark:text-indigo-400 font-bold">{t("adaptive.active_start", "Active Start ★")}</span>
                     )}
                     {status === "unlocked" && (
-                      <span className="text-blue-600 dark:text-blue-400">Unlocked</span>
+                      <span className="text-blue-600 dark:text-blue-400">{t("adaptive.unlocked", "Unlocked")}</span>
                     )}
                     {status === "locked" && (
-                      <span className="text-slate-400 dark:text-slate-500">Queued</span>
+                      <span className="text-slate-400 dark:text-slate-500">{t("adaptive.queued", "Queued")}</span>
                     )}
                   </div>
                 </div>
@@ -280,20 +283,20 @@ export const AdaptiveModuleConfigurator: React.FC<AdaptiveModuleConfiguratorProp
                 </span>
                 {getTierStatus(activeViewLevel).status === "tested_out" && (
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                    <CheckCircle2 size={14} /> Tested Out (Credit Granted)
+                    <CheckCircle2 size={14} /> {t("adaptive.tested_out_credit", "Tested Out (Credit Granted)")}
                   </span>
                 )}
                 {getTierStatus(activeViewLevel).status === "active" && (
                   <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
-                    <Zap size={14} /> Recommended Active Starting Tier
+                    <Zap size={14} /> {t("adaptive.recommended_start_tier", "Recommended Active Starting Tier")}
                   </span>
                 )}
               </div>
               <h3 className="text-2xl font-black text-slate-900 dark:text-white">
-                {activeModuleData.name}
+                <AutoText text={activeModuleData.name} context="adaptive_module_name" />
               </h3>
               <p className="text-sm text-slate-600 dark:text-slate-300 mt-1 max-w-3xl">
-                {activeModuleData.tagline}
+                <AutoText text={activeModuleData.tagline} context="adaptive_module_tagline" />
               </p>
             </div>
 
@@ -306,7 +309,7 @@ export const AdaptiveModuleConfigurator: React.FC<AdaptiveModuleConfiguratorProp
                   className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow transition-all cursor-pointer"
                 >
                   <Lock size={15} />
-                  <span>Unlock {activeViewLevel} Tier (150 XP)</span>
+                  <span>{t("adaptive.unlock_tier_prefix", "Unlock")} {activeViewLevel} {t("adaptive.unlock_tier_suffix", "Tier (150 XP)")}</span>
                 </button>
               ) : (
                 <button
@@ -315,7 +318,7 @@ export const AdaptiveModuleConfigurator: React.FC<AdaptiveModuleConfiguratorProp
                   className="px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white text-xs font-black rounded-xl flex items-center gap-2 shadow-md active:scale-95 transition-all cursor-pointer"
                 >
                   <MessageSquare size={16} />
-                  <span>Live FluidConvo AI Practice</span>
+                  <span>{t("adaptive.live_fluidconvo_practice", "Live FluidConvo AI Practice")}</span>
                 </button>
               )}
             </div>
@@ -328,16 +331,18 @@ export const AdaptiveModuleConfigurator: React.FC<AdaptiveModuleConfiguratorProp
             <GraduationCap size={20} className="text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
             <div>
               <span className="font-bold text-slate-900 dark:text-white uppercase tracking-wider block mb-0.5">
-                Official CEFR Level Descriptor:
+                {t("adaptive.official_descriptor_label", "Official CEFR Level Descriptor:")}
               </span>
-              <p className="italic leading-relaxed">{activeModuleData.cefrDescriptor}</p>
+              <p className="italic leading-relaxed">
+                <AutoText text={activeModuleData.cefrDescriptor} context="adaptive_cefr_descriptor" />
+              </p>
             </div>
           </div>
 
           {/* Core Competencies in This Module */}
           <div>
             <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-3">
-              Target Competencies & Oral Skills:
+              {t("adaptive.target_competencies", "Target Competencies & Oral Skills:")}
             </h4>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               {activeModuleData.focusSkills.map((skill, idx) => (
@@ -348,7 +353,9 @@ export const AdaptiveModuleConfigurator: React.FC<AdaptiveModuleConfiguratorProp
                   <span className="w-6 h-6 rounded-lg bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-xs shrink-0">
                     {idx + 1}
                   </span>
-                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{skill}</span>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                    <AutoText text={skill} context="adaptive_focus_skill" />
+                  </span>
                 </div>
               ))}
             </div>
@@ -358,9 +365,9 @@ export const AdaptiveModuleConfigurator: React.FC<AdaptiveModuleConfiguratorProp
           <div>
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Recommended Interactive Spoken Drills & Modules:
+                {t("adaptive.recommended_drills", "Recommended Interactive Spoken Drills & Modules:")}
               </h4>
-              <span className="text-xs text-slate-400">Audio capture enabled</span>
+              <span className="text-xs text-slate-400">{t("adaptive.audio_capture_enabled", "Audio capture enabled")}</span>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -380,20 +387,20 @@ export const AdaptiveModuleConfigurator: React.FC<AdaptiveModuleConfiguratorProp
                       </div>
 
                       <h5 className="text-sm font-bold text-slate-900 dark:text-white mb-2 leading-snug">
-                        {lesson.title}
+                        <AutoText text={lesson.title} context="adaptive_lesson_title" />
                       </h5>
                       <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-                        {lesson.summary}
+                        <AutoText text={lesson.summary} context="adaptive_lesson_summary" />
                       </p>
                     </div>
 
                     <div className="mt-5 pt-3 border-t border-slate-100 dark:border-slate-700 flex items-center justify-between">
                       {isCompleted ? (
                         <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                          <CheckCircle2 size={16} /> Completed
+                          <CheckCircle2 size={16} /> {t("common.completed", "Completed")}
                         </span>
                       ) : (
-                        <span className="text-xs font-bold text-slate-400">Ready to Start</span>
+                        <span className="text-xs font-bold text-slate-400">{t("adaptive.ready_to_start", "Ready to Start")}</span>
                       )}
 
                       <button
@@ -406,7 +413,7 @@ export const AdaptiveModuleConfigurator: React.FC<AdaptiveModuleConfiguratorProp
                         }`}
                       >
                         <Mic size={13} />
-                        <span>{isCompleted ? "Practice Again" : "Start Drill"}</span>
+                        <span>{isCompleted ? t("adaptive.practice_again", "Practice Again") : t("adaptive.start_drill", "Start Drill")}</span>
                       </button>
                     </div>
                   </div>

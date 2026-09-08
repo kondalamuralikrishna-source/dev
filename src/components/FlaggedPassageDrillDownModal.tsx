@@ -17,6 +17,8 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { FlaggedPassage } from "../types";
+import { AutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 interface FlaggedPassageDrillDownModalProps {
   passage: FlaggedPassage | null;
@@ -33,6 +35,7 @@ export const FlaggedPassageDrillDownModal: React.FC<FlaggedPassageDrillDownModal
   submissionContext,
   onApplyRevision,
 }) => {
+  const { t } = useTranslation();
   const [copiedRevision, setCopiedRevision] = useState<boolean>(false);
   const [copiedOriginal, setCopiedOriginal] = useState<boolean>(false);
 
@@ -92,7 +95,7 @@ export const FlaggedPassageDrillDownModal: React.FC<FlaggedPassageDrillDownModal
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-extrabold text-base sm:text-lg text-white">
-                  Integrity Flag Deep Dive
+                  {t("flagged.deep_dive_title", "Integrity Flag Deep Dive")}
                 </h3>
                 <span
                   className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
@@ -101,11 +104,11 @@ export const FlaggedPassageDrillDownModal: React.FC<FlaggedPassageDrillDownModal
                       : "bg-amber-500/20 text-amber-300 border-amber-500/40"
                   }`}
                 >
-                  {isPublishedSource ? "Source Match" : "Pattern Alert"}
+                  {isPublishedSource ? t("flagged.source_match", "Source Match") : t("flagged.pattern_alert", "Pattern Alert")}
                 </span>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Passage diagnostics and targeted revision coaching
+                {t("flagged.subtitle", "Passage diagnostics and targeted revision coaching")}
               </p>
             </div>
           </div>
@@ -126,7 +129,7 @@ export const FlaggedPassageDrillDownModal: React.FC<FlaggedPassageDrillDownModal
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
                 <FileText size={13} />
-                <span>Flagged Submission Segment</span>
+                <span>{t("flagged.submission_segment", "Flagged Submission Segment")}</span>
               </span>
               <button
                 type="button"
@@ -134,7 +137,7 @@ export const FlaggedPassageDrillDownModal: React.FC<FlaggedPassageDrillDownModal
                 className="text-xs text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer font-semibold"
               >
                 {copiedOriginal ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
-                <span>{copiedOriginal ? "Copied" : "Copy Segment"}</span>
+                <span>{copiedOriginal ? t("flagged.copied", "Copied") : t("flagged.copy_segment", "Copy Segment")}</span>
               </button>
             </div>
 
@@ -149,10 +152,10 @@ export const FlaggedPassageDrillDownModal: React.FC<FlaggedPassageDrillDownModal
           <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/60 space-y-2">
             <span className="text-xs font-black uppercase tracking-wider text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
               <Info size={14} className="text-indigo-500" />
-              <span>Why Was This Flagged?</span>
+              <span>{t("flagged.why_flagged", "Why Was This Flagged?")}</span>
             </span>
             <p className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
-              {passage.reason}
+              <AutoText text={passage.reason} context="flagged_reason" />
             </p>
           </div>
 
@@ -160,10 +163,10 @@ export const FlaggedPassageDrillDownModal: React.FC<FlaggedPassageDrillDownModal
           <div className="p-4 bg-indigo-50/70 dark:bg-indigo-950/40 rounded-2xl border border-indigo-200 dark:border-indigo-900/60 space-y-2">
             <span className="text-xs font-black uppercase tracking-wider text-indigo-900 dark:text-indigo-300 flex items-center gap-1.5">
               <Lightbulb size={14} className="text-amber-500" />
-              <span>Actionable Improvement Tip:</span>
+              <span>{t("flagged.improvement_tip_label", "Actionable Improvement Tip:")}</span>
             </span>
             <p className="text-sm text-indigo-950 dark:text-indigo-200 leading-relaxed">
-              {tip}
+              <AutoText text={tip} context="flagged_improvement_tip" />
             </p>
           </div>
 
@@ -172,7 +175,7 @@ export const FlaggedPassageDrillDownModal: React.FC<FlaggedPassageDrillDownModal
             <div className="flex items-center justify-between">
               <span className="text-xs font-black uppercase tracking-wider text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                 <Sparkles size={13} className="text-emerald-500" />
-                <span>Authentic Rephrasing Recommendation</span>
+                <span>{t("flagged.rephrasing_recommendation", "Authentic Rephrasing Recommendation")}</span>
               </span>
               <button
                 type="button"
@@ -180,7 +183,7 @@ export const FlaggedPassageDrillDownModal: React.FC<FlaggedPassageDrillDownModal
                 className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 cursor-pointer font-semibold"
               >
                 {copiedRevision ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
-                <span>{copiedRevision ? "Copied" : "Copy Revision"}</span>
+                <span>{copiedRevision ? t("flagged.copied", "Copied") : t("flagged.copy_revision", "Copy Revision")}</span>
               </button>
             </div>
 
@@ -195,7 +198,7 @@ export const FlaggedPassageDrillDownModal: React.FC<FlaggedPassageDrillDownModal
         {/* Footer */}
         <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between gap-3">
           <span className="text-xs text-slate-500 dark:text-slate-400">
-            PlagiarismIntegrityStudio • Pedagogical Feedback Loop
+            {t("flagged.footer_label", "PlagiarismIntegrityStudio • Pedagogical Feedback Loop")}
           </span>
 
           <div className="flex items-center gap-2">
@@ -209,7 +212,7 @@ export const FlaggedPassageDrillDownModal: React.FC<FlaggedPassageDrillDownModal
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
               >
                 <CheckCircle2 size={14} />
-                <span>Apply Revision</span>
+                <span>{t("flagged.apply_revision", "Apply Revision")}</span>
               </button>
             )}
 
@@ -218,7 +221,7 @@ export const FlaggedPassageDrillDownModal: React.FC<FlaggedPassageDrillDownModal
               onClick={onClose}
               className="px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-white font-bold text-xs rounded-xl transition-all cursor-pointer"
             >
-              Close
+              {t("flagged.close", "Close")}
             </button>
           </div>
         </div>

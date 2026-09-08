@@ -40,6 +40,8 @@ import { SpokenAssessmentScreen } from "./SpokenAssessmentScreen";
 import { PlagiarismIntegrityStudio } from "./PlagiarismIntegrityStudio";
 import { AudioButton } from "./AudioButton";
 import { FlaggedPassageDrillDownModal } from "./FlaggedPassageDrillDownModal";
+import { AutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 interface AssessmentIntegrityWrapperProps {
   currentUser: UserAccount | null;
@@ -90,6 +92,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
   onCancel,
   initialResult,
 }) => {
+  const { t } = useTranslation();
   const [activeDomain, setActiveDomain] = useState<AssessmentDomain>("speaking");
 
   // Writing Assessment State
@@ -182,13 +185,13 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-emerald-300 text-xs font-black tracking-wide">
               <ShieldCheck size={14} className="text-emerald-400" />
-              <span>GLOBAL AI ASSESSMENT & INTEGRITY PIPELINE</span>
+              <span>{t("assessment.engine_badge", "GLOBAL AI ASSESSMENT & INTEGRITY PIPELINE")}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight">
-              Unified Assessment Engine
+              {t("assessment.title", "Unified Assessment Engine")}
             </h1>
             <p className="text-slate-300 text-xs sm:text-sm leading-relaxed">
-              All Speaking, Writing, and Grammar AI evaluations are routed through the mandatory Plagiarism & Integrity Gate. Every evaluation output strictly adheres to the standardized <code className="text-emerald-300 font-mono bg-slate-800 px-1.5 py-0.5 rounded">assessment</code> and <code className="text-emerald-300 font-mono bg-slate-800 px-1.5 py-0.5 rounded">plagiarism_analysis</code> schema.
+              {t("assessment.subtitle_part1", "All Speaking, Writing, and Grammar AI evaluations are routed through the mandatory Plagiarism & Integrity Gate. Every evaluation output strictly adheres to the standardized")} <code className="text-emerald-300 font-mono bg-slate-800 px-1.5 py-0.5 rounded">assessment</code> {t("assessment.subtitle_and", "and")} <code className="text-emerald-300 font-mono bg-slate-800 px-1.5 py-0.5 rounded">plagiarism_analysis</code> {t("assessment.subtitle_schema", "schema.")}
             </p>
           </div>
 
@@ -205,7 +208,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
               }`}
             >
               <Mic size={15} />
-              <span>Speaking CEFR</span>
+              <span>{t("assessment.mode_speaking", "Speaking CEFR")}</span>
             </button>
 
             <button
@@ -219,7 +222,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
               }`}
             >
               <FileText size={15} />
-              <span>Writing Assessment</span>
+              <span>{t("assessment.mode_writing", "Writing Assessment")}</span>
             </button>
 
             <button
@@ -233,7 +236,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
               }`}
             >
               <BookOpen size={15} />
-              <span>Grammar Diagnostic</span>
+              <span>{t("assessment.mode_grammar", "Grammar Diagnostic")}</span>
             </button>
 
             <button
@@ -247,7 +250,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
               }`}
             >
               <ShieldCheck size={15} />
-              <span>Integrity Studio</span>
+              <span>{t("assessment.mode_studio", "Integrity Studio")}</span>
             </button>
           </div>
         </div>
@@ -263,16 +266,16 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
               </div>
               <div>
                 <h3 className="text-sm font-extrabold text-indigo-950">
-                  Oral Proficiency CEFR Assessor • Protected by Integrity Gate
+                  {t("assessment.speaking_banner_title", "Oral Proficiency CEFR Assessor • Protected by Integrity Gate")}
                 </h3>
                 <p className="text-xs text-indigo-700">
-                  Transcripts are continuously cross-examined for read-aloud flags, canned response templates, and AI generation markers.
+                  {t("assessment.speaking_banner_desc", "Transcripts are continuously cross-examined for read-aloud flags, canned response templates, and AI generation markers.")}
                 </p>
               </div>
             </div>
             <div className="hidden sm:flex items-center gap-2 text-xs font-bold text-emerald-700 bg-emerald-100/80 px-3 py-1 rounded-full">
               <ShieldCheck size={14} />
-              <span>Standard JSON Enabled</span>
+              <span>{t("assessment.standard_json_enabled", "Standard JSON Enabled")}</span>
             </div>
           </div>
 
@@ -296,26 +299,26 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                 </div>
                 <div>
                   <h2 className="text-lg font-black text-slate-900">
-                    Writing Performance & Originality Evaluator
+                    {t("assessment.writing_title", "Writing Performance & Originality Evaluator")}
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Evaluates task achievement, syntactic range, cohesion, and verifies authenticity.
+                    {t("assessment.writing_desc", "Evaluates task achievement, syntactic range, cohesion, and verifies authenticity.")}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Level:</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("assessment.level_label", "Level:")}</span>
                 <select
                   id="select-writing-cefr"
                   value={writingLevel}
                   onChange={(e) => setWritingLevel(e.target.value as CEFRLevel)}
                   className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
                 >
-                  <option value="B1">B1 Intermediate</option>
-                  <option value="B2">B2 Upper Intermediate</option>
-                  <option value="C1">C1 Advanced</option>
-                  <option value="C2">C2 Mastery</option>
+                  <option value="B1">{t("cefr_select.b1_intermediate", "B1 Intermediate")}</option>
+                  <option value="B2">{t("cefr_select.b2_upper_intermediate", "B2 Upper Intermediate")}</option>
+                  <option value="C1">{t("cefr_select.c1_advanced", "C1 Advanced")}</option>
+                  <option value="C2">{t("cefr_select.c2_mastery", "C2 Mastery")}</option>
                 </select>
               </div>
             </div>
@@ -323,7 +326,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
             {/* Prompt Selector */}
             <div className="space-y-3">
               <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                Select Assessment Task:
+                {t("assessment.select_task", "Select Assessment Task:")}
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {WRITING_PROMPTS.map((p, idx) => (
@@ -343,13 +346,15 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-black text-slate-900">{p.topic}</span>
+                      <span className="text-xs font-black text-slate-900">
+                        <AutoText text={p.topic} context="assessment_writing_topic" />
+                      </span>
                       <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full">
                         {p.level}
                       </span>
                     </div>
                     <p className="text-xs text-slate-600 leading-relaxed line-clamp-2">
-                      {p.prompt}
+                      <AutoText text={p.prompt} context="assessment_writing_prompt" />
                     </p>
                   </button>
                 ))}
@@ -359,10 +364,10 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
             {/* Writing Prompt Card */}
             <div className="p-4 bg-indigo-50/60 rounded-2xl border border-indigo-100">
               <span className="text-[11px] font-black text-indigo-800 uppercase tracking-wider block mb-1">
-                Candidate Prompt:
+                {t("assessment.candidate_prompt", "Candidate Prompt:")}
               </span>
               <p className="text-xs sm:text-sm text-indigo-950 font-medium leading-relaxed">
-                "{WRITING_PROMPTS[writingPromptIndex].prompt}"
+                "<AutoText as="span" text={WRITING_PROMPTS[writingPromptIndex].prompt} context="assessment_writing_prompt" />"
               </p>
             </div>
 
@@ -370,7 +375,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                  Student Essay / Written Response:
+                  {t("assessment.submission_label", "Student Essay / Written Response:")}
                 </label>
                 <div className="flex items-center gap-2 text-xs">
                   <button
@@ -378,7 +383,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                     onClick={() => setWritingSubmission(WRITING_PROMPTS[writingPromptIndex].sampleAuthentic)}
                     className="text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer"
                   >
-                    Load Authentic Sample
+                    {t("assessment.load_authentic", "Load Authentic Sample")}
                   </button>
                   <span className="text-slate-300">•</span>
                   <button
@@ -386,7 +391,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                     onClick={() => setWritingSubmission(WRITING_PROMPTS[writingPromptIndex].sampleAI)}
                     className="text-rose-600 hover:text-rose-800 font-semibold cursor-pointer"
                   >
-                    Load Synthetic AI Sample
+                    {t("assessment.load_synthetic", "Load Synthetic AI Sample")}
                   </button>
                 </div>
               </div>
@@ -396,14 +401,14 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                 rows={6}
                 value={writingSubmission}
                 onChange={(e) => setWritingSubmission(e.target.value)}
-                placeholder="Compose or paste your written response..."
+                placeholder={t("assessment.submission_placeholder", "Compose or paste your written response...")}
                 className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm leading-relaxed text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-normal"
               />
             </div>
 
             <div className="flex items-center justify-between pt-2">
               <span className="text-xs text-slate-500">
-                {writingSubmission.trim().split(/\s+/).filter(Boolean).length} words
+                {writingSubmission.trim().split(/\s+/).filter(Boolean).length} {t("assessment.words_suffix", "words")}
               </span>
 
               <button
@@ -416,12 +421,12 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                 {isEvaluatingWriting ? (
                   <>
                     <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Evaluating Writing & Integrity...</span>
+                    <span>{t("assessment.evaluating_writing", "Evaluating Writing & Integrity...")}</span>
                   </>
                 ) : (
                   <>
                     <ShieldCheck size={16} />
-                    <span>Evaluate with Integrity Gate</span>
+                    <span>{t("assessment.evaluate_with_integrity", "Evaluate with Integrity Gate")}</span>
                   </>
                 )}
               </button>
@@ -438,10 +443,10 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                   </div>
                   <div>
                     <h3 className="text-lg font-black text-slate-900">
-                      Writing Assessment Result
+                      {t("assessment.writing_result_title", "Writing Assessment Result")}
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Evaluated under CEFR Rubrics with Automated Plagiarism Telemetry
+                      {t("assessment.writing_result_desc", "Evaluated under CEFR Rubrics with Automated Plagiarism Telemetry")}
                     </p>
                   </div>
                 </div>
@@ -456,7 +461,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                         : "bg-rose-50 text-rose-700 border-rose-300"
                     }`}
                   >
-                    Integrity: {writingResult.plagiarism_analysis.risk_level} Risk
+                    {t("assessment.integrity_risk_prefix", "Integrity:")} {writingResult.plagiarism_analysis.risk_level} {t("assessment.risk_suffix", "Risk")}
                   </span>
 
                   <button
@@ -465,7 +470,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                     className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
                   >
                     {copiedWritingJson ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-                    <span>{copiedWritingJson ? "Copied" : "Copy JSON"}</span>
+                    <span>{copiedWritingJson ? t("assessment.copied", "Copied") : t("assessment.copy_json", "Copy JSON")}</span>
                   </button>
                 </div>
               </div>
@@ -474,7 +479,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    Score
+                    {t("assessment.score_label", "Score")}
                   </span>
                   <div className="text-2xl font-black text-slate-900 mt-1">
                     {writingResult.assessment.score !== null ? `${writingResult.assessment.score} / 100` : "N/A"}
@@ -483,7 +488,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
 
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    Similarity Score
+                    {t("assessment.similarity_score_label", "Similarity Score")}
                   </span>
                   <div className="text-2xl font-black text-slate-900 mt-1">
                     {writingResult.plagiarism_analysis.estimated_similarity_score}
@@ -492,7 +497,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
 
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                   <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                    AI Probability
+                    {t("assessment.ai_probability_label", "AI Probability")}
                   </span>
                   <div
                     className={`text-2xl font-black mt-1 ${
@@ -511,10 +516,10 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
               {/* Feedback */}
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1.5">
                 <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                  Constructive Pedagogical Feedback:
+                  {t("assessment.feedback_label", "Constructive Pedagogical Feedback:")}
                 </span>
                 <p className="text-sm text-slate-700 leading-relaxed">
-                  {writingResult.assessment.feedback}
+                  <AutoText text={writingResult.assessment.feedback} context="assessment_feedback" />
                 </p>
               </div>
 
@@ -530,9 +535,9 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
               >
                 <div className="font-black text-xs uppercase tracking-wider mb-1 flex items-center gap-1.5">
                   <ShieldCheck size={14} />
-                  <span>Integrity Verdict</span>
+                  <span>{t("assessment.integrity_verdict_label", "Integrity Verdict")}</span>
                 </div>
-                {writingResult.plagiarism_analysis.integrity_verdict}
+                <AutoText text={writingResult.plagiarism_analysis.integrity_verdict} context="assessment_integrity_verdict" />
               </div>
 
               {/* Flagged Snippets */}
@@ -540,10 +545,10 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                      Flagged Passages ({writingResult.plagiarism_analysis.flagged_passages.length}):
+                      {t("assessment.flagged_passages_label", "Flagged Passages")} ({writingResult.plagiarism_analysis.flagged_passages.length}):
                     </span>
                     <span className="text-[11px] text-indigo-600 font-semibold">
-                      Click any snippet to drill down & view revision tips
+                      {t("assessment.click_drill_down", "Click any snippet to drill down & view revision tips")}
                     </span>
                   </div>
                   <div className="space-y-2">
@@ -558,12 +563,12 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                             "{f.text_snippet}"
                           </span>
                           <span className="text-[10px] font-bold text-indigo-600 shrink-0 group-hover:underline flex items-center gap-0.5">
-                            <span>Drill Down</span>
+                            <span>{t("assessment.drill_down", "Drill Down")}</span>
                             <ArrowRight size={12} />
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-[11px] text-slate-500">
-                          <span>Reason: {f.reason}</span>
+                          <span>{t("assessment.reason_label", "Reason:")} {f.reason}</span>
                           {f.category && (
                             <span className="px-2 py-0.5 bg-slate-200 text-slate-700 rounded text-[10px] font-semibold">
                               {f.category}
@@ -591,28 +596,28 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                 </div>
                 <div>
                   <h2 className="text-lg font-black text-slate-900">
-                    Grammar & Syntax Diagnostic with Integrity Filter
+                    {t("assessment.grammar_title", "Grammar & Syntax Diagnostic with Integrity Filter")}
                   </h2>
                   <p className="text-xs text-slate-500">
-                    Deep structural parsing, error classification, and synthetic phrase detection.
+                    {t("assessment.grammar_desc", "Deep structural parsing, error classification, and synthetic phrase detection.")}
                   </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Target Level:</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t("assessment.target_level_label", "Target Level:")}</span>
                 <select
                   id="select-grammar-cefr"
                   value={grammarLevel}
                   onChange={(e) => setGrammarLevel(e.target.value as CEFRLevel)}
                   className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800"
                 >
-                  <option value="A1">A1 Foundation</option>
-                  <option value="A2">A2 Waystage</option>
-                  <option value="B1">B1 Intermediate</option>
-                  <option value="B2">B2 Upper Intermediate</option>
-                  <option value="C1">C1 Advanced</option>
-                  <option value="C2">C2 Mastery</option>
+                  <option value="A1">{t("cefr_select.a1_foundation", "A1 Foundation")}</option>
+                  <option value="A2">{t("cefr_select.a2_waystage", "A2 Waystage")}</option>
+                  <option value="B1">{t("cefr_select.b1_intermediate", "B1 Intermediate")}</option>
+                  <option value="B2">{t("cefr_select.b2_upper_intermediate", "B2 Upper Intermediate")}</option>
+                  <option value="C1">{t("cefr_select.c1_advanced", "C1 Advanced")}</option>
+                  <option value="C2">{t("cefr_select.c2_mastery", "C2 Mastery")}</option>
                 </select>
               </div>
             </div>
@@ -620,7 +625,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
             {/* Presets */}
             <div className="space-y-2">
               <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                Grammar Case Presets:
+                {t("assessment.grammar_presets", "Grammar Case Presets:")}
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {GRAMMAR_PROMPTS.map((g, idx) => (
@@ -639,7 +644,9 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-black text-slate-900">{g.topic}</span>
+                      <span className="text-xs font-black text-slate-900">
+                        <AutoText text={g.topic} context="assessment_grammar_topic" />
+                      </span>
                       <span className="text-[10px] font-bold px-2 py-0.5 bg-indigo-100 text-indigo-700 rounded-full">
                         {g.level}
                       </span>
@@ -655,14 +662,14 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
             {/* Sentence Input */}
             <div className="space-y-2">
               <label className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                Sentence or Construction to Diagnose:
+                {t("assessment.sentence_to_diagnose", "Sentence or Construction to Diagnose:")}
               </label>
               <textarea
                 id="textarea-grammar-input"
                 rows={3}
                 value={grammarInput}
                 onChange={(e) => setGrammarInput(e.target.value)}
-                placeholder="Enter a sentence to analyze its syntactic integrity and grammar..."
+                placeholder={t("assessment.sentence_placeholder", "Enter a sentence to analyze its syntactic integrity and grammar...")}
                 className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm leading-relaxed text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all font-normal"
               />
             </div>
@@ -678,12 +685,12 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                 {isEvaluatingGrammar ? (
                   <>
                     <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    <span>Analyzing Grammar & Integrity...</span>
+                    <span>{t("assessment.analyzing_grammar", "Analyzing Grammar & Integrity...")}</span>
                   </>
                 ) : (
                   <>
                     <ShieldCheck size={16} />
-                    <span>Diagnose with Integrity Gate</span>
+                    <span>{t("assessment.diagnose_with_integrity", "Diagnose with Integrity Gate")}</span>
                   </>
                 )}
               </button>
@@ -700,10 +707,10 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                   </div>
                   <div>
                     <h3 className="text-lg font-black text-slate-900">
-                      Grammar Diagnostic Result
+                      {t("assessment.grammar_result_title", "Grammar Diagnostic Result")}
                     </h3>
                     <p className="text-xs text-slate-500">
-                      Standard JSON payload: `assessment` + `plagiarism_analysis`
+                      {t("assessment.grammar_result_desc", "Standard JSON payload: `assessment` + `plagiarism_analysis`")}
                     </p>
                   </div>
                 </div>
@@ -716,7 +723,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                         : "bg-amber-50 text-amber-700 border-amber-300"
                     }`}
                   >
-                    Risk: {grammarResult.plagiarism_analysis.risk_level}
+                    {t("assessment.risk_label", "Risk:")} {grammarResult.plagiarism_analysis.risk_level}
                   </span>
 
                   <button
@@ -725,7 +732,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                     className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors flex items-center gap-1 cursor-pointer"
                   >
                     {copiedGrammarJson ? <Check size={13} className="text-emerald-600" /> : <Copy size={13} />}
-                    <span>{copiedGrammarJson ? "Copied" : "Copy JSON"}</span>
+                    <span>{copiedGrammarJson ? t("assessment.copied", "Copied") : t("assessment.copy_json", "Copy JSON")}</span>
                   </button>
                 </div>
               </div>
@@ -733,10 +740,10 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
               {/* Feedback */}
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1.5">
                 <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                  Diagnostic Analysis:
+                  {t("assessment.diagnostic_analysis_label", "Diagnostic Analysis:")}
                 </span>
                 <p className="text-sm text-slate-700 leading-relaxed whitespace-pre-line">
-                  {grammarResult.assessment.feedback}
+                  <AutoText text={grammarResult.assessment.feedback} context="assessment_feedback" />
                 </p>
               </div>
 
@@ -745,7 +752,7 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                 grammarResult.plagiarism_analysis.flagged_passages.length > 0 && (
                   <div className="space-y-2">
                     <span className="text-xs font-black text-slate-700 uppercase tracking-wider">
-                      Flagged Passages ({grammarResult.plagiarism_analysis.flagged_passages.length}):
+                      {t("assessment.flagged_passages_label", "Flagged Passages")} ({grammarResult.plagiarism_analysis.flagged_passages.length}):
                     </span>
                     <div className="space-y-2">
                       {grammarResult.plagiarism_analysis.flagged_passages.map((f, i) => (
@@ -759,11 +766,11 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
                               "{f.text_snippet}"
                             </span>
                             <span className="text-[10px] font-bold text-indigo-600 shrink-0 group-hover:underline flex items-center gap-0.5">
-                              <span>Drill Down</span>
+                              <span>{t("assessment.drill_down", "Drill Down")}</span>
                               <ArrowRight size={12} />
                             </span>
                           </div>
-                          <span className="text-slate-500 text-[11px]">Reason: {f.reason}</span>
+                          <span className="text-slate-500 text-[11px]">{t("assessment.reason_label", "Reason:")} {f.reason}</span>
                         </div>
                       ))}
                     </div>
@@ -780,9 +787,9 @@ export const AssessmentIntegrityWrapper: React.FC<AssessmentIntegrityWrapperProp
               >
                 <div className="font-black text-xs uppercase tracking-wider mb-1 flex items-center gap-1.5">
                   <ShieldCheck size={14} />
-                  <span>Integrity & Authenticity Check</span>
+                  <span>{t("assessment.integrity_authenticity_check", "Integrity & Authenticity Check")}</span>
                 </div>
-                {grammarResult.plagiarism_analysis.integrity_verdict}
+                <AutoText text={grammarResult.plagiarism_analysis.integrity_verdict} context="assessment_integrity_verdict" />
               </div>
             </div>
           )}

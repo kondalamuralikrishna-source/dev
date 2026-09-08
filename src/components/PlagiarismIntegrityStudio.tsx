@@ -24,6 +24,8 @@ import { CEFRLevel, IntegrityAssessmentResponse, FlaggedPassage } from "../types
 import { FlaggedPassageDrillDownModal } from "./FlaggedPassageDrillDownModal";
 import { AnonymousAttemptTelemetryModal } from "./AnonymousAttemptTelemetryModal";
 import { BarChart3 } from "lucide-react";
+import { AutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 const SAMPLE_SUBMISSIONS: {
   title: string;
@@ -81,6 +83,7 @@ During the experiment, my lab partner and I measured oxygen bubbles released by 
 ];
 
 export const PlagiarismIntegrityStudio: React.FC = () => {
+  const { t } = useTranslation();
   const [submissionText, setSubmissionText] = useState<string>(SAMPLE_SUBMISSIONS[0].text);
   const [promptTopic, setPromptTopic] = useState<string>(SAMPLE_SUBMISSIONS[0].prompt);
   const [selectedLevel, setSelectedLevel] = useState<CEFRLevel>("B2");
@@ -171,13 +174,13 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
           <div className="space-y-2 max-w-2xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-indigo-200 text-xs font-semibold tracking-wide border border-white/15">
               <ShieldCheck size={14} className="text-emerald-400" />
-              <span>Automated Plagiarism & Academic Integrity Engine</span>
+              <span>{t("plagiarism.engine_badge", "Automated Plagiarism & Academic Integrity Engine")}</span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-              Assessment Evaluation & Integrity Analysis
+              {t("plagiarism.title", "Assessment Evaluation & Integrity Analysis")}
             </h1>
             <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-              Every assessment output returns a structured JSON payload coupling educational performance evaluation with multi-metric plagiarism detection, synthetic AI probability auditing, and flagged passage telemetry.
+              {t("plagiarism.subtitle", "Every assessment output returns a structured JSON payload coupling educational performance evaluation with multi-metric plagiarism detection, synthetic AI probability auditing, and flagged passage telemetry.")}
             </p>
           </div>
 
@@ -196,7 +199,7 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
               }`}
             >
               <FileCheck size={16} />
-              <span>Evaluate Submission</span>
+              <span>{t("plagiarism.mode_evaluate", "Evaluate Submission")}</span>
             </button>
 
             <button
@@ -213,7 +216,7 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
               }`}
             >
               <Sparkles size={16} />
-              <span>Generate Task</span>
+              <span>{t("plagiarism.mode_generate", "Generate Task")}</span>
             </button>
 
             <button
@@ -221,10 +224,10 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
               type="button"
               onClick={() => setIsTelemetryModalOpen(true)}
               className="px-4 py-2.5 rounded-xl font-bold text-sm transition-all flex items-center gap-2 cursor-pointer bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30 border border-emerald-500/30 shadow-sm"
-              title="View anonymous attempt stats and download raw CSV export"
+              title={t("plagiarism.telemetry_tooltip", "View anonymous attempt stats and download raw CSV export")}
             >
               <BarChart3 size={16} />
-              <span>Attempts & CSV Export</span>
+              <span>{t("plagiarism.attempts_csv_export", "Attempts & CSV Export")}</span>
             </button>
           </div>
         </div>
@@ -237,10 +240,10 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
             <div className="flex items-center gap-2">
               <BookOpen size={18} className="text-indigo-600" />
               <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-                Pre-Loaded Submission Test Cases
+                {t("plagiarism.preloaded_cases_title", "Pre-Loaded Submission Test Cases")}
               </h2>
             </div>
-            <span className="text-xs text-slate-500 font-medium">Click to load instantly</span>
+            <span className="text-xs text-slate-500 font-medium">{t("plagiarism.click_to_load", "Click to load instantly")}</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -262,9 +265,11 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="font-bold text-xs text-slate-800">{sample.title}</span>
+                  <span className="font-bold text-xs text-slate-800">
+                    <AutoText text={sample.title} context="plagiarism_sample_title" />
+                  </span>
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${sample.tagColor}`}>
-                    {sample.tag}
+                    <AutoText text={sample.tag} context="plagiarism_sample_tag" />
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-500 line-clamp-2 leading-relaxed">
@@ -281,21 +286,21 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="md:col-span-2 space-y-1.5">
             <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              {activeMode === "evaluate" ? "Assessment Prompt / Task Topic" : "Topic to Generate Assessment For"}
+              {activeMode === "evaluate" ? t("plagiarism.prompt_label_evaluate", "Assessment Prompt / Task Topic") : t("plagiarism.prompt_label_generate", "Topic to Generate Assessment For")}
             </label>
             <input
               id="input-prompt-topic"
               type="text"
               value={promptTopic}
               onChange={(e) => setPromptTopic(e.target.value)}
-              placeholder="e.g. Workplace Problem Solving, Formal Email, Argumentative Essay..."
+              placeholder={t("plagiarism.prompt_placeholder", "e.g. Workplace Problem Solving, Formal Email, Argumentative Essay...")}
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
             />
           </div>
 
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-              Target CEFR Proficiency
+              {t("plagiarism.target_cefr", "Target CEFR Proficiency")}
             </label>
             <select
               id="select-cefr-level"
@@ -303,12 +308,12 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
               onChange={(e) => setSelectedLevel(e.target.value as CEFRLevel)}
               className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all cursor-pointer"
             >
-              <option value="A1">A1 - Breakthrough Foundation</option>
-              <option value="A2">A2 - Waystage</option>
-              <option value="B1">B1 - Threshold Intermediate</option>
-              <option value="B2">B2 - Vantage Upper Intermediate</option>
-              <option value="C1">C1 - Effective Operational Proficiency</option>
-              <option value="C2">C2 - Mastery / Native Fluency</option>
+              <option value="A1">{t("cefr_select.a1_breakthrough", "A1 - Breakthrough Foundation")}</option>
+              <option value="A2">{t("cefr_select.a2_waystage_dash", "A2 - Waystage")}</option>
+              <option value="B1">{t("cefr_select.b1_threshold", "B1 - Threshold Intermediate")}</option>
+              <option value="B2">{t("cefr_select.b2_vantage", "B2 - Vantage Upper Intermediate")}</option>
+              <option value="C1">{t("cefr_select.c1_operational", "C1 - Effective Operational Proficiency")}</option>
+              <option value="C2">{t("cefr_select.c2_native", "C2 - Mastery / Native Fluency")}</option>
             </select>
           </div>
         </div>
@@ -318,19 +323,19 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-2">
                 <FileText size={15} className="text-indigo-600" />
-                <span>Candidate Submission Text (Essay / Spoken Transcript)</span>
+                <span>{t("plagiarism.candidate_submission_label", "Candidate Submission Text (Essay / Spoken Transcript)")}</span>
               </label>
               <div className="flex items-center gap-3 text-xs text-slate-500 font-medium">
-                <span>{wordCount} words</span>
+                <span>{wordCount} {t("plagiarism.words_suffix", "words")}</span>
                 <span>•</span>
-                <span>{charCount} characters</span>
+                <span>{charCount} {t("plagiarism.characters_suffix", "characters")}</span>
                 {submissionText.trim().length > 0 && (
                   <button
                     type="button"
                     onClick={() => setSubmissionText("")}
                     className="text-slate-400 hover:text-slate-600 transition-colors cursor-pointer"
                   >
-                    Clear
+                    {t("plagiarism.clear", "Clear")}
                   </button>
                 )}
               </div>
@@ -341,7 +346,7 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
               rows={7}
               value={submissionText}
               onChange={(e) => setSubmissionText(e.target.value)}
-              placeholder="Paste student written submission or spoken transcript here for automated evaluation & plagiarism analysis..."
+              placeholder={t("plagiarism.submission_placeholder", "Paste student written submission or spoken transcript here for automated evaluation & plagiarism analysis...")}
               className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl text-sm leading-relaxed text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all resize-y font-normal"
             />
           </div>
@@ -350,7 +355,7 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
         <div className="flex flex-wrap items-center justify-between gap-4 pt-2 border-t border-slate-100">
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <Scale size={14} className="text-indigo-500" />
-            <span>Dual-Stream Evaluation: Qualitative Pedagogical Grade + Automated Integrity Audit</span>
+            <span>{t("plagiarism.dual_stream_note", "Dual-Stream Evaluation: Qualitative Pedagogical Grade + Automated Integrity Audit")}</span>
           </div>
 
           <button
@@ -363,17 +368,17 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
             {isLoading ? (
               <>
                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                <span>Running Integrity Engine...</span>
+                <span>{t("plagiarism.running_engine", "Running Integrity Engine...")}</span>
               </>
             ) : activeMode === "evaluate" ? (
               <>
                 <ShieldCheck size={18} />
-                <span>Evaluate & Check Plagiarism</span>
+                <span>{t("plagiarism.evaluate_check", "Evaluate & Check Plagiarism")}</span>
               </>
             ) : (
               <>
                 <Sparkles size={18} />
-                <span>Generate Assessment & Baseline</span>
+                <span>{t("plagiarism.generate_baseline", "Generate Assessment & Baseline")}</span>
               </>
             )}
           </button>
@@ -395,9 +400,9 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
                     </div>
                     <div>
                       <h3 className="font-extrabold text-slate-900 text-lg">
-                        Assessment Result
+                        {t("plagiarism.assessment_result_title", "Assessment Result")}
                       </h3>
-                      <p className="text-xs text-slate-500">Payload Section: `assessment`</p>
+                      <p className="text-xs text-slate-500">{t("plagiarism.payload_section_assessment", "Payload Section: `assessment`")}</p>
                     </div>
                   </div>
 
@@ -416,7 +421,7 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
                 <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 flex items-center justify-between">
                   <div>
                     <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                      Overall Score
+                      {t("plagiarism.overall_score", "Overall Score")}
                     </span>
                     <div className="text-3xl font-black text-slate-900 mt-1">
                       {result.assessment.score !== null ? (
@@ -425,7 +430,7 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
                           <span className="text-sm font-semibold text-slate-400 ml-1">/ 100</span>
                         </>
                       ) : (
-                        <span className="text-lg font-bold text-slate-500">null (Generating)</span>
+                        <span className="text-lg font-bold text-slate-500">{t("plagiarism.null_generating", "null (Generating)")}</span>
                       )}
                     </div>
                   </div>
@@ -441,17 +446,17 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
                 <div className="space-y-2">
                   <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                     <Sparkles size={14} className="text-indigo-600" />
-                    <span>Detailed Constructive Feedback</span>
+                    <span>{t("plagiarism.detailed_feedback", "Detailed Constructive Feedback")}</span>
                   </span>
                   <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 text-slate-700 text-sm leading-relaxed whitespace-pre-line">
-                    {result.assessment.feedback}
+                    <AutoText text={result.assessment.feedback} context="plagiarism_feedback" />
                   </div>
                 </div>
               </div>
 
               <div className="text-[11px] text-slate-400 pt-2 border-t border-slate-100 flex items-center justify-between">
-                <span>Evaluator Engine: CEFR Standardized Model</span>
-                <span>Status: Complete</span>
+                <span>{t("plagiarism.evaluator_engine", "Evaluator Engine: CEFR Standardized Model")}</span>
+                <span>{t("plagiarism.status_complete", "Status: Complete")}</span>
               </div>
             </div>
 
@@ -478,9 +483,9 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-extrabold text-slate-900 text-lg">
-                      Plagiarism & Integrity Analysis
+                      {t("plagiarism.analysis_title", "Plagiarism & Integrity Analysis")}
                     </h3>
-                    <p className="text-xs text-slate-500">Payload Section: `plagiarism_analysis`</p>
+                    <p className="text-xs text-slate-500">{t("plagiarism.payload_section_plagiarism", "Payload Section: `plagiarism_analysis`")}</p>
                   </div>
                 </div>
 
@@ -494,7 +499,7 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
                   }`}
                 >
                   <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
-                  <span>Risk Level: {result.plagiarism_analysis.risk_level}</span>
+                  <span>{t("plagiarism.risk_level_label", "Risk Level:")} {result.plagiarism_analysis.risk_level}</span>
                 </div>
               </div>
 
@@ -503,20 +508,20 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                     <Search size={14} className="text-slate-600" />
-                    <span>Estimated Similarity Score</span>
+                    <span>{t("plagiarism.estimated_similarity", "Estimated Similarity Score")}</span>
                   </span>
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-black text-slate-900">
                       {result.plagiarism_analysis.estimated_similarity_score}
                     </span>
-                    <span className="text-xs text-slate-500 font-medium">External overlap</span>
+                    <span className="text-xs text-slate-500 font-medium">{t("plagiarism.external_overlap", "External overlap")}</span>
                   </div>
                 </div>
 
                 <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 space-y-1">
                   <span className="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
                     <Bot size={14} className="text-slate-600" />
-                    <span>AI Generated Probability</span>
+                    <span>{t("plagiarism.ai_generated_probability", "AI Generated Probability")}</span>
                   </span>
                   <div className="flex items-baseline gap-2">
                     <span
@@ -530,7 +535,7 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
                     >
                       {result.plagiarism_analysis.ai_generated_probability}
                     </span>
-                    <span className="text-xs text-slate-500 font-medium">Synthetic syntax flag</span>
+                    <span className="text-xs text-slate-500 font-medium">{t("plagiarism.synthetic_syntax_flag", "Synthetic syntax flag")}</span>
                   </div>
                 </div>
               </div>
@@ -547,9 +552,9 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
               >
                 <div className="font-bold text-xs uppercase tracking-wider mb-1 flex items-center gap-1.5">
                   <UserCheck size={14} />
-                  <span>Integrity Verdict</span>
+                  <span>{t("plagiarism.integrity_verdict_label", "Integrity Verdict")}</span>
                 </div>
-                <p>{result.plagiarism_analysis.integrity_verdict}</p>
+                <p><AutoText text={result.plagiarism_analysis.integrity_verdict} context="plagiarism_integrity_verdict" /></p>
               </div>
 
               {/* Flagged Passages Explorer */}
@@ -557,10 +562,10 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
                     <AlertTriangle size={14} className="text-amber-500" />
-                    <span>Flagged Passages & Telemetry ({result.plagiarism_analysis.flagged_passages.length})</span>
+                    <span>{t("plagiarism.flagged_telemetry_label", "Flagged Passages & Telemetry")} ({result.plagiarism_analysis.flagged_passages.length})</span>
                   </span>
                   {result.plagiarism_analysis.flagged_passages.length === 0 && (
-                    <span className="text-xs text-emerald-600 font-semibold">No anomalous passages flagged</span>
+                    <span className="text-xs text-emerald-600 font-semibold">{t("plagiarism.no_anomalous_passages", "No anomalous passages flagged")}</span>
                   )}
                 </div>
 
@@ -577,10 +582,10 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
                             <span className="w-4 h-4 rounded-full bg-slate-200 group-hover:bg-indigo-200 text-slate-700 group-hover:text-indigo-800 text-[10px] flex items-center justify-center font-black">
                               {idx + 1}
                             </span>
-                            <span>Passage #{idx + 1}</span>
+                            <span>{t("plagiarism.passage_prefix", "Passage")} #{idx + 1}</span>
                           </span>
                           <span className="text-[10px] font-semibold px-2 py-0.5 bg-amber-100 text-amber-900 rounded-md border border-amber-200">
-                            {flag.reason}
+                            <AutoText text={flag.reason} context="plagiarism_flag_reason" />
                           </span>
                         </div>
 
@@ -590,17 +595,17 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
 
                         <div className="flex items-center justify-between pt-1 border-t border-slate-100">
                           <span className="text-[10px] font-bold text-indigo-600 group-hover:text-indigo-700 flex items-center gap-1">
-                            <span>Inspect Flag & Improvement Tips</span>
+                            <span>{t("plagiarism.inspect_flag", "Inspect Flag & Improvement Tips")}</span>
                             <ChevronRight size={12} className="group-hover:translate-x-0.5 transition-transform" />
                           </span>
-                          <span className="text-[10px] text-slate-600 font-medium">Click to drill down</span>
+                          <span className="text-[10px] text-slate-600 font-medium">{t("plagiarism.click_drill_down", "Click to drill down")}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
                   <div className="p-4 bg-slate-50 rounded-2xl border border-dashed border-slate-200 text-center text-xs text-slate-500">
-                    All submitted sentences demonstrate organic human structure, original phrasing, and valid contextual tone.
+                    {t("plagiarism.no_flags_desc", "All submitted sentences demonstrate organic human structure, original phrasing, and valid contextual tone.")}
                   </div>
                 )}
               </div>
@@ -616,10 +621,10 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="font-extrabold text-base text-slate-100">
-                    Engine JSON Output Specification
+                    {t("plagiarism.json_spec_title", "Engine JSON Output Specification")}
                   </h4>
                   <p className="text-xs text-slate-400">
-                    Strict JSON payload with `assessment` and `plagiarism_analysis` sections
+                    {t("plagiarism.json_spec_desc", "Strict JSON payload with `assessment` and `plagiarism_analysis` sections")}
                   </p>
                 </div>
               </div>
@@ -632,7 +637,7 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
                   className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-slate-700 cursor-pointer"
                 >
                   {copiedJson ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-                  <span>{copiedJson ? "Copied!" : "Copy JSON"}</span>
+                  <span>{copiedJson ? t("plagiarism.copied_bang", "Copied!") : t("plagiarism.copy_json", "Copy JSON")}</span>
                 </button>
 
                 <button
@@ -642,7 +647,7 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
                   className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-md shadow-indigo-600/30 cursor-pointer"
                 >
                   <Download size={14} />
-                  <span>Download Report</span>
+                  <span>{t("plagiarism.download_report", "Download Report")}</span>
                 </button>
 
                 <button
@@ -650,7 +655,7 @@ export const PlagiarismIntegrityStudio: React.FC = () => {
                   onClick={() => setShowJsonView(!showJsonView)}
                   className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
                 >
-                  {showJsonView ? "Collapse" : "Expand"}
+                  {showJsonView ? t("plagiarism.collapse", "Collapse") : t("plagiarism.expand", "Expand")}
                 </button>
               </div>
             </div>

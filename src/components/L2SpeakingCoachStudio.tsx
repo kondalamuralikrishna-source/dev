@@ -46,6 +46,8 @@ import {
   createSpeechRecognizer,
 } from "../utils/speechUtils";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
+import { AutoText } from "./AutoText";
+import { useTranslation } from "../context/TranslationContext";
 
 interface L2SpeakingCoachStudioProps {
   progress: UserProgress;
@@ -58,6 +60,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
   onGrantXp,
   onLogStudyMinutes,
 }) => {
+  const { t } = useTranslation();
   // Scenario & Setup state
   const [scenarios, setScenarios] = useState<L2CoachScenario[]>(
     L2_SPEAKING_COACH_SCENARIOS
@@ -442,38 +445,36 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <span className="px-2.5 py-1 rounded-full text-xs font-black uppercase tracking-wider bg-teal-500/20 text-teal-300 border border-teal-500/30 flex items-center gap-1.5">
               <Sparkles size={13} className="text-teal-400" />
-              INTERACTIVE SPEAKING COACH
+              {t("roleplay.hero_badge", "INTERACTIVE SPEAKING COACH")}
             </span>
             <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-400/20 text-amber-300 border border-amber-400/30 flex items-center gap-1">
-              <Zap size={13} /> Natural Dialogue Practice
+              <Zap size={13} /> {t("roleplay.natural_dialogue_practice", "Natural Dialogue Practice")}
             </span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-black font-serif tracking-tight text-white mb-2">
-            Interactive Speaking Coach & Dynamic Scenarios
+            {t("roleplay.hero_title", "Interactive Speaking Coach & Dynamic Scenarios")}
           </h1>
           <p className="text-slate-300 text-sm sm:text-base leading-relaxed mb-6">
-            Engage in realistic, multi-turn roleplay conversations to strengthen natural
-            vocabulary recall, sentence framing, and conversational fluency. Get turn-by-turn
-            feedback, supportive prompts if needed, and practice responding in your own words.
+            {t("roleplay.hero_desc", "Engage in realistic, multi-turn roleplay conversations to strengthen natural vocabulary recall, sentence framing, and conversational fluency. Get turn-by-turn feedback, supportive prompts if needed, and practice responding in your own words.")}
           </p>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
             <div className="bg-slate-800/80 backdrop-blur-sm rounded-xl p-3 border border-slate-700/60">
-              <p className="text-xs text-slate-400 font-medium">Practice Style</p>
-              <p className="text-sm font-black text-amber-300">Spontaneous Dialogue</p>
+              <p className="text-xs text-slate-400 font-medium">{t("roleplay.stat_practice_style", "Practice Style")}</p>
+              <p className="text-sm font-black text-amber-300">{t("roleplay.stat_practice_style_value", "Spontaneous Dialogue")}</p>
             </div>
             <div className="bg-slate-800/80 backdrop-blur-sm rounded-xl p-3 border border-slate-700/60">
-              <p className="text-xs text-slate-400 font-medium">Turn Feedback</p>
-              <p className="text-sm font-black text-teal-400">Grammar • Fluency • Tone</p>
+              <p className="text-xs text-slate-400 font-medium">{t("roleplay.stat_turn_feedback", "Turn Feedback")}</p>
+              <p className="text-sm font-black text-teal-400">{t("roleplay.stat_turn_feedback_value", "Grammar • Fluency • Tone")}</p>
             </div>
             <div className="bg-slate-800/80 backdrop-blur-sm rounded-xl p-3 border border-slate-700/60">
-              <p className="text-xs text-slate-400 font-medium">Conversation Partner</p>
-              <p className="text-sm font-black text-indigo-300">Adaptive Dialogue Partner</p>
+              <p className="text-xs text-slate-400 font-medium">{t("roleplay.stat_conversation_partner", "Conversation Partner")}</p>
+              <p className="text-sm font-black text-indigo-300">{t("roleplay.stat_conversation_partner_value", "Adaptive Dialogue Partner")}</p>
             </div>
             <div className="bg-slate-800/80 backdrop-blur-sm rounded-xl p-3 border border-slate-700/60">
-              <p className="text-xs text-slate-400 font-medium">Support Mode</p>
-              <p className="text-sm font-black text-emerald-400">Contextual Hints & Recovery</p>
+              <p className="text-xs text-slate-400 font-medium">{t("roleplay.stat_support_mode", "Support Mode")}</p>
+              <p className="text-sm font-black text-emerald-400">{t("roleplay.stat_support_mode_value", "Contextual Hints & Recovery")}</p>
             </div>
           </div>
         </div>
@@ -528,7 +529,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                       : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                   }`}
                 >
-                  {cat}
+                  <AutoText text={cat} context="roleplay_category" />
                 </button>
               ))}
             </div>
@@ -539,7 +540,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
               className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-black rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
             >
               <Plus size={15} />
-              <span>Create Custom Roleplay</span>
+              <span>{t("roleplay.create_custom", "Create Custom Roleplay")}</span>
             </button>
           </div>
 
@@ -560,7 +561,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">
-                        {sc.category}
+                        <AutoText text={sc.category} context="roleplay_category" />
                       </span>
                       <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-teal-100 text-teal-800">
                         CEFR {sc.level}
@@ -568,10 +569,10 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                     </div>
 
                     <h3 className="font-serif font-black text-base text-slate-900 mb-1.5 leading-snug">
-                      {sc.title}
+                      <AutoText text={sc.title} context="roleplay_scenario_title" />
                     </h3>
                     <p className="text-xs text-slate-600 line-clamp-3 mb-4 leading-relaxed">
-                      {sc.contextDescription}
+                      <AutoText text={sc.contextDescription} context="roleplay_scenario_context" />
                     </p>
 
                     <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/80 mb-4 space-y-1.5">
@@ -585,12 +586,12 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                           {sc.interlocutorName}
                         </span>
                         <span className="text-[10px] text-slate-500 truncate">
-                          ({sc.interlocutorRole})
+                          (<AutoText text={sc.interlocutorRole} context="roleplay_interlocutor_role" />)
                         </span>
                       </div>
                       <p className="text-[11px] text-slate-600 font-medium">
-                        <span className="font-bold text-slate-700">Your Role:</span>{" "}
-                        {sc.userRole}
+                        <span className="font-bold text-slate-700">{t("roleplay.your_role", "Your Role:")}</span>{" "}
+                        <AutoText text={sc.userRole} context="roleplay_user_role" />
                       </p>
                     </div>
                   </div>
@@ -598,7 +599,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                   <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                     <span className="text-[11px] text-teal-700 font-bold flex items-center gap-1">
                       <Target size={13} />
-                      {sc.communicativeObjectives.length} Key Objectives
+                      {sc.communicativeObjectives.length} {t("roleplay.key_objectives", "Key Objectives")}
                     </span>
 
                     <button
@@ -611,7 +612,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                       className="px-3 py-1.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-black rounded-xl shadow-xs flex items-center gap-1 transition-all"
                     >
                       <Play size={13} />
-                      <span>Start Roleplay</span>
+                      <span>{t("roleplay.start_roleplay", "Start Roleplay")}</span>
                     </button>
                   </div>
                 </div>
@@ -626,21 +627,21 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-teal-100 text-teal-800">
-                      Selected Scenario
+                      {t("roleplay.selected_scenario", "Selected Scenario")}
                     </span>
                     <span className="text-xs font-bold text-slate-500">
-                      {activeScenario.category} • CEFR {activeScenario.level}
+                      <AutoText text={activeScenario.category} context="roleplay_category" /> • CEFR {activeScenario.level}
                     </span>
                   </div>
                   <h2 className="text-xl font-serif font-black text-slate-900">
-                    {activeScenario.title}
+                    <AutoText text={activeScenario.title} context="roleplay_scenario_title" />
                   </h2>
                 </div>
 
                 {/* Difficulty & Friction Selector */}
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-slate-600 flex items-center gap-1">
-                    <Sliders size={13} /> Interlocutor Tone:
+                    <Sliders size={13} /> {t("roleplay.interlocutor_tone", "Interlocutor Tone:")}
                   </span>
                   <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
                     {(["friendly", "standard", "firm", "high_friction"] as L2CoachDifficulty[]).map(
@@ -655,7 +656,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                               : "text-slate-600 hover:text-slate-900"
                           }`}
                         >
-                          {lvl.replace("_", " ")}
+                          {t(`roleplay.tone_${lvl}`, lvl.replace("_", " "))}
                         </button>
                       )
                     )}
@@ -668,16 +669,16 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                 <div className="md:col-span-2 space-y-4">
                   <div>
                     <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1">
-                      Scenario Briefing & Context
+                      {t("roleplay.scenario_briefing", "Scenario Briefing & Context")}
                     </h4>
                     <p className="text-sm text-slate-700 leading-relaxed bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                      {activeScenario.contextDescription}
+                      <AutoText text={activeScenario.contextDescription} context="roleplay_scenario_context" />
                     </p>
                   </div>
 
                   <div>
                     <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
-                      Communicative Objectives Checklist (Formulate Spontaneously)
+                      {t("roleplay.objectives_checklist", "Communicative Objectives Checklist (Formulate Spontaneously)")}
                     </h4>
                     <div className="space-y-2">
                       {activeScenario.communicativeObjectives.map((obj, i) => (
@@ -688,7 +689,9 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                           <div className="w-5 h-5 rounded-full bg-teal-100 text-teal-800 font-bold flex items-center justify-center shrink-0 mt-0.5">
                             {i + 1}
                           </div>
-                          <span className="font-medium leading-relaxed">{obj}</span>
+                          <span className="font-medium leading-relaxed">
+                            <AutoText text={obj} context="roleplay_objective" />
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -709,19 +712,19 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                           {activeScenario.interlocutorName}
                         </p>
                         <p className="text-xs text-teal-300 font-medium">
-                          {activeScenario.interlocutorRole}
+                          <AutoText text={activeScenario.interlocutorRole} context="roleplay_interlocutor_role" />
                         </p>
                       </div>
                     </div>
 
                     <div className="pt-2 border-t border-slate-800 space-y-2">
                       <p className="text-xs text-slate-300">
-                        <span className="font-bold text-amber-300">Opening line:</span> "
+                        <span className="font-bold text-amber-300">{t("roleplay.opening_line", "Opening line:")}</span> "
                         {activeScenario.initialInterlocutorUtterance}"
                       </p>
                       <p className="text-xs text-slate-300">
-                        <span className="font-bold text-teal-300">Pragmatic Target:</span>{" "}
-                        {activeScenario.pragmaticFocus}
+                        <span className="font-bold text-teal-300">{t("roleplay.pragmatic_target", "Pragmatic Target:")}</span>{" "}
+                        <AutoText text={activeScenario.pragmaticFocus} context="roleplay_pragmatic_focus" />
                       </p>
                     </div>
                   </div>
@@ -729,10 +732,10 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                   <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs space-y-1">
                     <p className="font-black flex items-center gap-1.5 text-amber-950">
                       <ShieldCheck size={14} className="text-amber-700" />
-                      Authentic Conversation Practice
+                      {t("roleplay.authentic_practice_title", "Authentic Conversation Practice")}
                     </p>
                     <p className="text-amber-800 leading-relaxed">
-                      Respond naturally in your own words. Practice framing complete thoughts, using descriptive vocabulary, and expressing ideas clearly.
+                      {t("roleplay.authentic_practice_desc", "Respond naturally in your own words. Practice framing complete thoughts, using descriptive vocabulary, and expressing ideas clearly.")}
                     </p>
                   </div>
 
@@ -742,7 +745,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                     className="w-full py-3 bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 text-white font-black text-sm rounded-xl shadow-md flex items-center justify-center gap-2 transition-all cursor-pointer active:scale-98"
                   >
                     <Play size={16} />
-                    <span>Start Practice Session</span>
+                    <span>{t("roleplay.start_practice_session", "Start Practice Session")}</span>
                   </button>
                 </div>
               </div>
@@ -768,11 +771,11 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                       {activeScenario.interlocutorName}
                     </span>
                     <span className="text-[10px] font-bold text-teal-700 bg-teal-50 px-1.5 py-0.2 rounded border border-teal-200">
-                      Turn #{turns.length + 1}
+                      {t("roleplay.turn_hash", "Turn")} #{turns.length + 1}
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 truncate max-w-[200px] sm:max-w-xs">
-                    {activeScenario.title}
+                    <AutoText text={activeScenario.title} context="roleplay_scenario_title" />
                   </p>
                 </div>
               </div>
@@ -786,7 +789,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                       ? "bg-rose-50 text-rose-700 border-rose-200"
                       : "bg-slate-100 text-slate-700 border-slate-200 hover:bg-slate-200"
                   }`}
-                  title={audioMuted ? "Unmute AI Speech" : "Mute AI Speech"}
+                  title={audioMuted ? t("roleplay.unmute_ai", "Unmute AI Speech") : t("roleplay.mute_ai", "Mute AI Speech")}
                 >
                   {audioMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
                 </button>
@@ -797,7 +800,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                   className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-black rounded-xl shadow-xs flex items-center gap-1.5 transition-all cursor-pointer"
                 >
                   <FileCheck size={14} />
-                  <span>End & Audit</span>
+                  <span>{t("roleplay.end_audit", "End & Audit")}</span>
                 </button>
               </div>
             </div>
@@ -829,10 +832,10 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                     <div className="bg-teal-700 text-white rounded-2xl rounded-tr-sm p-3.5 max-w-[85%] shadow-sm space-y-1.5">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-[10px] font-black text-teal-200 uppercase">
-                          You (Learner)
+                          {t("roleplay.you_learner", "You (Learner)")}
                         </span>
                         <div className="flex items-center gap-1 text-[10px] font-bold text-teal-100">
-                          <span>Grammar: {turn.grammaticalAccuracy.score}%</span>
+                          <span>{t("roleplay.grammar_label", "Grammar:")} {turn.grammaticalAccuracy.score}%</span>
                         </div>
                       </div>
                       <p className="text-sm leading-relaxed">{turn.userSpokenText}</p>
@@ -858,7 +861,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                           type="button"
                           onClick={() => speakText(turn.interlocutorReply, 0.95)}
                           className="text-slate-400 hover:text-white transition-colors"
-                          title="Replay Audio"
+                          title={t("roleplay.replay_audio", "Replay Audio")}
                         >
                           <Volume2 size={13} />
                         </button>
@@ -876,7 +879,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                 <div className="flex items-start justify-end gap-3 animate-pulse">
                   <div className="bg-teal-900/80 border border-teal-500/50 text-teal-100 rounded-2xl p-3.5 max-w-[85%]">
                     <span className="text-[10px] font-black text-teal-300 block mb-1">
-                      Listening to your oral speech...
+                      {t("roleplay.listening_oral", "Listening to your oral speech...")}
                     </span>
                     <p className="text-sm italic">{spokenTranscript}</p>
                   </div>
@@ -887,7 +890,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
               {isAiProcessing && (
                 <div className="flex items-center gap-2 text-xs font-bold text-teal-400 bg-slate-800/80 p-3 rounded-xl border border-slate-700 w-fit">
                   <div className="w-4 h-4 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" />
-                  <span>Coach evaluating oral syntax, fluency & pragmatics...</span>
+                  <span>{t("roleplay.coach_evaluating", "Coach evaluating oral syntax, fluency & pragmatics...")}</span>
                 </div>
               )}
 
@@ -906,10 +909,10 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                 />
                 <span className="absolute right-3 text-[10px] font-bold text-slate-400">
                   {isListening
-                    ? "🔴 Microphone Active"
+                    ? t("roleplay.mic_active", "🔴 Microphone Active")
                     : isAiSpeaking
-                    ? "🔊 Interlocutor Vocalizing"
-                    : "Ready to Speak"}
+                    ? t("roleplay.interlocutor_vocalizing", "🔊 Interlocutor Vocalizing")
+                    : t("roleplay.ready_to_speak", "Ready to Speak")}
                 </span>
               </div>
 
@@ -926,7 +929,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                   }`}
                 >
                   {isListening ? <MicOff size={18} /> : <Mic size={18} />}
-                  <span>{isListening ? "Stop & Evaluate" : "Push to Speak"}</span>
+                  <span>{isListening ? t("roleplay.stop_evaluate", "Stop & Evaluate") : t("roleplay.push_to_speak", "Push to Speak")}</span>
                 </button>
 
                 <div className="flex-1 relative">
@@ -939,7 +942,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                         handleProcessUserTurn(typedInput.trim());
                       }
                     }}
-                    placeholder="Or type spontaneous response (no reading scripts)..."
+                    placeholder={t("roleplay.type_response_placeholder", "Or type spontaneous response (no reading scripts)...")}
                     disabled={isAiProcessing || isListening}
                     className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
                   />
@@ -950,15 +953,15 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                   onClick={() => handleProcessUserTurn(typedInput.trim())}
                   disabled={!typedInput.trim() || isAiProcessing}
                   className="p-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white rounded-xl transition-all cursor-pointer"
-                  title="Send text"
+                  title={t("roleplay.send_text", "Send text")}
                 >
                   <Send size={16} />
                 </button>
               </div>
 
               <div className="flex items-center justify-between text-[11px] text-slate-500 px-1">
-                <span>⚡ Formulate thoughts in your own words.</span>
-                <span>Press <strong>Push to Speak</strong> to articulate naturally.</span>
+                <span>⚡ {t("roleplay.formulate_own_words", "Formulate thoughts in your own words.")}</span>
+                <span>{t("roleplay.press_prefix", "Press")} <strong>{t("roleplay.push_to_speak", "Push to Speak")}</strong> {t("roleplay.press_suffix", "to articulate naturally.")}</span>
               </div>
             </div>
           </div>
@@ -968,11 +971,11 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
             {/* Tabbed Feedback Selector */}
             <div className="bg-white rounded-2xl p-2 border border-slate-200 shadow-xs flex items-center justify-between gap-1 overflow-x-auto no-scrollbar">
               {[
-                { id: "overview", label: "Live Stats" },
-                { id: "grammar", label: "Grammar Slips" },
-                { id: "lexical", label: "Lexical Reach" },
-                { id: "pragmatics", label: "Pragmatics" },
-                { id: "scaffolding", label: "Scaffolding" },
+                { id: "overview", label: t("roleplay.tab_live_stats", "Live Stats") },
+                { id: "grammar", label: t("roleplay.tab_grammar_slips", "Grammar Slips") },
+                { id: "lexical", label: t("roleplay.tab_lexical_reach", "Lexical Reach") },
+                { id: "pragmatics", label: t("roleplay.tab_pragmatics", "Pragmatics") },
+                { id: "scaffolding", label: t("roleplay.tab_scaffolding", "Scaffolding") },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -996,10 +999,10 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                 <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                   <div>
                     <span className="text-[10px] font-black uppercase text-teal-700 bg-teal-50 px-2 py-0.5 rounded">
-                      Turn #{latestTurn.turnNumber} Oral Analysis
+                      {t("roleplay.turn_hash", "Turn")} #{latestTurn.turnNumber} {t("roleplay.oral_analysis", "Oral Analysis")}
                     </span>
                     <h3 className="font-serif font-black text-base text-slate-900 mt-1">
-                      Dynamic Performance
+                      {t("roleplay.dynamic_performance", "Dynamic Performance")}
                     </h3>
                   </div>
                   <div className="text-right">
@@ -1014,7 +1017,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                       %
                     </span>
                     <span className="block text-[9px] font-bold text-slate-400 uppercase">
-                      Composite
+                      {t("roleplay.composite", "Composite")}
                     </span>
                   </div>
                 </div>
@@ -1025,7 +1028,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                     <div className="grid grid-cols-2 gap-2.5">
                       <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
                         <span className="text-[11px] font-bold text-slate-500 block">
-                          Grammar Accuracy
+                          {t("roleplay.grammar_accuracy", "Grammar Accuracy")}
                         </span>
                         <span className="text-lg font-black text-slate-900">
                           {latestTurn.grammaticalAccuracy.score}%
@@ -1033,7 +1036,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                       </div>
                       <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
                         <span className="text-[11px] font-bold text-slate-500 block">
-                          Communicative Fluency
+                          {t("roleplay.communicative_fluency", "Communicative Fluency")}
                         </span>
                         <span className="text-lg font-black text-teal-700">
                           {latestTurn.functionalFluency.score}%
@@ -1041,7 +1044,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                       </div>
                       <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
                         <span className="text-[11px] font-bold text-slate-500 block">
-                          Pragmatic Fit
+                          {t("roleplay.pragmatic_fit", "Pragmatic Fit")}
                         </span>
                         <span className="text-lg font-black text-indigo-700">
                           {latestTurn.pragmaticAppropriateness.score}%
@@ -1049,7 +1052,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                       </div>
                       <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80">
                         <span className="text-[11px] font-bold text-slate-500 block">
-                          Lexical Retrieval
+                          {t("roleplay.lexical_retrieval", "Lexical Retrieval")}
                         </span>
                         <span className="text-lg font-black text-amber-700">
                           {latestTurn.lexicalRetrieval.score}%
@@ -1062,11 +1065,11 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                       <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 space-y-1">
                         <span className="font-bold flex items-center gap-1 text-emerald-950">
                           <CheckCircle2 size={13} className="text-emerald-700" />
-                          Spontaneous Syntactic Wins:
+                          {t("roleplay.syntactic_wins", "Spontaneous Syntactic Wins:")}
                         </span>
                         <ul className="list-disc pl-4 space-y-0.5 text-emerald-800">
                           {latestTurn.grammaticalAccuracy.strengths.map((str, i) => (
-                            <li key={i}>{str}</li>
+                            <li key={i}><AutoText text={str} context="roleplay_strength" /></li>
                           ))}
                         </ul>
                       </div>
@@ -1075,9 +1078,9 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                     {/* Flow observation */}
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 space-y-1">
                       <span className="font-bold text-slate-900 block">
-                        Cadence & Coherence:
+                        {t("roleplay.cadence_coherence", "Cadence & Coherence:")}
                       </span>
-                      <p>{latestTurn.functionalFluency.hesitationObservation}</p>
+                      <p><AutoText text={latestTurn.functionalFluency.hesitationObservation} context="roleplay_hesitation_observation" /></p>
                     </div>
                   </div>
                 )}
@@ -1088,9 +1091,9 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                     {latestTurn.grammaticalAccuracy.slips.length === 0 ? (
                       <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-center text-xs space-y-1">
                         <CheckCircle2 size={20} className="text-emerald-600 mx-auto" />
-                        <p className="font-bold">Zero Morphosyntactic Slips!</p>
+                        <p className="font-bold">{t("roleplay.zero_slips", "Zero Morphosyntactic Slips!")}</p>
                         <p className="text-emerald-700">
-                          All verb tenses, prepositions, and collocations were accurate.
+                          {t("roleplay.zero_slips_desc", "All verb tenses, prepositions, and collocations were accurate.")}
                         </p>
                       </div>
                     ) : (
@@ -1113,7 +1116,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                             </span>
                           </div>
                           <p className="text-slate-600 text-[11px] leading-relaxed">
-                            {slip.explanation}
+                            <AutoText text={slip.explanation} context="roleplay_slip_explanation" />
                           </p>
                         </div>
                       ))
@@ -1126,9 +1129,9 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                   <div className="space-y-3">
                     {latestTurn.lexicalRetrieval.suggestedUpgrades.length === 0 ? (
                       <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-center text-xs">
-                        <p className="font-bold">Natural Vocabulary Fit</p>
+                        <p className="font-bold">{t("roleplay.natural_vocab_fit", "Natural Vocabulary Fit")}</p>
                         <p className="text-slate-500 mt-0.5">
-                          Good situational word retrieval for this conversational context.
+                          {t("roleplay.natural_vocab_fit_desc", "Good situational word retrieval for this conversational context.")}
                         </p>
                       </div>
                     ) : (
@@ -1145,7 +1148,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                               </span>
                             </span>
                           </div>
-                          <p className="text-slate-600 text-[11px]">{upg.why}</p>
+                          <p className="text-slate-600 text-[11px]"><AutoText text={upg.why} context="roleplay_upgrade_reason" /></p>
                         </div>
                       ))
                     )}
@@ -1157,20 +1160,20 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                   <div className="space-y-3">
                     <div className="p-3 rounded-xl bg-purple-50 border border-purple-200 text-xs space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-purple-950">Register Rating</span>
+                        <span className="font-bold text-purple-950">{t("roleplay.register_rating", "Register Rating")}</span>
                         <span className="px-2 py-0.5 rounded-full bg-purple-200 text-purple-950 font-black text-[10px]">
-                          {latestTurn.pragmaticAppropriateness.registerRating}
+                          <AutoText text={latestTurn.pragmaticAppropriateness.registerRating} context="roleplay_register_rating" />
                         </span>
                       </div>
                       <p className="text-purple-900 leading-relaxed">
-                        {latestTurn.pragmaticAppropriateness.politenessAndHedgingNotes}
+                        <AutoText text={latestTurn.pragmaticAppropriateness.politenessAndHedgingNotes} context="roleplay_politeness_notes" />
                       </p>
                     </div>
 
                     <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1">
-                      <span className="font-bold text-slate-800">Tone Assessment</span>
+                      <span className="font-bold text-slate-800">{t("roleplay.tone_assessment", "Tone Assessment")}</span>
                       <p className="text-slate-600">
-                        {latestTurn.pragmaticAppropriateness.toneAssessment}
+                        <AutoText text={latestTurn.pragmaticAppropriateness.toneAssessment} context="roleplay_tone_assessment" />
                       </p>
                     </div>
                   </div>
@@ -1182,14 +1185,14 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                     <div className="p-3.5 rounded-xl bg-gradient-to-br from-indigo-50 to-teal-50 border border-indigo-200 text-xs space-y-2">
                       <div className="flex items-center gap-1.5 font-black text-indigo-950">
                         <Brain size={14} className="text-indigo-600" />
-                        <span>Subtle Conversational Scaffolding</span>
+                        <span>{t("roleplay.scaffolding_title", "Subtle Conversational Scaffolding")}</span>
                       </div>
                       <p className="text-slate-700 leading-relaxed font-medium">
-                        {latestTurn.scaffoldingAndRecovery.subtleHint}
+                        <AutoText text={latestTurn.scaffoldingAndRecovery.subtleHint} context="roleplay_scaffolding_hint" />
                       </p>
                       <div className="p-2 rounded-lg bg-white border border-indigo-100 text-indigo-900 font-semibold text-[11px]">
-                        💡 <strong>Tactical Pointer:</strong>{" "}
-                        {latestTurn.scaffoldingAndRecovery.recommendedStrategy}
+                        💡 <strong>{t("roleplay.tactical_pointer", "Tactical Pointer:")}</strong>{" "}
+                        <AutoText text={latestTurn.scaffoldingAndRecovery.recommendedStrategy} context="roleplay_recommended_strategy" />
                       </div>
                     </div>
                   </div>
@@ -1200,11 +1203,10 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
               <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm space-y-4">
                 <div className="flex items-center gap-2 text-teal-700 font-serif font-black text-base">
                   <Target size={18} />
-                  <h3>Communicative Objectives</h3>
+                  <h3>{t("roleplay.communicative_objectives", "Communicative Objectives")}</h3>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  Address these milestones naturally during your dialogue. The coach tracks
-                  progress dynamically:
+                  {t("roleplay.objectives_desc", "Address these milestones naturally during your dialogue. The coach tracks progress dynamically:")}
                 </p>
                 <div className="space-y-2.5">
                   {activeScenario.communicativeObjectives.map((obj, i) => (
@@ -1215,7 +1217,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                       <div className="w-5 h-5 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center shrink-0 mt-0.5 text-[11px]">
                         {i + 1}
                       </div>
-                      <span className="font-medium">{obj}</span>
+                      <span className="font-medium"><AutoText text={obj} context="roleplay_objective" /></span>
                     </div>
                   ))}
                 </div>
@@ -1234,14 +1236,14 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-teal-100 text-teal-800">
-                    Roleplay Audit
+                    {t("roleplay.audit_badge", "Roleplay Audit")}
                   </span>
                   <span className="text-xs font-bold text-slate-500">
-                    {sessionReport.scenarioTitle}
+                    <AutoText text={sessionReport.scenarioTitle} context="roleplay_scenario_title" />
                   </span>
                 </div>
                 <h2 className="text-2xl font-serif font-black text-slate-900">
-                  L2 Spontaneous Speaking Competency Audit
+                  {t("roleplay.audit_title", "L2 Spontaneous Speaking Competency Audit")}
                 </h2>
               </div>
               <button
@@ -1257,7 +1259,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               <div className="p-4 rounded-2xl bg-teal-50 border border-teal-200 text-center">
                 <span className="text-xs font-bold text-teal-800 block">
-                  Overall Competence
+                  {t("roleplay.overall_competence", "Overall Competence")}
                 </span>
                 <span className="text-2xl font-black text-teal-900">
                   {sessionReport.overallCommunicativeScore}%
@@ -1265,7 +1267,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
               </div>
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 text-center">
                 <span className="text-xs font-bold text-slate-600 block">
-                  Grammar Accuracy
+                  {t("roleplay.grammar_accuracy", "Grammar Accuracy")}
                 </span>
                 <span className="text-2xl font-black text-slate-900">
                   {sessionReport.grammarAccuracyAvg}%
@@ -1273,7 +1275,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
               </div>
               <div className="p-4 rounded-2xl bg-indigo-50 border border-indigo-200 text-center">
                 <span className="text-xs font-bold text-indigo-800 block">
-                  Pragmatic Diplomacy
+                  {t("roleplay.pragmatic_diplomacy", "Pragmatic Diplomacy")}
                 </span>
                 <span className="text-2xl font-black text-indigo-900">
                   {sessionReport.pragmaticScoreAvg}%
@@ -1281,7 +1283,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
               </div>
               <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-center">
                 <span className="text-xs font-bold text-amber-800 block">
-                  XP Rewarded
+                  {t("roleplay.xp_rewarded", "XP Rewarded")}
                 </span>
                 <span className="text-2xl font-black text-amber-900">
                   +{sessionReport.xpEarned}
@@ -1293,10 +1295,10 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
             <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
               <h4 className="font-serif font-black text-sm text-slate-900 flex items-center gap-1.5">
                 <Brain size={16} className="text-teal-700" />
-                Pedagogical Performance Synthesis
+                {t("roleplay.pedagogical_synthesis", "Pedagogical Performance Synthesis")}
               </h4>
               <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
-                {sessionReport.detailedFeedbackSummary}
+                <AutoText text={sessionReport.detailedFeedbackSummary} context="roleplay_feedback_summary" />
               </p>
             </div>
 
@@ -1305,11 +1307,11 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
               <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 space-y-2">
                 <h5 className="font-bold text-emerald-950 flex items-center gap-1.5">
                   <CheckCircle2 size={15} className="text-emerald-700" />
-                  Key Grammar & Syntactic Wins
+                  {t("roleplay.grammar_wins_title", "Key Grammar & Syntactic Wins")}
                 </h5>
                 <ul className="list-disc pl-4 space-y-1 text-emerald-800">
                   {sessionReport.keyGrammarTakeaways.map((item, i) => (
-                    <li key={i}>{item}</li>
+                    <li key={i}><AutoText text={item} context="roleplay_grammar_takeaway" /></li>
                   ))}
                 </ul>
               </div>
@@ -1317,11 +1319,11 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
               <div className="p-4 rounded-2xl bg-purple-50 border border-purple-200 space-y-2">
                 <h5 className="font-bold text-purple-950 flex items-center gap-1.5">
                   <TrendingUp size={15} className="text-purple-700" />
-                  Pragmatic & Lexical Growth Targets
+                  {t("roleplay.growth_targets_title", "Pragmatic & Lexical Growth Targets")}
                 </h5>
                 <ul className="list-disc pl-4 space-y-1 text-purple-800">
                   {sessionReport.pragmaticGrowthPoints.map((item, i) => (
-                    <li key={i}>{item}</li>
+                    <li key={i}><AutoText text={item} context="roleplay_growth_point" /></li>
                   ))}
                 </ul>
               </div>
@@ -1337,14 +1339,14 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                 }}
                 className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-bold rounded-xl transition-all"
               >
-                Retry Scenario
+                {t("roleplay.retry_scenario", "Retry Scenario")}
               </button>
               <button
                 type="button"
                 onClick={() => setIsReportOpen(false)}
                 className="px-5 py-2.5 bg-teal-700 hover:bg-teal-800 text-white text-xs font-black rounded-xl shadow-xs transition-all"
               >
-                Close & Return to Hub
+                {t("roleplay.close_return_hub", "Close & Return to Hub")}
               </button>
             </div>
           </div>
@@ -1358,10 +1360,10 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div>
                 <span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-indigo-100 text-indigo-800">
-                  Custom Roleplay Studio
+                  {t("roleplay.custom_studio_badge", "Custom Roleplay Studio")}
                 </span>
                 <h3 className="text-xl font-serif font-black text-slate-900 mt-1">
-                  Design Your Spontaneous Scenario
+                  {t("roleplay.design_scenario_title", "Design Your Spontaneous Scenario")}
                 </h3>
               </div>
               <button
@@ -1376,13 +1378,13 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
             <div className="space-y-4 text-xs">
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  Scenario Title *
+                  {t("roleplay.field_scenario_title", "Scenario Title *")}
                 </label>
                 <input
                   type="text"
                   value={customTitle}
                   onChange={(e) => setCustomTitle(e.target.value)}
-                  placeholder="e.g. Challenging a Vendor Invoice Surcharge"
+                  placeholder={t("roleplay.field_scenario_title_placeholder", "e.g. Challenging a Vendor Invoice Surcharge")}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
@@ -1390,25 +1392,25 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    Your Role *
+                    {t("roleplay.field_your_role", "Your Role *")}
                   </label>
                   <input
                     type="text"
                     value={customUserRole}
                     onChange={(e) => setCustomUserRole(e.target.value)}
-                    placeholder="e.g. Operations Director"
+                    placeholder={t("roleplay.field_your_role_placeholder", "e.g. Operations Director")}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   />
                 </div>
                 <div>
                   <label className="font-bold text-slate-700 block mb-1">
-                    Interlocutor Name & Title
+                    {t("roleplay.field_interlocutor_name", "Interlocutor Name & Title")}
                   </label>
                   <input
                     type="text"
                     value={customInterlocutorName}
                     onChange={(e) => setCustomInterlocutorName(e.target.value)}
-                    placeholder="e.g. Sarah Jenkins (Account Executive)"
+                    placeholder={t("roleplay.field_interlocutor_name_placeholder", "e.g. Sarah Jenkins (Account Executive)")}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                   />
                 </div>
@@ -1416,20 +1418,20 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
 
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  Context & Background
+                  {t("roleplay.field_context", "Context & Background")}
                 </label>
                 <textarea
                   rows={3}
                   value={customContext}
                   onChange={(e) => setCustomContext(e.target.value)}
-                  placeholder="Describe the stakes, complications, and situational friction..."
+                  placeholder={t("roleplay.field_context_placeholder", "Describe the stakes, complications, and situational friction...")}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
 
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  Communicative Objectives (One per line)
+                  {t("roleplay.field_objectives", "Communicative Objectives (One per line)")}
                 </label>
                 <textarea
                   rows={3}
@@ -1442,13 +1444,13 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
 
               <div>
                 <label className="font-bold text-slate-700 block mb-1">
-                  Interlocutor Opening Line
+                  {t("roleplay.field_opening_line", "Interlocutor Opening Line")}
                 </label>
                 <input
                   type="text"
                   value={customOpeningLine}
                   onChange={(e) => setCustomOpeningLine(e.target.value)}
-                  placeholder="e.g. Hello, I received your email regarding the latest invoice. What seems to be the issue?"
+                  placeholder={t("roleplay.field_opening_line_placeholder", "e.g. Hello, I received your email regarding the latest invoice. What seems to be the issue?")}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-900 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                 />
               </div>
@@ -1460,7 +1462,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                 onClick={() => setIsCustomModalOpen(false)}
                 className="px-4 py-2 bg-slate-100 text-slate-700 text-xs font-bold rounded-xl"
               >
-                Cancel
+                {t("roleplay.cancel", "Cancel")}
               </button>
               <button
                 type="button"
@@ -1468,7 +1470,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
                 disabled={!customTitle.trim() || !customUserRole.trim()}
                 className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white text-xs font-black rounded-xl shadow-xs"
               >
-                Save & Start Roleplay
+                {t("roleplay.save_start_roleplay", "Save & Start Roleplay")}
               </button>
             </div>
           </div>
