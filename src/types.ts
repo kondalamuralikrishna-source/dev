@@ -600,6 +600,11 @@ export interface UserAccount {
     marketingOptIn?: boolean;
   };
   subscription?: SubscriptionInfo;
+  // Owner-managed, admin-only access control: which admin-panel sections this account may use.
+  // undefined/null = full access (the default for every admin until an owner restricts them, so
+  // existing admins are never silently locked out by this field's introduction). Never applies
+  // to role "owner" or "student".
+  allowedSections?: string[] | null;
 }
 
 export interface GoogleAuthStatus {

@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { Header, NavTab } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
 import { AdminHeader, AdminNavTab } from "./components/AdminHeader";
+import { AdminSidebar } from "./components/AdminSidebar";
+import { SubscriptionsRevenuePanel } from "./components/SubscriptionsRevenuePanel";
+import { ContentManagementPanel } from "./components/ContentManagementPanel";
 import { Dashboard } from "./components/Dashboard";
 import { GrammarHub } from "./components/GrammarHub";
 import { VocabularyHub } from "./components/VocabularyHub";
@@ -68,6 +71,20 @@ import {
 
 export type PortalType = "student" | "admin";
 
+// Shown when an admin's account has been restricted (by the owner) from a section they're
+// currently pointed at -- e.g. they had access, the owner revoked it, and their tab state is
+// stale, or they typed the URL's ?tab= param directly.
+function SectionAccessDenied() {
+  return (
+    <div className="bg-white rounded-3xl border border-slate-200 p-10 text-center space-y-2">
+      <p className="text-sm font-black text-slate-900">Access Restricted</p>
+      <p className="text-xs text-slate-500 max-w-md mx-auto">
+        Your account does not have access to this section. Contact the platform owner if you believe this is a mistake.
+      </p>
+    </div>
+  );
+}
+
 export default function App() {
   const [progress, setProgress] = useState<UserProgress>(loadUserProgress);
   const [portal, setPortal] = useState<PortalType>("student");
@@ -96,9 +113,13 @@ export default function App() {
   const isOwnerOrAdmin =
     currentUser?.role === "owner" ||
     currentUser?.role === "admin" ||
-    currentUser?.email === "regana.kasieswaramma@fluenxaapp.com" ||
-    currentUser?.email === "regana.kasieswaramma@fluenxiaapp.com" ||
-    currentUser?.email === "kondala.muralikrishna@gmail.com";
+    currentUser?.email === "reganakasieswaramma@fluenxaapp.com" ||
+    currentUser?.email === "reganakasieswaramma@fluenxiaapp.com";
+
+  // Owner-managed per-admin section restriction -- owner always has access; an admin with no
+  // allowedSections set (the default) also has full access; only a non-empty restriction narrows it.
+  const hasSectionAccess = (section: string) =>
+    currentUser?.role !== "admin" || !currentUser.allowedSections || currentUser.allowedSections.includes(section);
 
   const handleOpenLegalModal = (tab: LegalTab = "terms") => {
     setLegalInitialTab(tab);
@@ -154,6 +175,8 @@ export default function App() {
         tabParam &&
         [
           "governance",
+          "subscriptions",
+          "content_settings",
           "ala_studio",
           "speech_science",
           "enterprise_compliance",
@@ -349,9 +372,8 @@ export default function App() {
     if (
       user.role === "owner" ||
       user.role === "admin" ||
-      user.email === "regana.kasieswaramma@fluenxaapp.com" ||
-      user.email === "regana.kasieswaramma@fluenxiaapp.com" ||
-      user.email === "kondala.muralikrishna@gmail.com"
+      user.email === "reganakasieswaramma@fluenxaapp.com" ||
+      user.email === "reganakasieswaramma@fluenxiaapp.com"
     ) {
       setPortal("admin");
       setAdminTab("governance");
@@ -564,7 +586,9 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100/70 text-slate-900 font-sans selection:bg-indigo-500 selection:text-white flex">
-      {/* Left sidebar navigation (student portal only — admin keeps its existing top-nav shell) */}
+      {/* Left sidebar navigation — student and admin portals each get their own, mutually
+          exclusive since only one portal is ever active at a time, so they share the single
+          isMobileSidebarOpen drawer state. */}
       {portal === "student" && !isOwnerOrAdmin && (
         <Sidebar
           activeTab={studentTab}
@@ -572,6 +596,16 @@ export default function App() {
           onLogout={handleLogout}
           isMobileOpen={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        />
+      )}
+      {portal === "admin" && isOwnerOrAdmin && (
+        <AdminSidebar
+          activeTab={adminTab}
+          setActiveTab={setAdminTab}
+          onLogout={handleLogout}
+          isMobileOpen={isMobileSidebarOpen}
+          onCloseMobile={() => setIsMobileSidebarOpen(false)}
+          allowedSections={currentUser?.role === "admin" ? currentUser.allowedSections : undefined}
         />
       )}
 
@@ -585,6 +619,7 @@ export default function App() {
             onLogout={handleLogout}
             onOpenLegalModal={handleOpenLegalModal}
             onOpenArchitectureDoc={() => setIsArchitectureModalOpen(true)}
+            onOpenMobileMenu={() => setIsMobileSidebarOpen(true)}
           />
         ) : portal === "student" && !isOwnerOrAdmin ? (
           <Header
@@ -634,25 +669,35 @@ export default function App() {
         {portal === "admin" && isOwnerOrAdmin && (
           <>
             {adminTab === "governance" && (
-              <AdminDashboard
-                currentUser={currentUser}
-                onNavigateToTab={(t) => {
-                  if (
-                    [
-                      "governance",
-                      "ala_studio",
-                      "speech_science",
-                      "enterprise_compliance",
-                      "integrity_assessment",
-                      "adaptive_curriculum",
-                      "ase_engine",
-                    ].includes(t)
-                  ) {
-                    setAdminTab(t as AdminNavTab);
-                  }
-                }}
-              />
+              hasSectionAccess("governance") ? (
+                <AdminDashboard
+                  currentUser={currentUser}
+                  onNavigateToTab={(t) => {
+                    if (
+                      [
+                        "governance",
+                        "subscriptions",
+                        "content_settings",
+                        "ala_studio",
+                        "speech_science",
+                        "enterprise_compliance",
+                        "integrity_assessment",
+                        "adaptive_curriculum",
+                        "ase_engine",
+                      ].includes(t)
+                    ) {
+                      setAdminTab(t as AdminNavTab);
+                    }
+                  }}
+                />
+              ) : (
+                <SectionAccessDenied />
+              )
             )}
+
+            {adminTab === "subscriptions" && (hasSectionAccess("subscriptions") ? <SubscriptionsRevenuePanel /> : <SectionAccessDenied />)}
+
+            {adminTab === "content_settings" && (hasSectionAccess("content_settings") ? <ContentManagementPanel /> : <SectionAccessDenied />)}
 
             {adminTab === "ala_studio" && (
               <PsychometricALAEvaluatorStudio

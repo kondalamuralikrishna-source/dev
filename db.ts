@@ -46,6 +46,9 @@ export interface UserDoc extends Document {
     cashfreeOrderId?: string;
     lastPaymentId?: string;
   };
+  // Owner-managed, admin-only access control -- see the comment on UserAccount.allowedSections
+  // in src/types.ts for the full semantics (undefined = full access).
+  allowedSections?: string[];
 }
 
 const userSchema = new Schema<UserDoc>(
@@ -81,6 +84,7 @@ const userSchema = new Schema<UserDoc>(
       cashfreeOrderId: String,
       lastPaymentId: String,
     },
+    allowedSections: { type: [String], default: undefined },
   },
   { versionKey: false }
 );
@@ -153,6 +157,192 @@ export const paymentOrderStore = {
       delete (obj as any)._id;
       return obj;
     });
+  },
+  // Admin-facing: every order ever created, newest first, for the Subscriptions & Revenue panel.
+  async listAll(limit = 500) {
+    const docs = await PaymentOrderModel.find({}).sort({ createdAt: -1 }).limit(limit);
+    return docs.map((d) => {
+      const obj = d.toObject();
+      delete (obj as any)._id;
+      return obj;
+    });
+  },
+};
+
+// ============================================================================
+// PLANS (admin-editable pricing) -- cashfree.ts's PLANS constant remains the source of truth
+// for which plan IDs exist and their fallback defaults; this collection lets an admin override
+// name/price/duration/description per plan without a code deploy. Every place that charges a
+// customer (checkout, the public pricing list) reads through effectivePlans() below rather than
+// the static PLANS object directly, so an edit here actually changes what Cashfree bills.
+// ============================================================================
+
+export interface PlanDoc extends Document {
+  id: string;
+  tier: string;
+  name: string;
+  amountInr: number;
+  durationDays: number;
+  description: string;
+  updatedAt: string;
+}
+
+const planSchema = new Schema<PlanDoc>(
+  {
+    id: { type: String, required: true, unique: true, index: true },
+    tier: { type: String, required: true },
+    name: { type: String, required: true },
+    amountInr: { type: Number, required: true },
+    durationDays: { type: Number, required: true },
+    description: { type: String, required: true },
+    updatedAt: { type: String, required: true },
+  },
+  { versionKey: false }
+);
+
+export const PlanModel = mongoose.model<PlanDoc>("Plan", planSchema);
+
+export const planStore = {
+  async getAll() {
+    const docs = await PlanModel.find({});
+    return docs.map((d) => {
+      const obj = d.toObject();
+      delete (obj as any)._id;
+      return obj;
+    });
+  },
+  async upsert(plan: Omit<PlanDoc, keyof Document>) {
+    await PlanModel.findOneAndUpdate({ id: plan.id }, { $set: plan }, { upsert: true });
+  },
+};
+
+// ============================================================================
+// SITE SETTINGS (CMS) -- a single document holding editable, site-wide content: contact info,
+// the platform tagline, the logo, and the Terms of Usage / Privacy Policy body text. Both the
+// in-app LegalModal and the server-rendered /terms & /privacy pages read from this same document,
+// so there is exactly one place these get edited instead of two hardcoded copies drifting apart.
+// ============================================================================
+
+const SITE_SETTINGS_ID = "default";
+
+export interface SiteSettingsDoc extends Document {
+  id: string;
+  contactEmail: string;
+  salesEmail: string;
+  contactPhone?: string;
+  platformTagline: string;
+  logoUrl?: string;
+  termsContent: string;
+  privacyContent: string;
+  updatedAt: string;
+}
+
+const siteSettingsSchema = new Schema<SiteSettingsDoc>(
+  {
+    id: { type: String, required: true, unique: true, index: true },
+    contactEmail: { type: String, required: true },
+    salesEmail: { type: String, required: true },
+    contactPhone: String,
+    platformTagline: { type: String, required: true },
+    logoUrl: String,
+    termsContent: { type: String, required: true },
+    privacyContent: { type: String, required: true },
+    updatedAt: { type: String, required: true },
+  },
+  { versionKey: false }
+);
+
+export const SiteSettingsModel = mongoose.model<SiteSettingsDoc>("SiteSettings", siteSettingsSchema);
+
+// Defaults seeded on first read -- carries over the real Terms/Privacy prose that used to be
+// hardcoded in server.ts's /terms and /privacy routes (and duplicated again in LegalModal.tsx),
+// so switching those pages over to read from this document is not a content regression. Body
+// text uses a small "## heading" / "- bullet" convention (see renderLegalMarkup in server.ts and
+// the matching renderer in LegalModal.tsx) rather than full Markdown, since no Markdown library
+// is installed for this project -- lines starting with "## " become section headings, "- " lines
+// become bullets, and blank-line-separated blocks become paragraphs.
+//
+// The Google API Limited Use Disclosure clause on the Privacy page is intentionally NOT part of
+// this editable content -- it stays hardcoded in server.ts because it is boilerplate required by
+// Google's OAuth verification, not something that should be casually rewritten from the CMS.
+const DEFAULT_SITE_SETTINGS: Omit<SiteSettingsDoc, keyof Document> = {
+  id: SITE_SETTINGS_ID,
+  contactEmail: "reganakasieswaramma@fluenxiaapp.com",
+  salesEmail: "reganakasieswaramma@fluenxiaapp.com",
+  contactPhone: "",
+  platformTagline: "Empower Learning, Unleash Potential.",
+  logoUrl: "",
+  termsContent: `By accessing or using the Fluenxia mobile application, website (www.fluenxiaapp.com), or related services ("Services"), operated by Fluenxia Inc. and its registered owner Regana Kasieswaramma ("Company", "we", "us"), you agree to be bound by these Terms of Usage. If you do not agree, you must not access or use the Services.
+
+## Acceptance of Terms
+By accessing or using the Services, you agree to be bound by these Terms of Usage ("Terms"). If you do not agree to these Terms, you must not access or use the Services.
+
+## Description of Services & AI Educational Disclaimer
+Fluenxia provides an AI-powered conversational language tutoring platform incorporating real-time speech-to-text, acoustic formant analysis, and automated grammar feedback aligned with CEFR benchmarks.
+- Educational Tool Only: Fluenxia is an independent learning tool. It is not affiliated with, endorsed by, or accredited by IELTS, Cambridge Assessment, or any official testing body.
+- No Guarantee: Fluenxia does not guarantee specific exam scores, professional certifications, or employment outcomes.
+- AI Output & Hallucination Disclaimer: you acknowledge and agree that the lessons, dynamic conversational roleplays, oral feedback, score evaluations, and diagnostic feedback provided across the Services are generated by automated Artificial Intelligence (AI) algorithms and Large Language Models (LLMs). While Fluenxia strives for high pedagogical precision, AI-generated content is probabilistic and may occasionally contain errors, inaccuracies, or hallucinations. Fluenxia does not warrant that AI-generated feedback is completely error-free or suitable as an official accreditation.
+
+## Account Registration & Age Eligibility
+Users must be at least 18 years of age (or the legal age of majority) to register independently. Users under 18 may only use the platform under the supervision of a parent or legal guardian who accepts these Terms and provides verifiable consent.
+
+## Subscriptions, Trials, and Auto-Renewal
+Fluenxia may offer free or discounted trials (e.g., 7-day trials). Unless canceled prior to the trial expiration, the subscription automatically converts into a paid recurring plan at the rates displayed at checkout. Subscriptions automatically renew until canceled via account settings or the respective app store. Fees are inclusive/exclusive of statutory taxes as indicated at purchase.
+
+## Proprietary Rights & Prohibited Conduct
+All software, algorithms, speech models, prompt libraries, assessment frameworks, and the Lenin Martin English Grammar Curriculum are the exclusive Intellectual Property of the Company. Users shall not: (i) reverse engineer, decompile, or extract the source code or voice pipeline; (ii) use automated bots or scrapers to bypass the Anti-Gaming Engine or extract curriculum materials; or (iii) upload unlawful or infringing content.
+
+## Anti-Gaming Heuristics & System Integrity
+To maintain standard assessment validity, Fluenxia monitors response timing, keystroke patterns, and interaction metrics. Suspicious activities indicative of automated scripts or spoofing may result in standard score invalidation or account suspension.
+
+## Limitation of Liability
+To the maximum extent permitted by law, Fluenxia Inc. shall not be liable for indirect, incidental, or consequential damages. Total aggregate liability for any claims under these Terms shall be limited to the total amount paid by the user to Fluenxia in the twelve (12) months preceding the claim.
+
+## Governing Law & Dispute Resolution
+These Terms are governed by the laws of India. Any legal dispute arising out of these Terms shall be settled by binding arbitration under the Arbitration and Conciliation Act, 1996, with the venue of arbitration in Hyderabad, Telangana, India.`,
+  privacyContent: `Fluenxia Inc. operates as the Data Fiduciary (Data Controller). We do not sell your personal data.
+
+## Data Fiduciary & Contact Details
+Data Protection Officer: Regana Kasieswaramma. Contact channels: support@fluenxiaapp.com | privacy@fluenxiaapp.com
+
+## Categories of Personal Data Collected
+- Identity & Contact Data: name, email address, user credentials, and billing details.
+- Acoustic & Voice Data: audio recordings of spoken assessments, voice practice sessions, real-time conversation streams, pitch contours, and formant speech features.
+- Text & Assessment Data: transcripts, written benchmark tests, error history, and CEFR progress scores.
+- Technical & Behavioral Data: IP address, device identifiers, keystroke timing, and response latency heuristics.
+
+## Purposes of Data Processing & Legal Basis
+- Service Provision (Contract / Consent): generating real-time voice feedback, STT transcripts, acoustic analysis, and CEFR evaluations through automated AI models. Users are advised that AI processing is probabilistic and output may occasionally exhibit inaccuracies or hallucinations.
+- System Security & Anti-Gaming (Legitimate Interest / Statutory Duty): analyzing keystrokes and timing parameters to verify authentic human interaction and prevent assessment gaming.
+- AI Model Improvement (Explicit Opt-In Consent): fine-tuning proprietary speech recognition models using anonymized audio and text data.
+
+## Data Sharing & Third-Party Processors
+We do not sell personal data. Data is shared strictly with:
+- Cloud & AI Pipeline Providers: managed infrastructure processing voice streams under strict non-retention Data Processing Agreements (DPAs).
+- Payment Processors: secure gateways handling subscription billing transactions.
+- Human-in-the-Loop (HITL) Linguists: certified human evaluators reviewing flagged audio samples or disputed AI outputs in the queue for assessment calibration.
+
+## Data Retention & Erasure
+Personal data is retained only for operational necessities or statutory requirements. Live audio streams are deleted or anonymized upon session completion unless saved by the user or opted-in for model training. Account deletion and complete data erasure can be requested at any time by emailing privacy@fluenxiaapp.com.
+
+## Data Principal Rights
+Under applicable data protection laws (including the DPDP Act 2023 and GDPR), users hold the right to access, correct, export, or erase their personal data, and withdraw consent at any time via in-app privacy settings or by contacting privacy@fluenxiaapp.com.`,
+  updatedAt: new Date(0).toISOString(),
+};
+
+export const siteSettingsStore = {
+  async get(): Promise<Omit<SiteSettingsDoc, keyof Document>> {
+    const doc = await SiteSettingsModel.findOne({ id: SITE_SETTINGS_ID });
+    if (!doc) return DEFAULT_SITE_SETTINGS;
+    const obj = doc.toObject();
+    delete (obj as any)._id;
+    return obj;
+  },
+  async update(patch: Partial<Omit<SiteSettingsDoc, keyof Document>>) {
+    const current = await siteSettingsStore.get();
+    const next = { ...current, ...patch, id: SITE_SETTINGS_ID, updatedAt: new Date().toISOString() };
+    await SiteSettingsModel.findOneAndUpdate({ id: SITE_SETTINGS_ID }, { $set: next }, { upsert: true });
+    return next;
   },
 };
 

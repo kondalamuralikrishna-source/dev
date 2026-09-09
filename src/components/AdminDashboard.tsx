@@ -56,6 +56,163 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+// Must mirror ADMIN_SECTIONS in server.ts and the item list in AdminSidebar.tsx.
+const ACCESS_SECTIONS: { key: string; label: string }[] = [
+  { key: "governance", label: "User Management & Analytics" },
+  { key: "subscriptions", label: "Subscriptions & Revenue" },
+  { key: "content_settings", label: "Content & Site Settings" },
+  { key: "ala_studio", label: "Psychometric ALA Evaluator" },
+  { key: "speech_science", label: "Speech Science Acoustic DSP" },
+  { key: "integrity_assessment", label: "Dual Plagiarism & Integrity" },
+  { key: "ase_engine", label: "Anti-Gaming ASE Acoustic Lab" },
+  { key: "adaptive_curriculum", label: "Curriculum & Role-Play Authoring" },
+  { key: "enterprise_compliance", label: "Compliance & HITL Proctoring" },
+];
+
+interface AdminAccessRowProps {
+  admin: UserAccount;
+  onChanged: () => void;
+}
+
+const AdminAccessRow: React.FC<AdminAccessRowProps> = ({ admin, onChanged }) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [draft, setDraft] = useState<string[] | null>(admin.allowedSections ?? null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const hasFullAccess = draft === null;
+
+  const toggleSection = (key: string) => {
+    setDraft((prev) => {
+      const base = prev ?? ACCESS_SECTIONS.map((s) => s.key); // starting to restrict from "full access"
+      return base.includes(key) ? base.filter((k) => k !== key) : [...base, key];
+    });
+  };
+
+  const save = async (next: string[] | null) => {
+    setIsSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/user/${admin.id}/access`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ allowedSections: next }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Failed to save access.");
+      setDraft(next);
+      onChanged();
+    } catch (err: any) {
+      setError(err.message || "Something went wrong.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <div className="border border-slate-200 rounded-2xl overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center justify-between gap-3 p-3.5 hover:bg-slate-50 transition-colors text-left"
+      >
+        <div className="flex items-center gap-2.5 min-w-0">
+          <img
+            src={admin.avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${admin.name}`}
+            alt={admin.name}
+            className="w-8 h-8 rounded-lg border border-slate-200 object-cover shrink-0"
+          />
+          <div className="min-w-0">
+            <p className="text-xs font-bold text-slate-900 truncate">{admin.name}</p>
+            <p className="text-[11px] text-slate-500 truncate">{admin.email}</p>
+          </div>
+        </div>
+        <span
+          className={`text-[10px] font-black px-2 py-0.5 rounded-full uppercase shrink-0 ${
+            hasFullAccess ? "bg-emerald-50 text-emerald-700 border border-emerald-200" : "bg-amber-50 text-amber-700 border border-amber-200"
+          }`}
+        >
+          {hasFullAccess ? "Full Access" : `${draft!.length} of ${ACCESS_SECTIONS.length} Sections`}
+        </span>
+      </button>
+
+      {isExpanded && (
+        <div className="p-3.5 pt-0 border-t border-slate-100 space-y-3">
+          {error && <p className="text-[11px] font-semibold text-rose-600">{error}</p>}
+
+          <div className="flex items-center gap-2 pt-3">
+            <button
+              type="button"
+              onClick={() => save(null)}
+              disabled={isSaving || hasFullAccess}
+              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold rounded-lg transition-colors disabled:opacity-50"
+            >
+              Grant Full Access
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+            {ACCESS_SECTIONS.map((section) => {
+              const checked = hasFullAccess || draft!.includes(section.key);
+              return (
+                <label
+                  key={section.key}
+                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-50 cursor-pointer text-xs text-slate-700"
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleSection(section.key)}
+                    className="rounded border-slate-300"
+                  />
+                  <span>{section.label}</span>
+                </label>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => save(hasFullAccess ? ACCESS_SECTIONS.map((s) => s.key) : draft)}
+            disabled={isSaving}
+            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors disabled:opacity-50"
+          >
+            {isSaving ? "Saving…" : "Save Restrictions"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+interface AdminAccessControlSectionProps {
+  admins: UserAccount[];
+  onChanged: () => void;
+}
+
+const AdminAccessControlSection: React.FC<AdminAccessControlSectionProps> = ({ admins, onChanged }) => (
+  <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs p-6 space-y-4">
+    <div>
+      <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+        <ShieldCheck size={20} className="text-indigo-600" />
+        <span>Manage Admin Access</span>
+      </h3>
+      <p className="text-xs text-slate-500">
+        Control which admin-panel sections each admin account can see and use. New admins start with full access.
+      </p>
+    </div>
+    {admins.length === 0 ? (
+      <p className="text-xs text-slate-400 py-4 text-center">No admin accounts yet.</p>
+    ) : (
+      <div className="space-y-2">
+        {admins.map((admin) => (
+          <AdminAccessRow key={admin.id} admin={admin} onChanged={onChanged} />
+        ))}
+      </div>
+    )}
+  </div>
+);
+
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   currentUser,
   onNavigateToTab,
@@ -89,6 +246,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [roleFilter, setRoleFilter] = useState<string>("ALL");
   const [selectedUserDetail, setSelectedUserDetail] = useState<UserAccount | null>(null);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string | null>(null);
+  const [actionErrorMsg, setActionErrorMsg] = useState<string | null>(null);
   const [copiedStudent, setCopiedStudent] = useState<boolean>(false);
   const [copiedAdmin, setCopiedAdmin] = useState<boolean>(false);
   const [isLegalModalOpen, setIsLegalModalOpen] = useState<boolean>(false);
@@ -192,6 +350,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
+  const handleChangeRole = async (userId: string, role: "student" | "admin") => {
+    setActionErrorMsg(null);
+    try {
+      const res = await fetch(`/api/admin/user/${userId}/change-role`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...authHeaders() },
+        body: JSON.stringify({ role }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to change role.");
+      setActionSuccessMsg(`${data.user?.name || "User"} is now ${role === "admin" ? "an Admin" : "a Student"}.`);
+      setTimeout(() => setActionSuccessMsg(null), 3500);
+      fetchDashboardData();
+    } catch (err: any) {
+      console.error("Failed to change role:", err);
+      setActionErrorMsg(err.message || "Failed to change role.");
+      setTimeout(() => setActionErrorMsg(null), 4000);
+    }
+  };
+
   // Filter users list
   const filteredUsers = usersList.filter((u) => {
     const matchesSearch =
@@ -208,7 +386,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const isOwner =
     currentUser?.role === "owner" ||
-    currentUser?.email === "kondala.muralikrishna@gmail.com";
+    currentUser?.email === "reganakasieswaramma@fluenxiaapp.com";
 
   if (isLoading && !analytics) {
     return (
@@ -221,76 +399,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   return (
     <div className="space-y-8 pb-16">
-      {/* Top Banner / Command Center Header */}
-      <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute left-1/3 bottom-0 w-64 h-64 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="p-1.5 rounded-xl bg-white/95 shadow-md inline-flex items-center">
-                <LinguaFlowLogo variant="horizontal" size="xs" theme="light" />
-              </div>
-              <span className="px-3 py-1 bg-amber-500/20 border border-amber-500/40 rounded-full text-amber-300 text-xs font-extrabold flex items-center gap-1.5 shadow-xs">
-                <Crown size={14} className="text-amber-400" />
-                <span>{isOwner ? "Platform Owner & Administrator" : "Platform Administrator"}</span>
-              </span>
-            </div>
-
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-white">
-              LMS Learning Analytics & Learner Governance
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
-              Inspect student progression across CEFR standards, manage learner accounts, and monitor Google Authentication services.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={fetchDashboardData}
-              disabled={isRefreshing}
-              className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 active:scale-95 text-white font-bold text-xs rounded-xl border border-slate-700 shadow-sm flex items-center gap-2 transition-all cursor-pointer"
-            >
-              <RefreshCw size={14} className={isRefreshing ? "animate-spin text-indigo-400" : ""} />
-              <span>{isRefreshing ? "Refreshing..." : "Refresh Live Data"}</span>
-            </button>
-          </div>
-        </div>
+      {/* Page Title -- plain heading in place of the old hero banner, matching the sidebar's
+          own label for this section. */}
+      <div>
+        <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+          User Management & Analytics
+        </h1>
+        <p className="text-xs text-slate-500 mt-0.5">
+          Inspect student progression across CEFR standards and manage learner accounts.
+        </p>
       </div>
-
-      {/* Module Header Guide */}
-      <ModuleHeaderGuide
-        moduleTitle="LMS Analytics & Learner Governance"
-        moduleCategory="Administration"
-        estimatedTime="Administrative Controls"
-        difficulty="Admin & Platform Owner"
-        themeColor="amber"
-        steps={[
-          {
-            title: "Review Platform KPIs & Learner Roster",
-            instruction: "Monitor total enrolled students, aggregate XP earned, average CEFR quiz mastery, and speaking drills completed.",
-            tip: "Use the search bar in the user directory to quickly locate specific students by email or name.",
-          },
-          {
-            title: "Manage Student Accounts & CEFR Tiers",
-            instruction: "Adjust student roles (Learner vs Admin), update enrolled CEFR levels, or toggle account status.",
-            tip: "Enrolled levels automatically customize each student's starting curriculum.",
-          },
-          {
-            title: "Audit Google OAuth & Auth Telemetry",
-            instruction: "Verify client ID configuration, view live auth event logs, and send customized invite emails via Gmail.",
-            tip: "Real-time telemetry records sign-ins and token lifecycle events.",
-          },
-          {
-            title: "Access Compliance & Legal Policies",
-            instruction: "Open the Terms of Service and Privacy Policy modals directly from the compliance footer.",
-            tip: "Ensures full GDPR, COPPA, and Google Workspace user data compliance.",
-          },
-        ]}
-        completionGoal="Review platform telemetry, student progress distributions, and maintain account governance."
-      />
 
       {/* Success Notification Alert */}
       {actionSuccessMsg && (
@@ -300,96 +418,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
-      {/* Dedicated Portal URLs Management Bar */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-indigo-100 shadow-sm space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
-              <Link2 size={18} />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-slate-900">
-                Application Portal Access URLs
-              </h3>
-              <p className="text-[11px] text-slate-500">
-                Direct URLs for student learners and protected admin command center
-              </p>
-            </div>
-          </div>
-          <span className="text-[11px] font-bold text-slate-500 self-start sm:self-auto bg-slate-100 px-2.5 py-1 rounded-lg">
-            Automatic Route Guarding Active
-          </span>
+      {actionErrorMsg && (
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-2xl text-xs text-rose-900 font-bold flex items-center gap-2 animate-in fade-in shadow-xs">
+          <ShieldAlert size={16} className="text-rose-600 shrink-0" />
+          <span>{actionErrorMsg}</span>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Student URL Box */}
-          <div className="p-4 bg-indigo-50/50 rounded-2xl border border-indigo-100/80 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <GraduationCap size={16} className="text-indigo-600" />
-                <span className="text-xs font-black text-slate-900">Student Portal URL</span>
-              </div>
-              <span className="text-[10px] font-black px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md">
-                Public URL
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-600">
-              Share with students to access grammar drills, AI chat tutor & speaking exercises.
-            </p>
-            <div className="flex items-center gap-2 bg-white p-1.5 pl-3 rounded-xl border border-slate-200">
-              <span className="text-xs font-mono text-slate-700 font-semibold truncate flex-1 select-all">
-                {studentPortalUrl}
-              </span>
-              <button
-                type="button"
-                onClick={() => handleCopyUrl(studentPortalUrl, "student")}
-                className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                  copiedStudent
-                    ? "bg-emerald-600 text-white"
-                    : "bg-indigo-600 hover:bg-indigo-700 text-white"
-                }`}
-              >
-                {copiedStudent ? <Check size={13} /> : <Copy size={13} />}
-                <span>{copiedStudent ? "Copied" : "Copy"}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Admin URL Box */}
-          <div className="p-4 bg-amber-50/50 rounded-2xl border border-amber-200/70 space-y-2.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Crown size={16} className="text-amber-600" />
-                <span className="text-xs font-black text-slate-900">Owner & Admin URL</span>
-              </div>
-              <span className="text-[10px] font-black px-2 py-0.5 bg-amber-100 text-amber-900 rounded-md flex items-center gap-1">
-                <Shield size={10} />
-                <span>Protected</span>
-              </span>
-            </div>
-            <p className="text-[11px] text-slate-600">
-              Direct access for <strong>kondala.muralikrishna@gmail.com</strong> and administrators.
-            </p>
-            <div className="flex items-center gap-2 bg-white p-1.5 pl-3 rounded-xl border border-slate-200">
-              <span className="text-xs font-mono text-slate-700 font-semibold truncate flex-1 select-all">
-                {adminPortalUrl}
-              </span>
-              <button
-                type="button"
-                onClick={() => handleCopyUrl(adminPortalUrl, "admin")}
-                className={`px-3 py-1 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
-                  copiedAdmin
-                    ? "bg-emerald-600 text-white"
-                    : "bg-amber-600 hover:bg-amber-700 text-white"
-                }`}
-              >
-                {copiedAdmin ? <Check size={13} /> : <Copy size={13} />}
-                <span>{copiedAdmin ? "Copied" : "Copy"}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
 
       {/* 4 Executive KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -493,209 +527,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       </div>
 
-      {/* SECTION: Google Authentication & Gmail Student Gateway */}
-      <div className="bg-white rounded-3xl border border-indigo-200/90 shadow-xs overflow-hidden p-6 space-y-5">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-xs">
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
-                <span>Google & Gmail Student Authentication Gateway</span>
-              </h3>
-              <span
-                className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-extrabold border ${
-                  (googleStatus?.isLive || googleStatus?.isConfigured)
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : "bg-indigo-50 text-indigo-700 border-indigo-200"
-                }`}
-              >
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    (googleStatus?.isLive || googleStatus?.isConfigured) ? "bg-emerald-500 animate-pulse" : "bg-indigo-500"
-                  }`}
-                />
-                <span>{(googleStatus?.isLive || googleStatus?.isConfigured) ? "Google OAuth 2.0: LIVE & VERIFIED" : "Google / Gmail: ACTIVE & READY"}</span>
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 max-w-2xl">
-              Provides students with one-click Google Sign-In and Gmail profile sync, preserving daily learning streaks, XP, CEFR progress, and AI speaking analytics.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200">
-              Provider: <strong className="text-slate-800">Google OAuth 2.0 / Gmail</strong>
-            </span>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-extrabold text-slate-500 uppercase tracking-wider text-[10px]">
-                GOOGLE_CLIENT_ID
-              </span>
-              <span
-                className={`w-2 h-2 rounded-full ${
-                  googleStatus?.hasClientId ? "bg-emerald-500" : "bg-indigo-500"
-                }`}
-              />
-            </div>
-            <div className="font-mono text-xs font-bold text-slate-800 truncate">
-              {googleStatus?.clientIdMasked || "Built-in Gmail Direct Auth"}
-            </div>
-            <p className="text-[11px] text-slate-500">
-              {googleStatus?.hasClientId ? "✓ Google OAuth Client ID active" : "Integrated with Gmail Sign-In"}
-            </p>
-          </div>
-
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-extrabold text-slate-500 uppercase tracking-wider text-[10px]">
-                OAUTH REDIRECT URI
-              </span>
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            </div>
-            <div className="font-mono text-xs font-bold text-slate-800 truncate">
-              /auth/google/callback
-            </div>
-            <p className="text-[11px] text-slate-500">
-              ✓ PostMessage popup listener active
-            </p>
-          </div>
-
-          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5">
-            <div className="flex items-center justify-between text-xs">
-              <span className="font-extrabold text-slate-500 uppercase tracking-wider text-[10px]">
-                GMAIL STUDENT VERIFICATION
-              </span>
-              <span className="w-2 h-2 rounded-full bg-emerald-500" />
-            </div>
-            <div className="font-mono text-xs font-bold text-emerald-600 truncate">
-              Automatic Profile & CEFR Sync
-            </div>
-            <p className="text-[11px] text-slate-500">
-              ✓ Instant enrollment for student accounts
-            </p>
-          </div>
-        </div>
-
-        {/* Legal & Policy Compliance Audit Banner */}
-        <div className="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-50/70 p-4 rounded-2xl border border-slate-200/80">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shrink-0">
-              <Scale size={18} />
-            </div>
-            <div>
-              <h4 className="text-xs font-black text-slate-900 flex items-center gap-2">
-                <span>Terms of Usage & Privacy Policy Active Documents</span>
-                <span className="text-[10px] font-extrabold px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded-md">
-                  Compliant
-                </span>
-              </h4>
-              <p className="text-[11px] text-slate-500">
-                Google API User Data Policy & Limited Use Disclosure, AI Learning Ethics, and Student Data Protection.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => {
-                setLegalTab("terms");
-                setIsLegalModalOpen(true);
-              }}
-              className="flex-1 sm:flex-none px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 font-bold text-xs rounded-xl border border-slate-200 flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-            >
-              <FileText size={13} className="text-indigo-600" />
-              <span>View Terms</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                setLegalTab("privacy");
-                setIsLegalModalOpen(true);
-              }}
-              className="flex-1 sm:flex-none px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer"
-            >
-              <ShieldCheck size={13} />
-              <span>View Privacy Policy</span>
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Option C: Anonymous Test Attempt Tracking & CSV Export Center */}
-      <div className="bg-gradient-to-br from-indigo-950 via-slate-900 to-slate-950 rounded-3xl p-6 text-white border border-indigo-900/60 shadow-lg space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-indigo-900/40 pb-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-indigo-500/20 border border-indigo-400/30 flex items-center justify-center text-indigo-300">
-                <BarChart3 size={18} />
-              </div>
-              <h3 className="text-base font-black tracking-tight text-white flex items-center gap-2">
-                <span>Anonymous Test Attempt Tracking & Telemetry</span>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                  Option C Live
-                </span>
-              </h3>
-            </div>
-            <p className="text-xs text-slate-300 max-w-2xl">
-              Track global test attempts and evaluation performance without requiring users to log in. Query public endpoints or download raw CSV logs on demand.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap items-center gap-2.5">
-            <button
-              type="button"
-              onClick={() => setIsTelemetryModalOpen(true)}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold shadow-md shadow-indigo-600/30 transition-all flex items-center gap-2 cursor-pointer"
-            >
-              <BarChart3 size={14} />
-              <span>View Attempt Stats</span>
-            </button>
-
-            <a
-              href="/api/stats/export.csv"
-              target="_blank"
-              rel="noreferrer"
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/30 transition-all flex items-center gap-2"
-            >
-              <FileSpreadsheet size={14} />
-              <span>Export CSV</span>
-            </a>
-          </div>
-        </div>
-
-        {/* API Endpoint Documentation & cURL snippets */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-          <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center justify-between gap-2 font-mono">
-            <div>
-              <span className="text-emerald-400 font-bold mr-2">GET</span>
-              <span className="text-slate-200">/api/stats</span>
-            </div>
-            <span className="text-[11px] text-slate-400 font-sans">Returns real-time JSON aggregate metrics</span>
-          </div>
-
-          <div className="p-3 bg-slate-900/80 rounded-xl border border-slate-800 flex items-center justify-between gap-2 font-mono">
-            <div>
-              <span className="text-blue-400 font-bold mr-2">GET</span>
-              <span className="text-slate-200">/api/stats/export.csv</span>
-            </div>
-            <span className="text-[11px] text-slate-400 font-sans">Streams structured CSV logs</span>
-          </div>
-        </div>
-      </div>
-
       {/* 2-Column Visual Charts: CEFR Level Distribution & 7-Day Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* 7-Day Activity Chart */}
@@ -795,177 +626,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       </div>
 
-      {/* Real-time Activity Feed */}
-      <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden p-6 space-y-4">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <div className="space-y-0.5">
-            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-              <Activity size={18} className="text-emerald-600" />
-              <span>Real-Time Learner Activity Feed</span>
-            </h3>
-            <p className="text-xs text-slate-500">Live feed of student completions across all modules</p>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {(analytics?.recentActivityFeed || analytics?.recentActivity || []).slice(0, 6).map((act: ActivityFeedItem) => {
-            const badgeColor =
-              act.type === "quiz"
-                ? "bg-amber-50 text-amber-700 border-amber-200"
-                : act.type === "stress"
-                ? "bg-rose-50 text-rose-700 border-rose-200"
-                : act.type === "lesson"
-                ? "bg-indigo-50 text-indigo-700 border-indigo-200"
-                : "bg-slate-50 text-slate-700 border-slate-200";
-
-            const elapsedMins = Math.max(1, Math.round((Date.now() - act.timestamp) / 60000));
-
-            return (
-              <div
-                key={act.id}
-                className="p-4 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-2 hover:bg-slate-100/80 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-extrabold text-slate-800 truncate max-w-[120px]">
-                      {act.userName}
-                    </span>
-                    {act.userRole === "owner" && (
-                      <Crown size={12} className="text-amber-500 shrink-0" />
-                    )}
-                    {act.userRole === "admin" && (
-                      <Shield size={12} className="text-indigo-600 shrink-0" />
-                    )}
-                  </div>
-                  <span className="text-[10px] font-semibold text-slate-400">
-                    {elapsedMins}m ago
-                  </span>
-                </div>
-
-                <div>
-                  <div className="text-xs font-bold text-slate-900">{act.title}</div>
-                  <p className="text-[11px] text-slate-600 mt-0.5 truncate">{act.detail}</p>
-                </div>
-
-                <div className="flex items-center justify-between text-[10px] pt-1">
-                  <span className={`px-2 py-0.5 border rounded-md font-bold uppercase ${badgeColor}`}>
-                    {act.type}
-                  </span>
-                  {act.score !== undefined && (
-                    <span className="font-extrabold text-indigo-600">
-                      Score: {act.score}%
-                    </span>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Auth Telemetry & Security Hub */}
-      <div className="bg-white rounded-3xl border border-indigo-100 shadow-xs overflow-hidden p-6 space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
-          <div className="space-y-0.5">
-            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
-              <ShieldCheck size={18} className="text-indigo-600" />
-              <span>Authentication Telemetry & Security Hub</span>
-            </h3>
-            <p className="text-xs text-slate-500">
-              Live metrics across Single Sign-On (Google & Apple), native credentials, rate-limiting, and guest progress migration
-            </p>
-          </div>
-          <span className="text-[10px] font-extrabold px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg border border-indigo-200">
-            {authTelemetry?.totalEvents ?? authTelemetry?.summary?.totalEvents ?? 0} Total Security Events
-          </span>
-        </div>
-
-        {/* Telemetry KPI Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
-            <span className="text-[10px] font-bold text-slate-500 uppercase">Auth Completed</span>
-            <div className="text-xl font-black text-emerald-600 mt-0.5">
-              {(authTelemetry?.completedLogins ?? 0) + (authTelemetry?.completedSignups ?? 0) || (authTelemetry?.summary?.byEvent?.auth_completed ?? 0)}
-            </div>
-            <span className="text-[10px] text-slate-400">Successful logins/signups</span>
-          </div>
-
-          <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
-            <span className="text-[10px] font-bold text-slate-500 uppercase">Google SSO</span>
-            <div className="text-xl font-black text-sky-600 mt-0.5">
-              {authTelemetry?.methodBreakdown?.google ?? authTelemetry?.summary?.byMethod?.google_sso ?? 0}
-            </div>
-            <span className="text-[10px] text-slate-400">1-Tap & OAuth flows</span>
-          </div>
-
-          <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
-            <span className="text-[10px] font-bold text-slate-500 uppercase">Apple SSO</span>
-            <div className="text-xl font-black text-slate-900 mt-0.5">
-              {authTelemetry?.methodBreakdown?.apple ?? authTelemetry?.summary?.byMethod?.apple_sso ?? 0}
-            </div>
-            <span className="text-[10px] text-slate-400">Apple ID logins</span>
-          </div>
-
-          <div className="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl">
-            <span className="text-[10px] font-bold text-slate-500 uppercase">Failed / Rate-Limited</span>
-            <div className="text-xl font-black text-rose-600 mt-0.5">
-              {authTelemetry?.failedAttempts ?? authTelemetry?.summary?.byEvent?.auth_failed ?? 0}
-            </div>
-            <span className="text-[10px] text-slate-400">Shield cooldown active</span>
-          </div>
-        </div>
-
-        {/* Recent Auth Telemetry Stream */}
-        {authTelemetry?.recentEvents && authTelemetry.recentEvents.length > 0 && (
-          <div className="space-y-2">
-            <h4 className="text-xs font-black uppercase text-slate-400 tracking-wider">
-              Recent Security & Access Stream
-            </h4>
-            <div className="max-h-48 overflow-y-auto space-y-1.5 border border-slate-100 rounded-2xl p-2 bg-slate-50/50">
-              {authTelemetry.recentEvents.slice(0, 8).map((evt) => {
-                const isSuccess = evt.eventName === "auth_completed";
-                const isFail = evt.eventName === "auth_failed";
-                return (
-                  <div
-                    key={evt.id}
-                    className="p-2 bg-white rounded-xl border border-slate-200/80 text-xs flex items-center justify-between gap-2"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span
-                        className={`w-2 h-2 rounded-full shrink-0 ${
-                          isSuccess ? "bg-emerald-500" : isFail ? "bg-rose-500" : "bg-indigo-500"
-                        }`}
-                      />
-                      <span className="font-bold text-slate-800 capitalize">
-                        {evt.eventName.replace(/_/g, " ")}
-                      </span>
-                      {evt.method && (
-                        <span className="text-[10px] px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded font-semibold">
-                          {evt.method}
-                        </span>
-                      )}
-                      {evt.email && (
-                        <span className="text-[11px] text-slate-500 truncate hidden sm:inline">
-                          ({evt.email})
-                        </span>
-                      )}
-                    </div>
-                    <span className="text-[10px] text-slate-400 font-mono shrink-0">
-                      {new Date(evt.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-
       {/* SECTION: Dedicated Paginated System Activity & Audit Log */}
       <AdminActivityLog
         initialActivities={analytics?.recentActivityFeed}
         onRefreshParent={fetchDashboardData}
       />
+
+      {/* SECTION: Owner-only control over which admin-panel sections each admin can access */}
+      {isOwner && (
+        <AdminAccessControlSection admins={usersList.filter((u) => u.role === "admin")} onChanged={fetchDashboardData} />
+      )}
 
       {/* SECTION: Learners & User Accounts Management Table */}
       <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xs overflow-hidden space-y-4 p-6">
@@ -1139,6 +809,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         >
                           Details
                         </button>
+
+                        {isOwner && (user.role === "student" || user.role === "admin") && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              handleChangeRole(user.id, user.role === "admin" ? "student" : "admin")
+                            }
+                            title={user.role === "admin" ? "Demote to Student" : "Promote to Admin"}
+                            className={`px-2 py-1 rounded-lg border text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer ${
+                              user.role === "admin"
+                                ? "text-slate-500 hover:text-rose-600 hover:bg-rose-50 border-slate-200"
+                                : "text-indigo-600 bg-indigo-50 border-indigo-200 hover:bg-indigo-100"
+                            }`}
+                          >
+                            <ShieldCheck size={12} />
+                            <span>{user.role === "admin" ? "Demote" : "Make Admin"}</span>
+                          </button>
+                        )}
 
                         {isOwner && user.role !== "owner" && (
                           <button

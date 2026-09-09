@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Flame,
   Zap,
@@ -62,10 +62,23 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenEditProfile,
 }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
   const { t } = useTranslation();
   const levels: CEFRLevel[] = ["A1", "A2", "B1", "B2", "C1"];
 
   const userRankLevel = Math.floor(progress.xp / 500) + 1;
+
+  // Close the account dropdown on any click outside it (not just its own toggle button).
+  useEffect(() => {
+    if (!userDropdownOpen) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(e.target as Node)) {
+        setUserDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [userDropdownOpen]);
 
   return (
     <header className="bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs sticky top-0 z-30">
@@ -186,7 +199,7 @@ export const Header: React.FC<HeaderProps> = ({
               hiding the trigger below sm left mobile users with no way to reach it. */}
           <div className="flex items-center sm:pl-1 sm:border-l border-slate-200">
             {currentUser ? (
-              <div className="relative">
+              <div className="relative" ref={userDropdownRef}>
                 <button
                   type="button"
                   onClick={() => setUserDropdownOpen(!userDropdownOpen)}
@@ -215,7 +228,7 @@ export const Header: React.FC<HeaderProps> = ({
                       <p className="text-[11px] text-slate-500 truncate">
                         {currentUser.email || "student@fluenxiaapp.com"}
                       </p>
-                      <span className="inline-block mt-1 text-[10px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                      <span className="inline-block mt-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                         {t("header.active_learner_account", "Active Learner Account")}
                       </span>
                     </div>

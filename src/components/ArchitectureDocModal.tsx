@@ -100,7 +100,7 @@ export const ArchitectureDocModal: React.FC<ArchitectureDocModalProps> = ({
 
   const handleDownloadWordDoc = () => {
     const title = "Fluenxia Enterprise & Special Features Technical Specification";
-    const author = "Regana Kasieswaramma (regana.kasieswaramma@fluenxiaapp.com)";
+    const author = "Regana Kasieswaramma (reganakasieswaramma@fluenxiaapp.com)";
     const contacts = "Support: support@fluenxiaapp.com | Sales: sales@fluenxiaapp.com";
     const date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
@@ -640,7 +640,7 @@ export const ArchitectureDocModal: React.FC<ArchitectureDocModalProps> = ({
                 <span>Fluenxia: Language &amp; Communication Solutions</span>
               </div>
               <div>
-                Lead Systems Architect: <strong>Muralikrishna Kondala</strong> (<a href="mailto:kondala.muralikrishna@gmail.com" className="text-[#005A5B] underline">kondala.muralikrishna@gmail.com</a>)
+                Lead Systems Architect: <strong>Muralikrishna Kondala</strong> (<a href="mailto:reganakasieswaramma@fluenxiaapp.com" className="text-[#005A5B] underline">reganakasieswaramma@fluenxiaapp.com</a>)
               </div>
             </div>
           </div>

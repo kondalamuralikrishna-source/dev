@@ -6,14 +6,8 @@ import {
   CheckCircle2,
   X,
   Search,
-  ExternalLink,
-  Mail,
-  Database,
-  Cpu,
-  Mic,
   Copy,
   Check,
-  Gavel,
   Scale,
 } from "lucide-react";
 import { LinguaFlowLogo } from "./LinguaFlowLogo";
@@ -32,6 +26,53 @@ const CONTENT_ELEMENT_ID: Record<LegalTab, string> = {
   consent: "legal-consent-content",
 };
 
+interface SiteSettings {
+  contactEmail: string;
+  salesEmail: string;
+  platformTagline: string;
+  logoUrl?: string;
+  termsContent: string;
+  privacyContent: string;
+}
+
+// Renders the CMS's small "## heading" / "- bullet" content convention (see the comment on
+// DEFAULT_SITE_SETTINGS in db.ts) into the same numbered-badge section look this modal already
+// used for its hardcoded content. A leading block with no "## " heading (an intro paragraph) is
+// skipped here since the modal already shows its own fixed summary card above these sections.
+function renderLegalSections(content: string): React.ReactNode {
+  const blocks = content.split(/\n\s*\n/);
+  const sections: { title: string; lines: string[] }[] = [];
+  for (const block of blocks) {
+    const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) continue;
+    if (!lines[0].startsWith("## ")) continue; // intro paragraph, already shown in the summary card
+    sections.push({ title: lines[0].slice(3), lines: lines.slice(1) });
+  }
+
+  return sections.map((section, i) => {
+    const isBulletList = section.lines.length > 0 && section.lines.every((l) => l.startsWith("- "));
+    return (
+      <section key={i} className="space-y-2">
+        <h4 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
+          <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs flex items-center justify-center font-bold">
+            {i + 1}
+          </span>
+          <span>{section.title}</span>
+        </h4>
+        {isBulletList ? (
+          <ul className="list-disc pl-5 text-xs sm:text-sm text-slate-600 space-y-1">
+            {section.lines.map((l, j) => (
+              <li key={j}>{l.slice(2)}</li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-xs sm:text-sm text-slate-600">{section.lines.join(" ")}</p>
+        )}
+      </section>
+    );
+  });
+}
+
 export const LegalModal: React.FC<LegalModalProps> = ({
   isOpen,
   onClose,
@@ -40,6 +81,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
   const [activeTab, setActiveTab] = useState<LegalTab>(initialTab);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [copied, setCopied] = useState<boolean>(false);
+  const [settings, setSettings] = useState<SiteSettings | null>(null);
 
   // Sync initialTab when modal opens
   React.useEffect(() => {
@@ -49,6 +91,16 @@ export const LegalModal: React.FC<LegalModalProps> = ({
       setCopied(false);
     }
   }, [isOpen, initialTab]);
+
+  // Terms & Privacy body content is CMS-driven (edited from the admin panel) rather than
+  // hardcoded here, so this and the server-rendered /terms & /privacy pages read from one source.
+  React.useEffect(() => {
+    if (!isOpen) return;
+    fetch("/api/site-settings")
+      .then((res) => res.json())
+      .then((data) => setSettings(data.settings))
+      .catch(() => {});
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -190,142 +242,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 </div>
               </div>
 
-              {/* Section 1 */}
-              <section className="space-y-2">
-                <h4 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs flex items-center justify-center font-bold">1</span>
-                  <span>Acceptance of Terms</span>
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-600">
-                  By accessing or using the Services, you agree to be bound by these Terms of
-                  Usage ("Terms"). If you do not agree to these Terms, you must not access or use
-                  the Services.
-                </p>
-              </section>
-
-              {/* Section 2 */}
-              <section className="space-y-2">
-                <h4 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs flex items-center justify-center font-bold">2</span>
-                  <span>Description of Services & AI Educational Disclaimer</span>
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-600">
-                  Fluenxia provides an AI-powered conversational language tutoring platform
-                  incorporating real-time speech-to-text, acoustic formant analysis, and automated
-                  grammar feedback aligned with CEFR benchmarks.
-                </p>
-                <ul className="list-disc pl-5 text-xs sm:text-sm text-slate-600 space-y-1">
-                  <li>
-                    <strong>Educational Tool Only:</strong> Fluenxia is an independent learning
-                    tool. It is not affiliated with, endorsed by, or accredited by IELTS,
-                    Cambridge Assessment, or any official testing body.
-                  </li>
-                  <li>
-                    <strong>No Guarantee:</strong> Fluenxia does not guarantee specific exam
-                    scores, professional certifications, or employment outcomes.
-                  </li>
-                  <li>
-                    <strong>AI Output & Hallucination Disclaimer:</strong> You acknowledge and
-                    agree that the lessons, dynamic conversational roleplays, oral feedback, score
-                    evaluations, and diagnostic feedback provided across the Services are
-                    generated by automated Artificial Intelligence (AI) algorithms and Large
-                    Language Models (LLMs). While Fluenxia strives for high pedagogical precision,
-                    AI-generated content is probabilistic and may occasionally contain errors,
-                    inaccuracies, or hallucinations. Fluenxia does not warrant that AI-generated
-                    feedback is completely error-free or suitable as an official accreditation.
-                  </li>
-                </ul>
-              </section>
-
-              {/* Section 3 */}
-              <section className="space-y-2">
-                <h4 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs flex items-center justify-center font-bold">3</span>
-                  <span>Account Registration & Age Eligibility</span>
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-600">
-                  Users must be at least 18 years of age (or the legal age of majority) to
-                  register independently. Users under 18 may only use the platform under the
-                  supervision of a parent or legal guardian who accepts these Terms and provides
-                  verifiable consent.
-                </p>
-              </section>
-
-              {/* Section 4 */}
-              <section className="space-y-2">
-                <h4 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs flex items-center justify-center font-bold">4</span>
-                  <span>Subscriptions, Trials, and Auto-Renewal</span>
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-600">
-                  Fluenxia may offer free or discounted trials (e.g., 7-day trials). Unless
-                  canceled prior to the trial expiration, the subscription automatically converts
-                  into a paid recurring plan at the rates displayed at checkout. Subscriptions
-                  automatically renew until canceled via account settings or the respective app
-                  store. Fees are inclusive/exclusive of statutory taxes as indicated at purchase.
-                </p>
-              </section>
-
-              {/* Section 5 */}
-              <section className="space-y-2">
-                <h4 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs flex items-center justify-center font-bold">5</span>
-                  <span>Proprietary Rights & Prohibited Conduct</span>
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-600">
-                  All software, algorithms, speech models, prompt libraries, assessment
-                  frameworks, and the Lenin Martin English Grammar Curriculum are the exclusive
-                  Intellectual Property of the Company. Users shall not: (i) reverse engineer,
-                  decompile, or extract the source code or voice pipeline; (ii) use automated bots
-                  or scrapers to bypass the Anti-Gaming Engine or extract curriculum materials; or
-                  (iii) upload unlawful or infringing content.
-                </p>
-              </section>
-
-              {/* Section 6 */}
-              <section className="space-y-2">
-                <h4 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs flex items-center justify-center font-bold">6</span>
-                  <span>Anti-Gaming Heuristics & System Integrity</span>
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-600">
-                  To maintain standard assessment validity, Fluenxia monitors response timing,
-                  keystroke patterns, and interaction metrics. Suspicious activities indicative of
-                  automated scripts or spoofing may result in standard score invalidation or
-                  account suspension.
-                </p>
-              </section>
-
-              {/* Section 7 */}
-              <section className="space-y-2">
-                <h4 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs flex items-center justify-center font-bold">7</span>
-                  <span>Limitation of Liability</span>
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-600">
-                  To the maximum extent permitted by law, Fluenxia Inc. shall not be liable for
-                  indirect, incidental, or consequential damages. Total aggregate liability for
-                  any claims under these Terms shall be limited to the total amount paid by the
-                  user to Fluenxia in the twelve (12) months preceding the claim.
-                </p>
-              </section>
-
-              {/* Section 8 */}
-              <section className="space-y-2">
-                <h4 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs flex items-center justify-center font-bold">8</span>
-                  <span>Governing Law & Dispute Resolution</span>
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-600 flex items-start gap-2">
-                  <Gavel size={14} className="text-slate-400 shrink-0 mt-0.5" />
-                  <span>
-                    These Terms are governed by the laws of India. Any legal dispute arising out
-                    of these Terms shall be settled by binding arbitration under the Arbitration
-                    and Conciliation Act, 1996, with the venue of arbitration in Hyderabad,
-                    Telangana, India.
-                  </span>
-                </p>
-              </section>
+              {settings ? renderLegalSections(settings.termsContent) : <p className="text-xs text-slate-400">Loading...</p>}
             </div>
           )}
 
@@ -345,164 +262,7 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 </div>
               </div>
 
-              {/* Section 1 */}
-              <section className="space-y-2">
-                <h4 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs flex items-center justify-center font-bold">1</span>
-                  <span>Data Fiduciary & Contact Details</span>
-                </h4>
-                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 space-y-0.5">
-                  <p><strong>Data Protection Officer:</strong> Regana Kasieswaramma</p>
-                  <p>
-                    Contact Channels:{" "}
-                    <a href="mailto:support@fluenxiaapp.com" className="text-blue-600 font-semibold hover:underline">
-                      support@fluenxiaapp.com
-                    </a>{" "}
-                    |{" "}
-                    <a href="mailto:privacy@fluenxiaapp.com" className="text-blue-600 font-semibold hover:underline">
-                      privacy@fluenxiaapp.com
-                    </a>
-                  </p>
-                </div>
-              </section>
-
-              {/* Section 2 */}
-              <section className="space-y-2">
-                <h4 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs flex items-center justify-center font-bold">2</span>
-                  <span>Categories of Personal Data Collected</span>
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                      <Mail size={14} className="text-blue-600" />
-                      <span>Identity & Contact Data</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500">
-                      Name, email address, user credentials, and billing details.
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                      <Mic size={14} className="text-blue-600" />
-                      <span>Acoustic & Voice Data</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500">
-                      Audio recordings of spoken assessments, voice practice sessions, real-time
-                      conversation streams, pitch contours, and formant speech features.
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                      <Database size={14} className="text-blue-600" />
-                      <span>Text & Assessment Data</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500">
-                      Transcripts, written benchmark tests, error history, and CEFR progress
-                      scores.
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                      <Cpu size={14} className="text-blue-600" />
-                      <span>Technical & Behavioral Data</span>
-                    </div>
-                    <p className="text-[11px] text-slate-500">
-                      IP address, device identifiers, keystroke timing, and response latency
-                      heuristics.
-                    </p>
-                  </div>
-                </div>
-              </section>
-
-              {/* Section 3 */}
-              <section className="space-y-2">
-                <h4 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs flex items-center justify-center font-bold">3</span>
-                  <span>Purposes of Data Processing & Legal Basis</span>
-                </h4>
-                <ul className="list-disc pl-5 text-xs sm:text-sm text-slate-600 space-y-1">
-                  <li>
-                    <strong>Service Provision (Contract / Consent):</strong> Generating real-time
-                    voice feedback, STT transcripts, acoustic analysis, and CEFR evaluations
-                    through automated AI models. Users are advised that AI processing is
-                    probabilistic and output may occasionally exhibit inaccuracies or
-                    hallucinations.
-                  </li>
-                  <li>
-                    <strong>System Security & Anti-Gaming (Legitimate Interest / Statutory Duty):</strong>{" "}
-                    Analyzing keystrokes and timing parameters to verify authentic human
-                    interaction and prevent assessment gaming.
-                  </li>
-                  <li>
-                    <strong>AI Model Improvement (Explicit Opt-In Consent):</strong> Fine-tuning
-                    proprietary speech recognition models using anonymized audio and text data.
-                  </li>
-                </ul>
-              </section>
-
-              {/* Section 4 */}
-              <section className="space-y-2">
-                <h4 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs flex items-center justify-center font-bold">4</span>
-                  <span>Data Sharing & Third-Party Processors</span>
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-600">
-                  We do not sell personal data. Data is shared strictly with:
-                </p>
-                <ul className="list-disc pl-5 text-xs sm:text-sm text-slate-600 space-y-1">
-                  <li>
-                    <strong>Cloud & AI Pipeline Providers:</strong> Managed infrastructure
-                    processing voice streams under strict non-retention Data Processing
-                    Agreements (DPAs).
-                  </li>
-                  <li>
-                    <strong>Payment Processors:</strong> Secure gateways handling subscription
-                    billing transactions.
-                  </li>
-                  <li>
-                    <strong>Human-in-the-Loop (HITL) Linguists:</strong> Certified human evaluators
-                    reviewing flagged audio samples or disputed AI outputs in the queue for
-                    assessment calibration.
-                  </li>
-                </ul>
-              </section>
-
-              {/* Section 5 */}
-              <section className="space-y-2">
-                <h4 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs flex items-center justify-center font-bold">5</span>
-                  <span>Data Retention & Erasure</span>
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-600">
-                  Personal data is retained only for operational necessities or statutory
-                  requirements. Live audio streams are deleted or anonymized upon session
-                  completion unless saved by the user or opted-in for model training. Account
-                  deletion and complete data erasure can be requested at any time by emailing{" "}
-                  <a href="mailto:privacy@fluenxiaapp.com" className="text-blue-600 font-bold hover:underline">
-                    privacy@fluenxiaapp.com
-                  </a>.
-                </p>
-              </section>
-
-              {/* Section 6 */}
-              <section className="space-y-2">
-                <h4 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                  <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-700 text-xs flex items-center justify-center font-bold">6</span>
-                  <span>Data Principal Rights</span>
-                </h4>
-                <p className="text-xs sm:text-sm text-slate-600">
-                  Under applicable data protection laws (including the DPDP Act 2023 and GDPR),
-                  users hold the right to access, correct, export, or erase their personal data,
-                  and withdraw consent at any time via in-app privacy settings or by contacting{" "}
-                  <a href="mailto:privacy@fluenxiaapp.com" className="text-blue-600 font-bold hover:underline">
-                    privacy@fluenxiaapp.com
-                  </a>.
-                </p>
-              </section>
+              {settings ? renderLegalSections(settings.privacyContent) : <p className="text-xs text-slate-400">Loading...</p>}
             </div>
           )}
 

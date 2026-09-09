@@ -15,9 +15,8 @@ export const StudentGateForAdmin: React.FC<StudentGateForAdminProps> = ({
 }) => {
   const isOwner =
     currentUser.role === "owner" ||
-    currentUser.email === "regana.kasieswaramma@fluenxaapp.com" ||
-    currentUser.email === "regana.kasieswaramma@fluenxiaapp.com" ||
-    currentUser.email === "kondala.muralikrishna@gmail.com";
+    currentUser.email === "reganakasieswaramma@fluenxaapp.com" ||
+    currentUser.email === "reganakasieswaramma@fluenxiaapp.com";
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">

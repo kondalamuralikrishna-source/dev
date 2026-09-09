@@ -300,7 +300,7 @@ export const PortalLinksModal: React.FC<PortalLinksModalProps> = ({
         <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-start gap-2 text-xs text-slate-500">
           <Info size={15} className="text-cyan-700 shrink-0 mt-0.5" />
           <p>
-            The Admin URL strictly verifies owner credentials (<strong>kondala.muralikrishna@gmail.com</strong>). Unauthenticated visitors or students attempting to view the Admin URL will be prompted to sign in with an authorized administrator account.
+            The Admin URL strictly verifies owner credentials (<strong>reganakasieswaramma@fluenxiaapp.com</strong>). Unauthenticated visitors or students attempting to view the Admin URL will be prompted to sign in with an authorized administrator account.
           </p>
         </div>
 

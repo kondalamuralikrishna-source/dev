@@ -33,7 +33,7 @@ export const AdminGate: React.FC<AdminGateProps> = ({
             Owner & Admin Command Center
           </h2>
           <p className="text-xs sm:text-sm text-slate-600 max-w-md mx-auto leading-relaxed">
-            This URL portal (<code>?portal=admin</code>) is protected and reserved for the platform owner (<strong>kondala.muralikrishna@gmail.com</strong>) and authorized administrators.
+            This URL portal (<code>?portal=admin</code>) is protected and reserved for the platform owner (<strong>reganakasieswaramma@fluenxiaapp.com</strong>) and authorized administrators.
           </p>
         </div>
 
@@ -69,7 +69,7 @@ export const AdminGate: React.FC<AdminGateProps> = ({
               className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black text-xs sm:text-sm rounded-2xl shadow-md shadow-amber-500/20 flex items-center justify-center gap-2 transition-all cursor-pointer"
             >
               <Crown size={16} />
-              <span>Sign In as Platform Owner (kondala.muralikrishna@gmail.com)</span>
+              <span>Sign In as Platform Owner (reganakasieswaramma@fluenxiaapp.com)</span>
             </button>
           ) : null}
 

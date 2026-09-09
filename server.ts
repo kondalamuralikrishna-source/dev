@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
+import multer from "multer";
 import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import { GoogleGenAI, Type } from "@google/genai";
@@ -17,6 +18,9 @@ import {
   authTelemetryStore,
   anonymousAttemptStore,
   paymentOrderStore,
+  planStore,
+  siteSettingsStore,
+  UserModel,
 } from "./db";
 import { signAuthToken, requireAuth, requireRole, isDevAuthAllowed, extractToken, verifyAuthToken } from "./auth";
 import {
@@ -169,6 +173,31 @@ app.use(
     },
   })
 );
+
+// CMS logo uploads: written to a persistent local folder (outside dist/, so a rebuild never wipes
+// it) and served back at /uploads/<filename>. NOTE: on a platform without a persistent disk (most
+// serverless/container redeploys), this directory does not survive a redeploy -- fine for a single
+// long-running Node process (this app's current deploy model), but re-upload after infra changes
+// that wipe local disk.
+const UPLOADS_DIR = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
+app.use("/uploads", express.static(UPLOADS_DIR));
+
+const logoUpload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase();
+      cb(null, `logo_${Date.now()}${ext}`);
+    },
+  }),
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB
+  fileFilter: (_req, file, cb) => {
+    const allowed = [".png", ".jpg", ".jpeg", ".svg", ".webp"];
+    if (allowed.includes(path.extname(file.originalname).toLowerCase())) return cb(null, true);
+    cb(new Error("Only PNG, JPG, SVG, or WEBP images are allowed."));
+  },
+});
 
 // Rate limiting for auth endpoints most exposed to brute-force/enumeration (OTP send/verify, password
 // login). Keyed by IP; tight enough to stop scripted guessing, loose enough for a real user retrying.
@@ -4161,7 +4190,7 @@ app.post("/api/auth/verify-otp", otpVerifyLimiter, async (req, res) => {
       }
     }
 
-    const isOwnerEmail = cleanTarget === "kondala.muralikrishna@gmail.com";
+    const isOwnerEmail = cleanTarget === "reganakasieswaramma@fluenxiaapp.com";
     const isAdminEmail = cleanTarget === "admin@linguaflow.com";
 
     if (!matchedUser) {
@@ -4517,7 +4546,7 @@ app.get([
       }
     }
 
-    const isOwnerEmail = googleEmail === "kondala.muralikrishna@gmail.com";
+    const isOwnerEmail = googleEmail === "reganakasieswaramma@fluenxiaapp.com";
     const isAdminEmail = googleEmail === "admin@linguaflow.com";
 
     if (!matchedUser) {
@@ -4682,7 +4711,36 @@ app.get(["/app-logo.svg", "/logo.svg", "/logo.png", "/app-logo.png", "/linguaflo
 });
 
 // Comprehensive, Google OAuth Trust & Safety Compliant Privacy Policy
-app.get("/privacy", (req, res) => {
+// Renders the CMS's small "## heading" / "- bullet" content convention (see the comment on
+// DEFAULT_SITE_SETTINGS in db.ts) into the same HTML structure the hardcoded page markup used to
+// produce -- h2 section headings, ul/li bullet lists, p paragraphs. No Markdown library involved,
+// on purpose: the input only ever comes from an authenticated admin/owner via the CMS, but this
+// still escapes it before wrapping in tags, since it's rendered on a public page either way.
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+function renderLegalMarkup(content: string): string {
+  const blocks = content.split(/\n\s*\n/);
+  let html = "";
+  for (const block of blocks) {
+    const lines = block.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) continue;
+    if (lines[0].startsWith("## ")) {
+      html += `<h2>${escapeHtml(lines[0].slice(3))}</h2>\n`;
+      lines.shift();
+      if (lines.length === 0) continue;
+    }
+    if (lines.every((l) => l.startsWith("- "))) {
+      html += "<ul>\n" + lines.map((l) => `  <li>${escapeHtml(l.slice(2))}</li>`).join("\n") + "\n</ul>\n";
+    } else {
+      html += `<p>${escapeHtml(lines.join(" "))}</p>\n`;
+    }
+  }
+  return html;
+}
+
+app.get("/privacy", async (req, res) => {
+  const settings = await siteSettingsStore.get();
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(`<!DOCTYPE html>
 <html lang="en">
@@ -4730,65 +4788,19 @@ app.get("/privacy", (req, res) => {
   <div class="card">
     <span class="badge">Google OAuth Verified & Compliant</span>
     <h1>Privacy Policy</h1>
-    <p><em>Last updated: August 26, 2026</em></p>
-    
-    <p>Welcome to <strong>Fluenxia: Language & Communication Solutions (English Mastery LMS & AI Tutor)</strong> ("we", "our", "us", or "the platform"). We are committed to protecting your privacy, personal identity, and educational records. This Privacy Policy details how we collect, use, and protect information when you access our learning management system, interactive voice tutor, curriculum modules, and Google Single Sign-On services.</p>
+    <p><em>Last updated: ${new Date(settings.updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</em></p>
 
     <div class="google-clause">
       <h3>Google API Limited Use Disclosure</h3>
       <p><strong>Fluenxia's use and transfer to any other app of information received from Google APIs will adhere to the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" style="color: #005A5B; text-decoration: underline; font-weight: bold;">Google API Services User Data Policy</a>, including the Limited Use requirements.</strong></p>
     </div>
 
-    <h2>1. Information We Collect Through Google Authentication</h2>
-    <p>When you choose to authenticate using <strong>Sign in with Google</strong> (OAuth 2.0), we only request standard, non-sensitive profile scopes (<code>openid</code>, <code>profile</code>, <code>email</code>). We receive:</p>
-    <ul>
-      <li><strong>Primary Email Address:</strong> Used strictly to uniquely identify your learner account and save course progress.</li>
-      <li><strong>Full Name:</strong> Displayed on your student profile, learner certificates, and leaderboard rankings.</li>
-      <li><strong>Profile Picture URL:</strong> Displayed in the top navigation avatar bar for account switching and visual personalization.</li>
-      <li><strong>Unique Google Subject ID (sub):</strong> Used as a secure cryptographic token to authenticate your return sessions without storing passwords.</li>
-    </ul>
+    ${renderLegalMarkup(settings.privacyContent)}
 
-    <h2>2. Educational & Telemetry Data</h2>
-    <p>While using the LMS platform, we record your:</p>
-    <ul>
-      <li>CEFR proficiency level assessments (A1 to C2).</li>
-      <li>Speech practice recordings and pronunciation accuracy feedback generated by the AI voice tutor.</li>
-      <li>Vocabulary retention milestones, grammar quiz scores, and course completion badges.</li>
-      <li>Active study streaks and gamification points.</li>
-    </ul>
-
-    <h2>3. How We Use Your Data</h2>
-    <p>We use your information exclusively to provide and improve educational services:</p>
-    <ul>
-      <li>To maintain continuous learning progress across your desktop, tablet, and mobile devices.</li>
-      <li>To adapt AI tutor practice prompts to your current fluency weaknesses and vocabulary level.</li>
-      <li>To generate official course completion certificates and track teacher-assigned homework.</li>
-    </ul>
-
-    <div class="callout">
-      <div class="callout-title">Zero Data Selling & Strict Privacy Guarantee</div>
-      <p>We never sell, rent, monetize, or lease your personal data or Google account information to third-party advertisers, data brokers, or marketing firms. We do not use Google user data for advertising purposes or credit scoring.</p>
-    </div>
-
-    <h2>4. Third-Party Services & AI Subprocessors</h2>
-    <p>We integrate secure infrastructure partners to run the platform:</p>
-    <ul>
-      <li><strong>Google Cloud & Cloud Run:</strong> Secure, encrypted cloud hosting and Google OAuth 2.0 authentication gateway.</li>
-      <li><strong>Gemini API / AI Models:</strong> For natural-language voice feedback, conversational speech evaluation, and grammatical error correction. Ephemeral processing only.</li>
-    </ul>
-
-    <h2>5. Data Retention, Security & Deletion Rights</h2>
-    <p>All data in transit is encrypted using modern TLS 1.3 / HTTPS encryption. You retain complete ownership and control over your personal data:</p>
-    <ul>
-      <li><strong>Account Deletion:</strong> You may request complete deletion of your account and all associated learning history at any time by emailing us at <a href="mailto:kondala.muralikrishna@gmail.com" style="color: #005A5B; font-weight: bold;">kondala.muralikrishna@gmail.com</a>. Requests are processed within 48 hours.</li>
-      <li><strong>Revoke Google Access:</strong> You can disconnect our app's access to your Google account at any moment through your <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer" style="color: #005A5B; font-weight: bold;">Google Account Security Settings</a>.</li>
-    </ul>
-
-    <h2>6. Contact & Support Information</h2>
-    <p>For questions about this Privacy Policy, branding verification inquiries, or data protection requests, please contact our lead developer and data protection team:</p>
+    <h2>Contact & Support Information</h2>
+    <p>For questions about this Privacy Policy, branding verification inquiries, or data protection requests, please contact us:</p>
     <p>
-      <strong>Lead Developer / Data Controller:</strong> Muralikrishna Kondala<br>
-      <strong>Official Support Email:</strong> <a href="mailto:kondala.muralikrishna@gmail.com" style="color: #005A5B; font-weight: bold;">kondala.muralikrishna@gmail.com</a><br>
+      <strong>Support Email:</strong> <a href="mailto:${escapeHtml(settings.contactEmail)}" style="color: #005A5B; font-weight: bold;">${escapeHtml(settings.contactEmail)}</a><br>
       <strong>Application:</strong> Fluenxia: Language & Communication Solutions<br>
       <strong>Platform URL:</strong> <a href="/" style="color: #005A5B; font-weight: bold;">Home Dashboard</a>
     </p>
@@ -4802,7 +4814,8 @@ app.get("/privacy", (req, res) => {
 });
 
 // Comprehensive, Google OAuth Trust & Safety Compliant Terms of Service
-app.get("/terms", (req, res) => {
+app.get("/terms", async (req, res) => {
+  const settings = await siteSettingsStore.get();
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(`<!DOCTYPE html>
 <html lang="en">
@@ -4844,39 +4857,14 @@ app.get("/terms", (req, res) => {
   <div class="card">
     <span class="badge">Terms & Conditions</span>
     <h1>Terms of Service</h1>
-    <p><em>Last updated: August 26, 2026</em></p>
-    
-    <p>Please read these Terms of Service carefully before accessing or using <strong>Fluenxia: Language & Communication Solutions (English Mastery LMS & AI Tutor)</strong> (the "Service", "Platform", or "Application").</p>
+    <p><em>Last updated: ${new Date(settings.updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</em></p>
 
-    <h2>1. Acceptance of Terms</h2>
-    <p>By creating an account, logging in via Google Single Sign-On, or utilizing our interactive voice tutoring tools, you agree to be bound by these Terms of Service, all applicable laws, and our Privacy Policy.</p>
+    ${renderLegalMarkup(settings.termsContent)}
 
-    <h2>2. Educational Scope & AI-Assisted Features</h2>
-    <p>Fluenxia provides interactive ESL (English as a Second Language) training, CEFR benchmarks, IELTS prep modules, spoken fluency simulations, and automated grammar evaluations.</p>
-    <ul>
-      <li>AI feedback is provided for educational guidance and skill acceleration.</li>
-      <li>Learners are encouraged to practice in a positive, respectful learning environment.</li>
-    </ul>
-
-    <h2>3. User Account & Google Authentication</h2>
-    <p>When you register or sign in using Google OAuth:</p>
-    <ul>
-      <li>You are responsible for maintaining the confidentiality of your device and login sessions.</li>
-      <li>You agree not to impersonate any other person or provide fraudulent credentials.</li>
-      <li>You agree not to attempt automated denial-of-service, reverse-engineering, or unauthorized scraping of educational course materials.</li>
-    </ul>
-
-    <h2>4. Intellectual Property</h2>
-    <p>All curriculum lessons, interactive exercises, software algorithms, design assets, and logos are the property of Fluenxia: Language & Communication Solutions or licensed educational contributors. You are granted a personal, non-exclusive, non-transferable license to access course materials for your individual education.</p>
-
-    <h2>5. Termination & Service Availability</h2>
-    <p>We reserve the right to suspend or terminate accounts that violate these terms or engage in abusive platform behavior. Users may delete their account at any time.</p>
-
-    <h2>6. Contact Us</h2>
+    <h2>Contact Us</h2>
     <p>If you have any questions regarding these Terms of Service, please contact:</p>
     <p>
-      <strong>Administrator:</strong> Muralikrishna Kondala<br>
-      <strong>Email:</strong> <a href="mailto:kondala.muralikrishna@gmail.com" style="color: #005A5B; font-weight: bold;">kondala.muralikrishna@gmail.com</a>
+      <strong>Email:</strong> <a href="mailto:${escapeHtml(settings.contactEmail)}" style="color: #005A5B; font-weight: bold;">${escapeHtml(settings.contactEmail)}</a>
     </p>
   </div>
 
@@ -4956,7 +4944,7 @@ app.get(["/architecture", "/architecture-doc", "/api/architecture/doc"], (req, r
       <div><strong>Document ID:</strong> LF-ARCH-2026-V3.4</div>
       <div><strong>Target Runtime:</strong> Google Cloud Run Container (Port 3000)</div>
       <div><strong>Classification:</strong> Public Engineering Architecture</div>
-      <div><strong>Lead Architect:</strong> Muralikrishna Kondala (<a href="mailto:kondala.muralikrishna@gmail.com" style="color:#005A5B;">kondala.muralikrishna@gmail.com</a>)</div>
+      <div><strong>Lead Architect:</strong> Muralikrishna Kondala (<a href="mailto:reganakasieswaramma@fluenxiaapp.com" style="color:#005A5B;">reganakasieswaramma@fluenxiaapp.com</a>)</div>
     </div>
 
     <h2>1. Executive Summary & Purpose</h2>
@@ -5083,7 +5071,7 @@ app.get(["/architecture", "/architecture-doc", "/api/architecture/doc"], (req, r
     <p>
       <strong>Application:</strong> Fluenxia: Language & Communication Solutions<br>
       <strong>Lead Systems Architect:</strong> Muralikrishna Kondala<br>
-      <strong>Contact Email:</strong> <a href="mailto:kondala.muralikrishna@gmail.com" style="color: #005A5B; font-weight: bold;">kondala.muralikrishna@gmail.com</a>
+      <strong>Contact Email:</strong> <a href="mailto:reganakasieswaramma@fluenxiaapp.com" style="color: #005A5B; font-weight: bold;">reganakasieswaramma@fluenxiaapp.com</a>
     </p>
   </div>
 
@@ -5122,7 +5110,7 @@ app.post("/api/auth/google/signin", async (req, res) => {
       }
     }
 
-    const isOwnerEmail = cleanEmail === "kondala.muralikrishna@gmail.com";
+    const isOwnerEmail = cleanEmail === "reganakasieswaramma@fluenxiaapp.com";
     const isAdminEmail = cleanEmail === "admin@linguaflow.com";
     const displayName = name || cleanEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
     const displayAvatar = avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanEmail}`;
@@ -5220,11 +5208,11 @@ app.post("/api/auth/admin/signin", async (req, res) => {
       });
     }
     const { email, passcode, name } = req.body;
-    const cleanEmail = String(email || "kondala.muralikrishna@gmail.com").trim().toLowerCase();
+    const cleanEmail = String(email || "reganakasieswaramma@fluenxiaapp.com").trim().toLowerCase();
     const cleanPasscode = String(passcode || "").trim();
 
     // Valid admin credentials: owner email OR valid security passcode (admin2026 / master key)
-    const isOwnerEmail = cleanEmail === "kondala.muralikrishna@gmail.com";
+    const isOwnerEmail = cleanEmail === "reganakasieswaramma@fluenxiaapp.com";
     const isValidPasscode = !cleanPasscode || cleanPasscode === "admin2026" || cleanPasscode === "linguaflow" || cleanPasscode === "123456" || cleanPasscode === "admin";
 
     if (!isOwnerEmail && !isValidPasscode && !cleanEmail.includes("admin")) {
@@ -5445,7 +5433,7 @@ app.post("/api/auth/register", async (req, res) => {
     }
 
     const displayName = cleanName || cleanEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-    const isOwnerEmail = cleanEmail === "kondala.muralikrishna@gmail.com";
+    const isOwnerEmail = cleanEmail === "reganakasieswaramma@fluenxiaapp.com";
     const isAdminEmail = cleanEmail === "admin@linguaflow.com";
     const assignedRole = isOwnerEmail ? "owner" : isAdminEmail ? "admin" : "student";
     const newUserId = `usr_${Date.now()}`;
@@ -5848,7 +5836,7 @@ app.post("/api/auth/telemetry", async (req, res) => {
 });
 
 // 2m. Admin Auth Telemetry Summary Endpoint
-app.get("/api/admin/auth-telemetry", requireAuth, requireRole("admin", "owner"), async (req, res) => {
+app.get("/api/admin/auth-telemetry", requireAuth, requireRole("admin", "owner"), requireSection("governance"), async (req, res) => {
   try {
     const allEvents = await authTelemetryStore.all();
     const totalEvents = allEvents.length;
@@ -6052,7 +6040,8 @@ async function activateSubscriptionForOrder(orderId: string, cashfreePaymentId?:
   if (!order) throw new Error(`No local order record for ${orderId}`);
   if (order.status === "paid") return; // already applied
 
-  const plan = PLANS[order.planId as PlanId];
+  const plans = await effectivePlans();
+  const plan = plans[order.planId as PlanId];
   if (!plan) throw new Error(`Unknown planId ${order.planId} on order ${orderId}`);
 
   const user = await userStore.getById(order.userId);
@@ -6088,10 +6077,169 @@ async function activateSubscriptionForOrder(orderId: string, cashfreePaymentId?:
   });
 }
 
+// Merges the static PLANS defaults (cashfree.ts) with any admin overrides stored in the Plan
+// collection, keyed by plan id. Every route that charges a customer or lists pricing reads
+// through this instead of the static PLANS object, so an admin edit actually takes effect.
+async function effectivePlans(): Promise<Record<PlanId, typeof PLANS[PlanId]>> {
+  const overrides = await planStore.getAll();
+  const overrideById = new Map(overrides.map((p) => [p.id, p]));
+  const result = {} as Record<PlanId, typeof PLANS[PlanId]>;
+  for (const id of Object.keys(PLANS) as PlanId[]) {
+    const base = PLANS[id];
+    const override = overrideById.get(id);
+    result[id] = override
+      ? {
+          ...base,
+          name: override.name,
+          amountInr: override.amountInr,
+          durationDays: override.durationDays,
+          description: override.description,
+        }
+      : base;
+  }
+  return result;
+}
+
 // Public plan catalog for the pricing page -- no auth required, no sensitive data.
-app.get("/api/payments/plans", (req, res) => {
-  res.json({ plans: Object.values(PLANS), cashfreeConfigured: isCashfreeConfigured() });
+app.get("/api/payments/plans", async (req, res) => {
+  const plans = await effectivePlans();
+  res.json({ plans: Object.values(plans), cashfreeConfigured: isCashfreeConfigured() });
 });
+
+// Admin: list plans with their editable fields, for the Subscriptions & Revenue -> Plans panel.
+app.get("/api/admin/plans", requireAuth, requireRole("admin", "owner"), requireSection("subscriptions"), async (req, res) => {
+  try {
+    const plans = await effectivePlans();
+    res.json({ plans: Object.values(plans) });
+  } catch (err: any) {
+    console.error("Error in /api/admin/plans:", err);
+    res.status(500).json({ error: "Failed to load plans" });
+  }
+});
+
+// Admin: edit a plan's name/price/duration/description. Owner-gated the same way change-role is,
+// since this directly controls what customers get charged.
+app.put("/api/admin/plans/:id", requireAuth, requireRole("owner"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!(id in PLANS)) {
+      return res.status(404).json({ error: "Unknown plan id" });
+    }
+    const base = PLANS[id as PlanId];
+    const { name, amountInr, durationDays, description } = req.body;
+
+    const cleanAmount = Number(amountInr);
+    const cleanDuration = Number(durationDays);
+    if (!Number.isFinite(cleanAmount) || cleanAmount <= 0) {
+      return res.status(400).json({ error: "amountInr must be a positive number." });
+    }
+    if (!Number.isFinite(cleanDuration) || cleanDuration <= 0) {
+      return res.status(400).json({ error: "durationDays must be a positive number." });
+    }
+    if (!name || typeof name !== "string" || !name.trim()) {
+      return res.status(400).json({ error: "name is required." });
+    }
+
+    await planStore.upsert({
+      id,
+      tier: base.tier,
+      name: name.trim(),
+      amountInr: cleanAmount,
+      durationDays: cleanDuration,
+      description: typeof description === "string" ? description.trim() : base.description,
+      updatedAt: new Date().toISOString(),
+    });
+
+    const plans = await effectivePlans();
+    res.json({ success: true, plan: plans[id as PlanId] });
+  } catch (err: any) {
+    console.error("Error in PUT /api/admin/plans/:id:", err);
+    res.status(500).json({ error: "Failed to update plan" });
+  }
+});
+
+// ============================================================================
+// SITE SETTINGS (CMS) -- contact details, tagline, logo, Terms & Privacy body text. Public GET
+// (needed by any page rendering these), admin/owner-gated writes.
+// ============================================================================
+
+app.get("/api/site-settings", async (req, res) => {
+  try {
+    const settings = await siteSettingsStore.get();
+    res.json({ settings });
+  } catch (err: any) {
+    console.error("Error in /api/site-settings:", err);
+    res.status(500).json({ error: "Failed to load site settings" });
+  }
+});
+
+app.put("/api/admin/site-settings", requireAuth, requireRole("admin", "owner"), requireSection("content_settings"), async (req, res) => {
+  try {
+    const { contactEmail, salesEmail, contactPhone, platformTagline, termsContent, privacyContent } = req.body;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (contactEmail !== undefined && !emailRegex.test(String(contactEmail).trim())) {
+      return res.status(400).json({ error: "contactEmail must be a valid email address." });
+    }
+    if (salesEmail !== undefined && !emailRegex.test(String(salesEmail).trim())) {
+      return res.status(400).json({ error: "salesEmail must be a valid email address." });
+    }
+    if (platformTagline !== undefined && !String(platformTagline).trim()) {
+      return res.status(400).json({ error: "platformTagline cannot be empty." });
+    }
+    if (termsContent !== undefined && !String(termsContent).trim()) {
+      return res.status(400).json({ error: "termsContent cannot be empty." });
+    }
+    if (privacyContent !== undefined && !String(privacyContent).trim()) {
+      return res.status(400).json({ error: "privacyContent cannot be empty." });
+    }
+
+    const patch: Record<string, string> = {};
+    if (contactEmail !== undefined) patch.contactEmail = String(contactEmail).trim().toLowerCase();
+    if (salesEmail !== undefined) patch.salesEmail = String(salesEmail).trim().toLowerCase();
+    if (contactPhone !== undefined) patch.contactPhone = String(contactPhone).trim();
+    if (platformTagline !== undefined) patch.platformTagline = String(platformTagline).trim();
+    if (termsContent !== undefined) patch.termsContent = String(termsContent);
+    if (privacyContent !== undefined) patch.privacyContent = String(privacyContent);
+
+    const settings = await siteSettingsStore.update(patch);
+    res.json({ success: true, settings });
+  } catch (err: any) {
+    console.error("Error in PUT /api/admin/site-settings:", err);
+    res.status(500).json({ error: "Failed to update site settings" });
+  }
+});
+
+app.post(
+  "/api/admin/site-settings/logo",
+  requireAuth,
+  requireRole("admin", "owner"),
+  (req, res) => {
+    logoUpload.single("logo")(req, res, async (err: any) => {
+      if (err) {
+        return res.status(400).json({ error: err.message || "Failed to upload logo." });
+      }
+      if (!req.file) {
+        return res.status(400).json({ error: "No file uploaded." });
+      }
+      try {
+        // Best-effort cleanup of the previous uploaded logo file so old uploads don't accumulate.
+        const current = await siteSettingsStore.get();
+        if (current.logoUrl && current.logoUrl.startsWith("/uploads/")) {
+          const oldPath = path.join(UPLOADS_DIR, path.basename(current.logoUrl));
+          fs.unlink(oldPath, () => {}); // fire-and-forget; a missing old file is not an error
+        }
+
+        const logoUrl = `/uploads/${req.file.filename}`;
+        const settings = await siteSettingsStore.update({ logoUrl });
+        res.json({ success: true, settings });
+      } catch (updateErr: any) {
+        console.error("Error saving uploaded logo:", updateErr);
+        res.status(500).json({ error: "Logo uploaded but failed to save. Please try again." });
+      }
+    });
+  }
+);
 
 // Current user's subscription + effective tier (accounting for expiry).
 app.get("/api/subscription/me", requireAuth, async (req, res) => {
@@ -6125,7 +6273,8 @@ app.post("/api/payments/cashfree/create-order", requireAuth, async (req, res) =>
       return res.status(503).json({ error: "Payments are not configured yet. Please try again later." });
     }
     const { planId } = req.body;
-    const plan = PLANS[planId as PlanId];
+    const plans = await effectivePlans();
+    const plan = plans[planId as PlanId];
     if (!plan) {
       return res.status(400).json({ error: "Invalid plan selected." });
     }
@@ -6289,8 +6438,38 @@ app.post("/api/admin/activity-log", requireAuth, async (req, res) => {
   }
 });
 
+// Admin-panel sections an owner can grant/restrict per admin account. Must mirror AdminNavTab in
+// src/components/AdminHeader.tsx. Only the sections with a genuinely admin-only backend route
+// (governance/User Management, subscriptions, content_settings) are enforced here -- the six AI
+// "Studio" tool sections (ala_studio, speech_science, etc.) route to endpoints that are also used
+// by real student-facing assessment flows and are not cleanly separable per-admin without a
+// larger refactor, so those are gated client-side only (sidebar visibility) for now.
+const ADMIN_SECTIONS = [
+  "governance",
+  "subscriptions",
+  "content_settings",
+  "ala_studio",
+  "speech_science",
+  "enterprise_compliance",
+  "integrity_assessment",
+  "adaptive_curriculum",
+  "ase_engine",
+] as const;
+
+// Must run after requireAuth + requireRole("admin", "owner"). Owners always pass. An admin passes
+// if allowedSections is unset (default = full access) or includes this section.
+function requireSection(section: (typeof ADMIN_SECTIONS)[number]) {
+  return async (req: any, res: express.Response, next: express.NextFunction) => {
+    if (req.authUser.role === "owner") return next();
+    const user = await userStore.getById(req.authUser.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user.allowedSections || user.allowedSections.includes(section)) return next();
+    return res.status(403).json({ error: "You do not have access to this section." });
+  };
+}
+
 // 6. Admin Analytics Aggregation Endpoint
-app.get("/api/admin/analytics", requireAuth, requireRole("admin", "owner"), async (req, res) => {
+app.get("/api/admin/analytics", requireAuth, requireRole("admin", "owner"), requireSection("governance"), async (req, res) => {
   try {
     const allUsers = (await userStore.getAll());
     const allActivity = await activityLogStore.all();
@@ -6488,8 +6667,68 @@ app.get("/api/admin/analytics", requireAuth, requireRole("admin", "owner"), asyn
   }
 });
 
+// 6b. Subscriptions & Revenue — real Cashfree order history + current subscriber list. Nothing
+// here was previously surfaced to admins; the payment infrastructure existed but was entirely
+// invisible from the admin panel until this route.
+app.get("/api/admin/subscriptions", requireAuth, requireRole("admin", "owner"), requireSection("subscriptions"), async (req, res) => {
+  try {
+    const allUsers = await userStore.getAll();
+    const allOrders = await paymentOrderStore.listAll(1000);
+
+    const subscribers = allUsers
+      .filter((u) => u.subscription && u.subscription.tier !== "free")
+      .map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        tier: u.subscription!.tier,
+        status: u.subscription!.status,
+        planId: u.subscription!.planId,
+        startedAt: u.subscription!.startedAt,
+        expiresAt: u.subscription!.expiresAt,
+      }))
+      .sort((a, b) => new Date(b.startedAt || 0).getTime() - new Date(a.startedAt || 0).getTime());
+
+    const paidOrders = allOrders.filter((o) => o.status === "paid");
+    const totalRevenueInr = paidOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
+
+    const now = new Date();
+    const thisMonthPaidOrders = paidOrders.filter((o) => {
+      if (!o.paidAt) return false;
+      const d = new Date(o.paidAt);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    });
+    const thisMonthRevenueInr = thisMonthPaidOrders.reduce((sum, o) => sum + (o.amount || 0), 0);
+
+    const activeSubscriptions = subscribers.filter((s) => s.status === "active").length;
+
+    const revenueByPlan: Record<string, { count: number; totalInr: number }> = {};
+    for (const o of paidOrders) {
+      if (!revenueByPlan[o.planId]) revenueByPlan[o.planId] = { count: 0, totalInr: 0 };
+      revenueByPlan[o.planId].count += 1;
+      revenueByPlan[o.planId].totalInr += o.amount || 0;
+    }
+
+    res.json({
+      summary: {
+        totalRevenueInr,
+        thisMonthRevenueInr,
+        activeSubscriptions,
+        totalPaidOrders: paidOrders.length,
+      },
+      plans: Object.values(PLANS),
+      revenueByPlan,
+      subscribers,
+      recentOrders: allOrders.slice(0, 100),
+    });
+  } catch (err: any) {
+    console.error("Error in /api/admin/subscriptions:", err);
+    res.status(500).json({ error: "Failed to load subscriptions & revenue data" });
+  }
+});
+
 // 7. Get All Registered Users List
-app.get("/api/admin/users", requireAuth, requireRole("admin", "owner"), async (req, res) => {
+app.get("/api/admin/users", requireAuth, requireRole("admin", "owner"), requireSection("governance"), async (req, res) => {
   try {
     const allUsers = (await userStore.getAll()).sort(
       (a, b) => new Date(b.lastLoginAt).getTime() - new Date(a.lastLoginAt).getTime()
@@ -6501,7 +6740,7 @@ app.get("/api/admin/users", requireAuth, requireRole("admin", "owner"), async (r
 });
 
 // 7b. Paginated & Filtered Admin Activity Logs Endpoint
-app.get("/api/admin/activities", requireAuth, requireRole("admin", "owner"), async (req, res) => {
+app.get("/api/admin/activities", requireAuth, requireRole("admin", "owner"), requireSection("governance"), async (req, res) => {
   try {
     const page = Math.max(1, parseInt(String(req.query.page || "1"), 10));
     const limit = Math.max(1, Math.min(100, parseInt(String(req.query.limit || "10"), 10)));
@@ -6554,7 +6793,7 @@ app.get("/api/admin/activities", requireAuth, requireRole("admin", "owner"), asy
 });
 
 // 8. Admin Action: Grant Bonus XP to User (supports both route styles)
-app.post(["/api/admin/user/:id/grant-xp", "/api/admin/grant-xp"], requireAuth, requireRole("admin", "owner"), async (req, res) => {
+app.post(["/api/admin/user/:id/grant-xp", "/api/admin/grant-xp"], requireAuth, requireRole("admin", "owner"), requireSection("governance"), async (req, res) => {
   try {
     const targetId = req.params.id || req.body.userId;
     const rawAmount = Number(req.body.amount ?? req.body.xp ?? 100);
@@ -6588,7 +6827,7 @@ app.post(["/api/admin/user/:id/grant-xp", "/api/admin/grant-xp"], requireAuth, r
 });
 
 // 9. Admin Action: Toggle User Account Status (Active/Suspended)
-app.post(["/api/admin/user/:id/toggle-status", "/api/admin/users/:id/toggle-status"], requireAuth, requireRole("admin", "owner"), async (req, res) => {
+app.post(["/api/admin/user/:id/toggle-status", "/api/admin/users/:id/toggle-status"], requireAuth, requireRole("admin", "owner"), requireSection("governance"), async (req, res) => {
   try {
     const { id } = req.params;
     if (!await userStore.has(id)) {
@@ -6629,6 +6868,45 @@ app.post("/api/admin/user/:id/change-role", requireAuth, requireRole("owner"), a
     res.json({ success: true, user });
   } catch (err: any) {
     res.status(500).json({ error: "Failed to change user role" });
+  }
+});
+
+// Owner-only: grant or restrict which admin-panel sections a specific admin account can access.
+// null/omitted allowedSections means "full access" (the default) -- this is how an owner revokes
+// back to full access after having restricted someone.
+app.put("/api/admin/user/:id/access", requireAuth, requireRole("owner"), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { allowedSections } = req.body;
+
+    if (allowedSections !== null && allowedSections !== undefined) {
+      if (!Array.isArray(allowedSections) || !allowedSections.every((s: any) => typeof s === "string")) {
+        return res.status(400).json({ error: "allowedSections must be an array of section keys, or null for full access." });
+      }
+      const invalid = allowedSections.filter((s: string) => !(ADMIN_SECTIONS as readonly string[]).includes(s));
+      if (invalid.length > 0) {
+        return res.status(400).json({ error: `Unknown section(s): ${invalid.join(", ")}` });
+      }
+    }
+
+    const user = await userStore.getById(id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    if (user.role !== "admin") {
+      return res.status(400).json({ error: "Access restrictions only apply to admin accounts, not owner or student." });
+    }
+
+    // A plain $set can't remove a field -- null/undefined here means "back to full access",
+    // which requires $unset, not setting the field to an empty/undefined value.
+    if (allowedSections === null || allowedSections === undefined) {
+      await UserModel.findOneAndUpdate({ id }, { $unset: { allowedSections: "" } });
+    } else {
+      await UserModel.findOneAndUpdate({ id }, { $set: { allowedSections } });
+    }
+    const updated = await userStore.getById(id);
+    res.json({ success: true, user: updated });
+  } catch (err: any) {
+    console.error("Error in PUT /api/admin/user/:id/access:", err);
+    res.status(500).json({ error: "Failed to update admin access" });
   }
 });
 

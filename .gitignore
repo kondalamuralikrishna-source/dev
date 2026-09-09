@@ -9,3 +9,6 @@ coverage/
 
 # Contains real-looking demo credentials (Admin123!, Learner123!) — local/dev seeding only, never ship this.
 scripts/seed-demo.ts
+
+# CMS-uploaded logo files -- local disk storage, not something to commit.
+uploads/

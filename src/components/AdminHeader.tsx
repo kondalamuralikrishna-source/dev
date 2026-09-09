@@ -1,19 +1,12 @@
 import React, { useState } from "react";
 import {
-  Crown,
-  Shield,
   Layers,
-  BarChart3,
   Link2,
   LogOut,
   ChevronDown,
-  Brain,
-  Activity,
-  ShieldCheck,
-  ShieldAlert,
-  Users,
-  Sparkles,
   FileSpreadsheet,
+  ShieldCheck,
+  Menu,
 } from "lucide-react";
 import { UserAccount } from "../types";
 import { LinguaFlowLogo } from "./LinguaFlowLogo";
@@ -24,6 +17,8 @@ import { LanguageSelector } from "./LanguageSelector";
 
 export type AdminNavTab =
   | "governance"
+  | "subscriptions"
+  | "content_settings"
   | "ala_studio"
   | "speech_science"
   | "enterprise_compliance"
@@ -38,6 +33,7 @@ interface AdminHeaderProps {
   onLogout: () => void;
   onOpenLegalModal?: (tab?: LegalTab) => void;
   onOpenArchitectureDoc?: () => void;
+  onOpenMobileMenu?: () => void;
 }
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
@@ -47,6 +43,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   onLogout,
   onOpenLegalModal,
   onOpenArchitectureDoc,
+  onOpenMobileMenu,
 }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [isPortalLinksOpen, setIsPortalLinksOpen] = useState(false);
@@ -54,9 +51,8 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
 
   const isOwner =
     currentUser.role === "owner" ||
-    currentUser.email === "regana.kasieswaramma@fluenxaapp.com" ||
-    currentUser.email === "regana.kasieswaramma@fluenxiaapp.com" ||
-    currentUser.email === "kondala.muralikrishna@gmail.com";
+    currentUser.email === "reganakasieswaramma@fluenxaapp.com" ||
+    currentUser.email === "reganakasieswaramma@fluenxiaapp.com";
 
   return (
     <header className="sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 shadow-xl">
@@ -64,22 +60,33 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Brand & Admin Badge */}
-          <div
-            className="flex items-center gap-3 cursor-pointer select-none"
-            onClick={() => setActiveAdminTab("governance")}
-          >
-            <div className="p-1 rounded-xl bg-white shadow-md flex items-center justify-center">
-              <LinguaFlowLogo variant="mark" size="sm" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="font-sans font-black text-lg text-white tracking-wider uppercase">
-                  FLUENXI<span className="text-cyan-400">A</span>
-                </span>
+          <div className="flex items-center gap-2">
+            {/* Hamburger — opens the AdminSidebar as a slide-in drawer below the lg breakpoint,
+                where the static sidebar column is hidden and this is otherwise the only way to
+                switch admin sections. */}
+            {onOpenMobileMenu && (
+              <button
+                type="button"
+                onClick={onOpenMobileMenu}
+                aria-label="Open menu"
+                className="lg:hidden p-2 -ml-1 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition-colors shrink-0"
+              >
+                <Menu size={20} />
+              </button>
+            )}
+            <div
+              className="flex items-center gap-3 cursor-pointer select-none"
+              onClick={() => setActiveAdminTab("governance")}
+            >
+              <div className="p-1 rounded-xl bg-white shadow-md flex items-center justify-center">
+                <LinguaFlowLogo variant="mark" size="sm" />
               </div>
-              <p className="text-[10px] font-semibold text-slate-400 tracking-wider hidden sm:block">
-                Institutional Governance, Acoustic DSP & Psychometrics
-              </p>
+              {/* Tagline dropped here -- the AdminSidebar's own brand block already shows it,
+                  and this row no longer has room to wrap it without spilling past the fixed
+                  header height into the content below. */}
+              <span className="font-sans font-black text-lg text-white tracking-wider uppercase">
+                FLUENXI<span className="text-cyan-400">A</span>
+              </span>
             </div>
           </div>
 
@@ -218,142 +225,6 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Dedicated Admin Navigation Tabs */}
-        <nav className="flex space-x-1 overflow-x-auto no-scrollbar pb-2 pt-1 border-t border-slate-800">
-          {/* Tab 1: Learner Governance & Overview */}
-          <button
-            type="button"
-            onClick={() => setActiveAdminTab("governance")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg whitespace-nowrap transition-all cursor-pointer ${
-              activeAdminTab === "governance"
-                ? "bg-amber-500 text-slate-950 shadow-md font-black"
-                : "text-slate-300 hover:text-white hover:bg-slate-800"
-            }`}
-          >
-            <Users size={15} />
-            <span>Learner Governance & Analytics</span>
-            <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase ${
-              activeAdminTab === "governance" ? "bg-slate-950 text-amber-300" : "bg-amber-500/20 text-amber-400"
-            }`}>
-              ROSTER
-            </span>
-          </button>
-
-          {/* Tab 2: Psychometric ALA Evaluator */}
-          <button
-            type="button"
-            onClick={() => setActiveAdminTab("ala_studio")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg whitespace-nowrap transition-all cursor-pointer ${
-              activeAdminTab === "ala_studio"
-                ? "bg-emerald-600 text-white shadow-md font-black ring-1 ring-emerald-400"
-                : "text-emerald-400 hover:text-emerald-300 hover:bg-slate-800"
-            }`}
-          >
-            <Brain size={15} />
-            <span>Psychometric ALA Evaluator</span>
-            <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase ${
-              activeAdminTab === "ala_studio" ? "bg-slate-950 text-emerald-300" : "bg-emerald-500/20 text-emerald-400"
-            }`}>
-              PSYCHOMETRIC
-            </span>
-          </button>
-
-          {/* Tab 3: Speech Science DSP */}
-          <button
-            type="button"
-            onClick={() => setActiveAdminTab("speech_science")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg whitespace-nowrap transition-all cursor-pointer ${
-              activeAdminTab === "speech_science"
-                ? "bg-teal-600 text-white shadow-md font-black ring-1 ring-teal-400"
-                : "text-teal-400 hover:text-teal-300 hover:bg-slate-800"
-            }`}
-          >
-            <Activity size={15} />
-            <span>Speech Science Acoustic DSP</span>
-            <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase ${
-              activeAdminTab === "speech_science" ? "bg-slate-950 text-teal-300" : "bg-teal-500/20 text-teal-400"
-            }`}>
-              ACOUSTIC
-            </span>
-          </button>
-
-          {/* Tab 4: Compliance & HITL Proctoring */}
-          <button
-            type="button"
-            onClick={() => setActiveAdminTab("enterprise_compliance")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg whitespace-nowrap transition-all cursor-pointer ${
-              activeAdminTab === "enterprise_compliance"
-                ? "bg-indigo-600 text-white shadow-md font-black ring-1 ring-indigo-400"
-                : "text-indigo-400 hover:text-indigo-300 hover:bg-slate-800"
-            }`}
-          >
-            <ShieldCheck size={15} />
-            <span>Compliance & HITL Proctoring</span>
-            <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase ${
-              activeAdminTab === "enterprise_compliance" ? "bg-slate-950 text-indigo-300" : "bg-indigo-500/20 text-indigo-400"
-            }`}>
-              DPDP • GDPR
-            </span>
-          </button>
-
-          {/* Tab 5: Integrity & Plagiarism Detector */}
-          <button
-            type="button"
-            onClick={() => setActiveAdminTab("integrity_assessment")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg whitespace-nowrap transition-all cursor-pointer ${
-              activeAdminTab === "integrity_assessment"
-                ? "bg-purple-600 text-white shadow-md font-black ring-1 ring-purple-400"
-                : "text-purple-400 hover:text-purple-300 hover:bg-slate-800"
-            }`}
-          >
-            <ShieldAlert size={15} />
-            <span>Dual Plagiarism & Integrity</span>
-            <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase ${
-              activeAdminTab === "integrity_assessment" ? "bg-slate-950 text-purple-300" : "bg-purple-500/20 text-purple-400"
-            }`}>
-              ANTI-CHEAT
-            </span>
-          </button>
-
-          {/* Tab 6: Adaptive Curriculum Authoring */}
-          <button
-            type="button"
-            onClick={() => setActiveAdminTab("adaptive_curriculum")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg whitespace-nowrap transition-all cursor-pointer ${
-              activeAdminTab === "adaptive_curriculum"
-                ? "bg-cyan-600 text-white shadow-md font-black ring-1 ring-cyan-400"
-                : "text-cyan-400 hover:text-cyan-300 hover:bg-slate-800"
-            }`}
-          >
-            <Sparkles size={15} />
-            <span>Curriculum & Role-Play Authoring</span>
-            <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase ${
-              activeAdminTab === "adaptive_curriculum" ? "bg-slate-950 text-cyan-300" : "bg-cyan-500/20 text-cyan-400"
-            }`}>
-              AUTHORING
-            </span>
-          </button>
-
-          {/* Tab 7: Anti-Gaming ASE Engine */}
-          <button
-            type="button"
-            onClick={() => setActiveAdminTab("ase_engine")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-bold rounded-lg whitespace-nowrap transition-all cursor-pointer ${
-              activeAdminTab === "ase_engine"
-                ? "bg-rose-600 text-white shadow-md font-black ring-1 ring-rose-400"
-                : "text-rose-400 hover:text-rose-300 hover:bg-slate-800"
-            }`}
-          >
-            <ShieldAlert size={15} />
-            <span>Anti-Gaming ASE Acoustic Lab</span>
-            <span className={`text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase ${
-              activeAdminTab === "ase_engine" ? "bg-slate-950 text-rose-300" : "bg-rose-500/20 text-rose-400"
-            }`}>
-              SIGNAL DSP
-            </span>
-          </button>
-        </nav>
       </div>
 
       {/* Direct Portal Links Modal */}
