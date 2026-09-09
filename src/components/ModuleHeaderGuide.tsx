@@ -194,7 +194,18 @@ export const ModuleHeaderGuide: React.FC<ModuleHeaderGuideProps> = ({
       accentText: "text-slate-300",
       toggleBtn: "hover:bg-slate-800 text-slate-300",
     },
-  }[themeColor];
+  }[themeColor] ?? {
+    // Defensive fallback: an invalid/unrecognized themeColor value used to crash this component
+    // entirely (reading a property off undefined), blanking the whole page for whatever tab
+    // rendered it. Fall back to the indigo theme instead of throwing.
+    cardBg: "bg-indigo-950/40 border-indigo-500/30 text-indigo-100",
+    badge: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
+    stepNum: "bg-indigo-600 text-white shadow-indigo-500/30",
+    stepBox: "bg-indigo-900/30 border-indigo-800/60 hover:border-indigo-600/50",
+    goalBox: "bg-indigo-950/80 border-indigo-500/40 text-indigo-200",
+    accentText: "text-indigo-300",
+    toggleBtn: "hover:bg-indigo-800/40 text-indigo-300",
+  };
 
   return (
     <div

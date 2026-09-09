@@ -118,7 +118,7 @@ export const GrammarDoctor: React.FC<GrammarDoctorProps> = ({ progress }) => {
         moduleCategory="Syntactic Breakdown"
         estimatedTime="1–3 min per query"
         difficulty="Instant Syntax Explanations"
-        themeColor="purple"
+        themeColor="violet"
         steps={[
           {
             title: "Type or Paste Any Sentence",

@@ -134,7 +134,7 @@ export const FluencySuiteHub: React.FC<FluencySuiteHubProps> = ({
         moduleCategory="Fluency & Pragmatics"
         estimatedTime="10–20 min per studio"
         difficulty="Intermediate to Advanced"
-        themeColor="purple"
+        themeColor="violet"
         steps={[
           {
             title: "Select Specialized Practice Studio",
