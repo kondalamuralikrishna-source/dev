@@ -70,7 +70,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs sticky top-0 z-30">
-      <div className="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+      <div className="relative px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
         {/* Hamburger — opens the Sidebar as a slide-in drawer below the lg breakpoint, where the
             static sidebar column is hidden and this is otherwise the only way to switch tabs. */}
         {onOpenMobileMenu && (
@@ -85,8 +85,11 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         {/* Compact brand mark — only shown once the hamburger replaces the Sidebar's own logo
-            (i.e. below lg), so the mobile header isn't just an unlabeled bar of icons. */}
-        <div className="lg:hidden flex items-center gap-1.5 shrink-0">
+            (i.e. below lg), so the mobile header isn't just an unlabeled bar of icons. Centered
+            in the header bar on phones (below md, where the search box is hidden and there'd
+            otherwise be nothing balancing the hamburger/bell on either side); reverts to normal
+            inline flow once the search box appears at md+. */}
+        <div className="lg:hidden md:static md:left-auto md:translate-x-0 absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 shrink-0">
           <LinguaFlowLogo variant="mark" size="xs" />
           <span className="font-black text-sm text-slate-900 tracking-tight">
             FLUENXI<span className="text-blue-600">A</span>

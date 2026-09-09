@@ -535,11 +535,11 @@ export const GrammarHub: React.FC<GrammarHubProps> = ({
       <div className="bg-white rounded-3xl p-6 sm:p-7 border border-slate-200 shadow-xs space-y-4">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="space-y-1 max-w-2xl">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                 {t("grammar.hub_title", "Grammar Hub & Syntax Curriculum")}
               </h1>
-              <span className="text-xs px-2.5 py-0.5 bg-indigo-50 text-indigo-700 font-extrabold rounded-md border border-indigo-200">
+              <span className="text-xs px-2.5 py-0.5 bg-indigo-50 text-indigo-700 font-extrabold rounded-md border border-indigo-200 whitespace-nowrap shrink-0">
                 CEFR A1–C1
               </span>
             </div>
