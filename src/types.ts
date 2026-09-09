@@ -378,6 +378,20 @@ export interface UserProgress {
   stressTestsCompleted?: StressTestHistoryItem[];
   errorMemoryBank?: ErrorMemoryItem[];
   afterActionAudits?: AfterActionAuditReport[];
+  // Free-tier AI voice usage metering (Board Strategy Sept 2026: 3 min/day cap on Free).
+  // Resets daily; unlimited tiers (Plus/Pro/Sachet) never check this.
+  voiceUsageDate?: string; // YYYY-MM-DD
+  voiceSecondsUsedToday?: number;
+}
+
+export type SubscriptionTier = "free" | "plus" | "pro" | "sachet";
+
+export interface SubscriptionInfo {
+  tier: SubscriptionTier;
+  status: "active" | "expired" | "none";
+  startedAt?: string;
+  expiresAt?: string;
+  planId?: string;
 }
 
 export interface EndLevelSpeakingTask {
@@ -585,6 +599,7 @@ export interface UserAccount {
     aiTrainingOptIn?: boolean;
     marketingOptIn?: boolean;
   };
+  subscription?: SubscriptionInfo;
 }
 
 export interface GoogleAuthStatus {

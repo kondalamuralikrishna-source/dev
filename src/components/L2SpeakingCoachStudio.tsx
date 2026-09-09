@@ -53,12 +53,14 @@ interface L2SpeakingCoachStudioProps {
   progress: UserProgress;
   onGrantXp: (amount: number, reason: string) => void;
   onLogStudyMinutes?: (minutes: number) => void;
+  onOpenPricing?: () => void;
 }
 
 export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
   progress,
   onGrantXp,
   onLogStudyMinutes,
+  onOpenPricing,
 }) => {
   const { t } = useTranslation();
   // Scenario & Setup state
@@ -87,6 +89,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
   const [spokenTranscript, setSpokenTranscript] = useState<string>("");
   const [typedInput, setTypedInput] = useState<string>("");
   const [isAiProcessing, setIsAiProcessing] = useState<boolean>(false);
+  const [voiceQuotaExceeded, setVoiceQuotaExceeded] = useState<string | null>(null);
   const [isAiSpeaking, setIsAiSpeaking] = useState<boolean>(false);
   const [audioMuted, setAudioMuted] = useState<boolean>(false);
   const [sessionStartTime, setSessionStartTime] = useState<number>(0);
@@ -313,9 +316,13 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
         { role: "model", text: t.interlocutorReply },
       ]).flat();
 
+      const authToken = localStorage.getItem("auth_token");
       const response = await fetch("/api/gemini/l2-speaking-coach-turn", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
         body: JSON.stringify({
           spokenText: text,
           scenario: { ...activeScenario, difficulty },
@@ -324,6 +331,13 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
           level: progress.selectedLevel || "B2",
         }),
       });
+
+      if (response.status === 429) {
+        const quotaData = await response.json();
+        setVoiceQuotaExceeded(quotaData.error || "You've used today's free AI voice time.");
+        setIsAiProcessing(false);
+        return;
+      }
 
       const data = await response.json();
 
@@ -515,6 +529,21 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
         completionGoal="Complete at least 3 conversational turns and finish the roleplay to receive your evaluation & XP."
         xpReward={60}
       />
+
+      {voiceQuotaExceeded && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl text-xs text-blue-900 font-semibold flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <span>{voiceQuotaExceeded}</span>
+          {onOpenPricing && (
+            <button
+              type="button"
+              onClick={onOpenPricing}
+              className="shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-colors"
+            >
+              Upgrade Now
+            </button>
+          )}
+        </div>
+      )}
 
       {!isSessionActive ? (
         <div className="space-y-6">

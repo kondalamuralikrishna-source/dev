@@ -16,8 +16,17 @@ import {
   activityLogStore,
   authTelemetryStore,
   anonymousAttemptStore,
+  paymentOrderStore,
 } from "./db";
-import { signAuthToken, requireAuth, requireRole, isDevAuthAllowed } from "./auth";
+import { signAuthToken, requireAuth, requireRole, isDevAuthAllowed, extractToken, verifyAuthToken } from "./auth";
+import {
+  PLANS,
+  PlanId,
+  isCashfreeConfigured,
+  createCashfreeOrder,
+  fetchCashfreeOrderStatus,
+  verifyCashfreeWebhookSignature,
+} from "./cashfree";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
 
@@ -150,7 +159,16 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: "10mb" }));
+// Captures the exact raw request bytes alongside the parsed body -- needed by the Cashfree
+// webhook handler, which must verify a signature computed over the raw (unparsed) payload.
+app.use(
+  express.json({
+    limit: "10mb",
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 
 // Rate limiting for auth endpoints most exposed to brute-force/enumeration (OTP send/verify, password
 // login). Keyed by IP; tight enough to stop scripted guessing, loose enough for a real user retrying.
@@ -1968,7 +1986,7 @@ Requirements:
 // ============================================================================
 
 // A. FluidConvo AI Turn Processor: Dual-Stream Intelligibility & Dynamic Interlocutor
-app.post("/api/gemini/fluidconvo-turn", async (req, res) => {
+app.post("/api/gemini/fluidconvo-turn", enforceVoiceQuota, async (req, res) => {
   try {
     const {
       spokenText,
@@ -3947,6 +3965,15 @@ interface ServerUserAccount {
     aiTrainingOptIn?: boolean;
     marketingOptIn?: boolean;
   };
+  subscription?: {
+    tier: "free" | "plus" | "pro" | "sachet";
+    status: "active" | "expired" | "none";
+    startedAt?: string;
+    expiresAt?: string;
+    planId?: string;
+    cashfreeOrderId?: string;
+    lastPaymentId?: string;
+  };
 }
 
 interface ServerActivityItem {
@@ -5893,6 +5920,264 @@ app.post("/api/auth/consent", requireAuth, async (req, res) => {
   }
 });
 
+// ============================================================================
+// MONETIZATION: SUBSCRIPTION TIERS & CASHFREE PAYMENTS
+// (Board Strategy Sept 2026: Freemium + 7-Day Sachet Pass + Multi-Tier Subscription)
+// ============================================================================
+
+// Returns the tier a user actually has access to right now -- a paid tier past its
+// expiresAt is treated as "free", not left dangling as a permanently-active paid tier.
+function getEffectiveTier(user: ServerUserAccount): "free" | "plus" | "pro" | "sachet" {
+  const sub = user.subscription;
+  if (!sub || sub.status !== "active" || sub.tier === "free") return "free";
+  if (sub.expiresAt && new Date(sub.expiresAt).getTime() < Date.now()) return "free";
+  return sub.tier;
+}
+
+// Free tier: 3 minutes/day of AI voice per the board doc. Plus/Pro/Sachet: unlimited.
+const FREE_TIER_DAILY_VOICE_SECONDS = 3 * 60;
+
+// Called before any Gemini "AI Voice Launcher" turn is processed. Returns whether the request
+// may proceed and, if not, how many seconds are left (0) until the next reset. Mutates and
+// persists the user's daily usage counter when consuming quota.
+async function checkAndConsumeVoiceQuota(
+  userId: string,
+  secondsRequested: number = 20
+): Promise<{ allowed: boolean; secondsRemainingToday: number; tier: string }> {
+  const user = await userStore.getById(userId);
+  if (!user) return { allowed: false, secondsRemainingToday: 0, tier: "free" };
+
+  const tier = getEffectiveTier(user);
+  if (tier !== "free") {
+    return { allowed: true, secondsRemainingToday: Infinity as any, tier };
+  }
+
+  const today = new Date().toISOString().split("T")[0];
+  const progress = user.progress || {};
+  const isNewDay = progress.voiceUsageDate !== today;
+  const usedSoFar = isNewDay ? 0 : Number(progress.voiceSecondsUsedToday) || 0;
+
+  if (usedSoFar >= FREE_TIER_DAILY_VOICE_SECONDS) {
+    return { allowed: false, secondsRemainingToday: 0, tier };
+  }
+
+  const newUsed = usedSoFar + secondsRequested;
+  await userStore.update(userId, {
+    progress: { ...progress, voiceUsageDate: today, voiceSecondsUsedToday: newUsed },
+  });
+
+  return {
+    allowed: true,
+    secondsRemainingToday: Math.max(0, FREE_TIER_DAILY_VOICE_SECONDS - newUsed),
+    tier,
+  };
+}
+
+// Express middleware for "AI Voice Launcher" endpoints (FluidConvo, Speaking Coach turns).
+// Auth here is optional by design -- these endpoints have always been reachable by guests, and
+// gating them behind requireAuth would regress that. Only logged-in accounts get their usage
+// metered against the Free tier's daily cap; unauthenticated callers pass through unmetered,
+// same as before this feature existed.
+async function enforceVoiceQuota(req: any, res: any, next: any) {
+  const token = extractToken(req);
+  if (!token) return next(); // guest -- no account to meter against
+
+  const payload = verifyAuthToken(token);
+  if (!payload) return next(); // invalid/expired token -- treat as guest rather than hard-fail a voice endpoint
+
+  const quota = await checkAndConsumeVoiceQuota(payload.id);
+  if (!quota.allowed) {
+    return res.status(429).json({
+      error: "You've used your 3 free minutes of AI voice today. Upgrade to Plus or grab a 7-Day Sachet Pass for unlimited voice.",
+      code: "VOICE_QUOTA_EXCEEDED",
+      tier: quota.tier,
+    });
+  }
+  req.authUser = payload;
+  next();
+}
+
+// Applies a paid plan to a user's account. Idempotent per order: callers (webhook and the
+// polling-fallback verify endpoint) both check the order's stored status first so a plan is
+// never applied twice for the same payment.
+async function activateSubscriptionForOrder(orderId: string, cashfreePaymentId?: string) {
+  const order = await paymentOrderStore.getByOrderId(orderId);
+  if (!order) throw new Error(`No local order record for ${orderId}`);
+  if (order.status === "paid") return; // already applied
+
+  const plan = PLANS[order.planId as PlanId];
+  if (!plan) throw new Error(`Unknown planId ${order.planId} on order ${orderId}`);
+
+  const user = await userStore.getById(order.userId);
+  if (!user) throw new Error(`No user ${order.userId} for order ${orderId}`);
+
+  const now = new Date();
+  const expires = new Date(now.getTime() + plan.durationDays * 24 * 60 * 60 * 1000);
+
+  await userStore.update(order.userId, {
+    subscription: {
+      tier: plan.tier,
+      status: "active",
+      startedAt: now.toISOString(),
+      expiresAt: expires.toISOString(),
+      planId: plan.id,
+      cashfreeOrderId: orderId,
+      lastPaymentId: cashfreePaymentId,
+    },
+  });
+
+  await paymentOrderStore.markPaid(orderId, cashfreePaymentId || "unknown");
+
+  await activityLogStore.add({
+    id: `act_${Date.now()}`,
+    userId: user.id,
+    userName: user.name,
+    userRole: user.role,
+    avatarUrl: user.avatarUrl,
+    type: "login",
+    title: `Subscribed to ${plan.name}`,
+    detail: `Paid Rs${plan.amountInr} for ${plan.name} (order ${orderId})`,
+    timestamp: Date.now(),
+  });
+}
+
+// Public plan catalog for the pricing page -- no auth required, no sensitive data.
+app.get("/api/payments/plans", (req, res) => {
+  res.json({ plans: Object.values(PLANS), cashfreeConfigured: isCashfreeConfigured() });
+});
+
+// Current user's subscription + effective tier (accounting for expiry).
+app.get("/api/subscription/me", requireAuth, async (req, res) => {
+  try {
+    const user = await userStore.getById(req.authUser!.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json({
+      subscription: user.subscription || { tier: "free", status: "none" },
+      effectiveTier: getEffectiveTier(user),
+      voiceUsage:
+        getEffectiveTier(user) === "free"
+          ? {
+              secondsUsedToday:
+                user.progress?.voiceUsageDate === new Date().toISOString().split("T")[0]
+                  ? Number(user.progress?.voiceSecondsUsedToday) || 0
+                  : 0,
+              dailyLimitSeconds: FREE_TIER_DAILY_VOICE_SECONDS,
+            }
+          : null,
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: "Failed to load subscription" });
+  }
+});
+
+// Creates a Cashfree order for a plan and returns the payment_session_id the frontend's
+// Cashfree Checkout SDK needs to open the hosted payment page.
+app.post("/api/payments/cashfree/create-order", requireAuth, async (req, res) => {
+  try {
+    if (!isCashfreeConfigured()) {
+      return res.status(503).json({ error: "Payments are not configured yet. Please try again later." });
+    }
+    const { planId } = req.body;
+    const plan = PLANS[planId as PlanId];
+    if (!plan) {
+      return res.status(400).json({ error: "Invalid plan selected." });
+    }
+
+    const user = await userStore.getById(req.authUser!.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const orderId = `fx_${plan.id}_${Date.now()}_${crypto.randomBytes(3).toString("hex")}`;
+    const appBaseUrl = process.env.APP_URL || "http://localhost:3000";
+
+    const cfOrder = await createCashfreeOrder({
+      orderId,
+      amount: plan.amountInr,
+      customerId: user.id,
+      customerEmail: user.email || `${user.id}@fluenxiaapp.com`,
+      customerPhone: user.phone,
+      returnUrl: `${appBaseUrl}/?portal=student&payment_return=1&order_id=${orderId}`,
+      notifyUrl: `${appBaseUrl}/api/payments/webhook/cashfree`,
+    });
+
+    await paymentOrderStore.create({
+      orderId,
+      userId: user.id,
+      planId: plan.id,
+      amount: plan.amountInr,
+      currency: "INR",
+      status: "created",
+      cashfreePaymentSessionId: cfOrder.payment_session_id,
+      createdAt: new Date().toISOString(),
+    });
+
+    res.json({ orderId, paymentSessionId: cfOrder.payment_session_id, amount: plan.amountInr, plan });
+  } catch (err: any) {
+    console.error("Error in /api/payments/cashfree/create-order:", err);
+    res.status(500).json({ error: err.message || "Failed to create payment order." });
+  }
+});
+
+// Cashfree calls this directly (no user auth -- authenticity comes from the signature check).
+// Must read the raw body captured by the express.json() verify hook above.
+app.post("/api/payments/webhook/cashfree", async (req, res) => {
+  try {
+    const signature = req.headers["x-webhook-signature"] as string;
+    const timestamp = req.headers["x-webhook-timestamp"] as string;
+    const rawBody = (req as any).rawBody ? (req as any).rawBody.toString("utf-8") : JSON.stringify(req.body);
+
+    if (!signature || !timestamp || !verifyCashfreeWebhookSignature(rawBody, signature, timestamp)) {
+      console.warn("Cashfree webhook signature verification failed");
+      return res.status(401).json({ error: "Invalid signature" });
+    }
+
+    const payload = req.body;
+    const orderId = payload?.data?.order?.order_id;
+    const paymentStatus = payload?.data?.payment?.payment_status;
+    const paymentId = payload?.data?.payment?.cf_payment_id;
+
+    if (orderId && paymentStatus === "SUCCESS") {
+      await activateSubscriptionForOrder(orderId, String(paymentId || ""));
+    } else if (orderId && (paymentStatus === "FAILED" || paymentStatus === "USER_DROPPED")) {
+      await paymentOrderStore.markFailed(orderId, payload);
+    }
+
+    res.json({ received: true });
+  } catch (err: any) {
+    console.error("Error in /api/payments/webhook/cashfree:", err);
+    // Still 200 so Cashfree doesn't hammer retries for a bug on our side once we've logged it;
+    // the polling-fallback verify endpoint below covers us if a webhook is ever lost.
+    res.status(200).json({ received: true, error: "internal_error_logged" });
+  }
+});
+
+// Polling fallback for when a webhook is delayed or (e.g. on localhost) can never arrive: the
+// frontend calls this after Cashfree's checkout redirects back, to confirm and apply the plan.
+app.get("/api/payments/cashfree/verify/:orderId", requireAuth, async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    const localOrder = await paymentOrderStore.getByOrderId(orderId);
+    if (!localOrder || localOrder.userId !== req.authUser!.id) {
+      return res.status(404).json({ error: "Order not found." });
+    }
+    if (localOrder.status === "paid") {
+      const user = await userStore.getById(req.authUser!.id);
+      return res.json({ status: "paid", subscription: user?.subscription });
+    }
+
+    const cfStatus = await fetchCashfreeOrderStatus(orderId);
+    if (cfStatus.order_status === "PAID") {
+      await activateSubscriptionForOrder(orderId);
+      const user = await userStore.getById(req.authUser!.id);
+      return res.json({ status: "paid", subscription: user?.subscription });
+    }
+
+    res.json({ status: cfStatus.order_status.toLowerCase() });
+  } catch (err: any) {
+    console.error("Error in /api/payments/cashfree/verify:", err);
+    res.status(500).json({ error: "Failed to verify payment status." });
+  }
+});
+
 // 4. Sync User Progress from Client to Server
 app.post("/api/auth/sync-progress", requireAuth, async (req, res) => {
   try {
@@ -5915,7 +6200,16 @@ app.post("/api/auth/sync-progress", requireAuth, async (req, res) => {
       return res.status(404).json({ error: "User not found" });
     }
 
-    user.progress = progress;
+    // The client's UserProgress never carries voiceUsageDate/voiceSecondsUsedToday -- they're
+    // server-only anti-abuse counters set by enforceVoiceQuota. A naive full replace here would
+    // silently wipe a Free-tier user's daily voice usage back to zero on every ordinary progress
+    // sync (finishing a lesson, earning XP, etc.), defeating the 3-minute/day cap entirely.
+    // Preserve them from the existing record regardless of what the client payload contains.
+    user.progress = {
+      ...progress,
+      voiceUsageDate: user.progress?.voiceUsageDate,
+      voiceSecondsUsedToday: user.progress?.voiceSecondsUsedToday,
+    };
     user.lastLoginAt = new Date().toISOString();
     await userStore.upsert(user);
 
@@ -7277,7 +7571,7 @@ Return strictly formatted JSON adhering to:
 // L2 SPEAKING COACH & SPONTANEOUS ROLEPLAY ENDPOINTS
 // ============================================================================
 
-app.post("/api/gemini/l2-speaking-coach-turn", async (req, res) => {
+app.post("/api/gemini/l2-speaking-coach-turn", enforceVoiceQuota, async (req, res) => {
   try {
     const {
       spokenText,

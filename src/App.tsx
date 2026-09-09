@@ -18,6 +18,7 @@ import { StudentGateForAdmin } from "./components/StudentGateForAdmin";
 import { AuthModal } from "./components/AuthModal";
 import { LegalModal, LegalTab } from "./components/LegalModal";
 import { ConsentGateModal } from "./components/ConsentGateModal";
+import { PricingModal } from "./components/PricingModal";
 import { LoginPage } from "./components/LoginPage";
 import { PlacementAssessmentModal } from "./components/PlacementAssessmentModal";
 import { SpokenAssessmentScreen } from "./components/SpokenAssessmentScreen";
@@ -82,6 +83,8 @@ export default function App() {
   const [isLegalModalOpen, setIsLegalModalOpen] = useState<boolean>(false);
   const [legalInitialTab, setLegalInitialTab] = useState<LegalTab>("terms");
   const [isArchitectureModalOpen, setIsArchitectureModalOpen] = useState<boolean>(false);
+  const [isPricingModalOpen, setIsPricingModalOpen] = useState<boolean>(false);
+  const [paymentStatusMsg, setPaymentStatusMsg] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
   // Assessment & Level Advancement state
@@ -190,6 +193,43 @@ export default function App() {
     }
 
     setIsAuthInitialized(true);
+  }, []);
+
+  // Cashfree redirects back here with ?payment_return=1&order_id=... after checkout. Verify the
+  // order server-side (idempotent -- the webhook may have already applied it) and refresh the
+  // subscription so the UI reflects the new plan immediately, without waiting for a re-login.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("payment_return") !== "1") return;
+    const orderId = params.get("order_id");
+    const token = localStorage.getItem("auth_token");
+    if (!orderId || !token) return;
+
+    fetch(`/api/payments/cashfree/verify/${encodeURIComponent(orderId)}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.status === "paid") {
+          setPaymentStatusMsg("Payment successful! Your plan is now active.");
+          setCurrentUser((prev) => {
+            if (!prev) return prev;
+            const updated = { ...prev, subscription: data.subscription };
+            localStorage.setItem("linguaflow_user_session", JSON.stringify(updated));
+            return updated;
+          });
+        } else {
+          setPaymentStatusMsg("Payment wasn't completed. No charge was made.");
+        }
+      })
+      .catch(() => setPaymentStatusMsg("Couldn't confirm payment status. Contact support if you were charged."))
+      .finally(() => {
+        // Strip the payment params from the URL so a refresh doesn't re-trigger verification
+        const url = new URL(window.location.href);
+        url.searchParams.delete("payment_return");
+        url.searchParams.delete("order_id");
+        window.history.replaceState({}, "", url.toString());
+      });
   }, []);
 
   // Dynamically sync browser URL address bar with current portal / tab
@@ -556,6 +596,7 @@ export default function App() {
             onOpenLegalModal={handleOpenLegalModal}
             onOpenArchitectureDoc={() => setIsArchitectureModalOpen(true)}
             onOpenMobileMenu={() => setIsMobileSidebarOpen(true)}
+            onOpenPricing={() => setIsPricingModalOpen(true)}
           />
         ) : null}
 
@@ -666,6 +707,7 @@ export default function App() {
                 onOpenAdvancementExam={(lvl) => setAdvancementExamTargetLevel(lvl)}
                 onUpdateGoalSettings={handleUpdateGoalSettings}
                 onLogStudyMinutes={handleLogStudyMinutes}
+                onOpenPricing={() => setIsPricingModalOpen(true)}
               />
             )}
 
@@ -748,6 +790,7 @@ export default function App() {
                 progress={progress}
                 onGrantXp={handleGrantXp}
                 onLogStudyMinutes={handleLogStudyMinutes}
+                onOpenPricing={() => setIsPricingModalOpen(true)}
               />
             )}
 
@@ -763,6 +806,7 @@ export default function App() {
                 progress={progress}
                 onAddXp={handleGrantXp}
                 onLogStudyMinutes={handleLogStudyMinutes}
+                onOpenPricing={() => setIsPricingModalOpen(true)}
               />
             )}
 
@@ -863,6 +907,19 @@ export default function App() {
         isOpen={isArchitectureModalOpen}
         onClose={() => setIsArchitectureModalOpen(false)}
       />
+
+      {/* Subscription tier upgrade / Cashfree checkout modal */}
+      <PricingModal isOpen={isPricingModalOpen} onClose={() => setIsPricingModalOpen(false)} />
+
+      {/* Post-checkout confirmation banner (dismissable) */}
+      {paymentStatusMsg && (
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 bg-slate-900 text-white text-sm font-semibold px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3">
+          <span>{paymentStatusMsg}</span>
+          <button type="button" onClick={() => setPaymentStatusMsg(null)} className="text-slate-400 hover:text-white text-xs font-bold">
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Global Footer */}
       <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500">

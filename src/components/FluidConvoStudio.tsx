@@ -61,12 +61,14 @@ interface FluidConvoStudioProps {
   progress: UserProgress;
   onAddXp: (amount: number) => void;
   onLogStudyMinutes?: (minutes: number) => void;
+  onOpenPricing?: () => void;
 }
 
 export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
   progress,
   onAddXp,
   onLogStudyMinutes,
+  onOpenPricing,
 }) => {
   const { t } = useTranslation();
   // Configuration state
@@ -100,6 +102,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
   // Final Session Report
   const [sessionReport, setSessionReport] = useState<FluidConvoSessionReport | null>(null);
   const [reportError, setReportError] = useState<string | null>(null);
+  const [voiceQuotaExceeded, setVoiceQuotaExceeded] = useState<string | null>(null);
 
   // Speech Recognition and Audio Refs
   const recognitionRef = useRef<any>(null);
@@ -310,9 +313,13 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
     setIsListening(false);
 
     try {
+      const authToken = localStorage.getItem("auth_token");
       const response = await fetch("/api/gemini/fluidconvo-turn", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
         body: JSON.stringify({
           spokenText,
           turnIndex: currentTurnIndex + 1,
@@ -326,6 +333,13 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
           })),
         }),
       });
+
+      if (response.status === 429) {
+        const quotaData = await response.json();
+        setVoiceQuotaExceeded(quotaData.error || "You've used today's free AI voice time.");
+        setIsAiProcessing(false);
+        return;
+      }
 
       const data = await response.json();
 
@@ -550,6 +564,21 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
       {reportError && !sessionReport && (
         <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 font-semibold flex items-center gap-2">
           <span>{reportError}</span>
+        </div>
+      )}
+
+      {voiceQuotaExceeded && (
+        <div className="p-4 bg-blue-50 border border-blue-200 rounded-2xl text-xs text-blue-900 font-semibold flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <span>{voiceQuotaExceeded}</span>
+          {onOpenPricing && (
+            <button
+              type="button"
+              onClick={onOpenPricing}
+              className="shrink-0 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition-colors"
+            >
+              Upgrade Now
+            </button>
+          )}
         </div>
       )}
 

@@ -34,6 +34,7 @@ import { DailyStudyGoalCard } from "./DailyStudyGoalCard";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
 import { LanguageSelector } from "./LanguageSelector";
 import { AutoText, useAutoText } from "./AutoText";
+import { VoiceUsageBar } from "./VoiceUsageBar";
 import { useTranslation } from "../context/TranslationContext";
 
 interface DashboardProps {
@@ -52,6 +53,7 @@ interface DashboardProps {
     dailyGoalTargetStreak: number;
   }) => void;
   onLogStudyMinutes?: (minutes: number) => void;
+  onOpenPricing?: () => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -65,6 +67,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onOpenAdvancementExam,
   onUpdateGoalSettings,
   onLogStudyMinutes,
+  onOpenPricing,
 }) => {
   // Find next uncompleted grammar lesson for current level
   const currentLevelLessons = GRAMMAR_LESSONS.filter((l) => l.level === progress.selectedLevel);
@@ -128,6 +131,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Free-tier daily AI voice usage timer (Board Strategy P1: prominent on the home screen) */}
+      {onOpenPricing && <VoiceUsageBar onUpgradeClick={onOpenPricing} />}
 
       {/* High-Visibility Mother Tongue Translation Banner */}
       <LanguageSelector variant="banner" />

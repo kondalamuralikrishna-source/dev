@@ -40,7 +40,7 @@ declare global {
   }
 }
 
-function extractToken(req: Request): string | null {
+export function extractToken(req: Request): string | null {
   const header = req.headers.authorization;
   if (header && header.startsWith("Bearer ")) {
     return header.slice("Bearer ".length).trim();

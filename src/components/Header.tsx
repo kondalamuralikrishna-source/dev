@@ -45,6 +45,7 @@ interface HeaderProps {
   onOpenLegalModal?: (tab?: LegalTab) => void;
   onOpenArchitectureDoc?: () => void;
   onOpenMobileMenu?: () => void;
+  onOpenPricing?: () => void;
 }
 
 // Slim top bar (search, notifications, stats, user menu). Primary navigation lives in <Sidebar>.
@@ -56,6 +57,7 @@ export const Header: React.FC<HeaderProps> = ({
   onLogout,
   onOpenLegalModal,
   onOpenMobileMenu,
+  onOpenPricing,
 }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { t } = useTranslation();
@@ -149,6 +151,19 @@ export const Header: React.FC<HeaderProps> = ({
               {t("header.rank", "Rank")} {userRankLevel}
             </span>
           </div>
+
+          {/* Upgrade CTA -- opens the Cashfree pricing/checkout modal */}
+          {onOpenPricing && (
+            <button
+              type="button"
+              id="btn-open-pricing"
+              onClick={onOpenPricing}
+              className="hidden sm:flex items-center gap-1.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-900 font-bold text-xs px-3 py-1.5 rounded-full shadow-xs transition-all"
+            >
+              <Zap size={13} className="fill-slate-900" />
+              <span>Upgrade</span>
+            </button>
+          )}
 
           {/* Notification bell (visual placeholder — no live notifications yet) */}
           <button

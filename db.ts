@@ -37,6 +37,15 @@ export interface UserDoc extends Document {
     aiTrainingOptIn?: boolean;
     marketingOptIn?: boolean;
   };
+  subscription?: {
+    tier: "free" | "plus" | "pro" | "sachet";
+    status: "active" | "expired" | "none";
+    startedAt?: string;
+    expiresAt?: string;
+    planId?: string;
+    cashfreeOrderId?: string;
+    lastPaymentId?: string;
+  };
 }
 
 const userSchema = new Schema<UserDoc>(
@@ -63,11 +72,89 @@ const userSchema = new Schema<UserDoc>(
       aiTrainingOptIn: Boolean,
       marketingOptIn: Boolean,
     },
+    subscription: {
+      tier: { type: String, enum: ["free", "plus", "pro", "sachet"], default: "free" },
+      status: { type: String, enum: ["active", "expired", "none"], default: "none" },
+      startedAt: String,
+      expiresAt: String,
+      planId: String,
+      cashfreeOrderId: String,
+      lastPaymentId: String,
+    },
   },
   { versionKey: false }
 );
 
 export const UserModel = mongoose.model<UserDoc>("User", userSchema);
+
+// ============================================================================
+// PAYMENT ORDERS (Cashfree) — every order we create is recorded here immediately, independent
+// of the webhook, so we can reconcile "created but never paid" orders and have an audit trail
+// that isn't solely dependent on Cashfree's webhook actually reaching us.
+// ============================================================================
+
+export interface PaymentOrderDoc extends Document {
+  orderId: string;
+  userId: string;
+  planId: string;
+  amount: number;
+  currency: string;
+  status: "created" | "paid" | "failed" | "expired";
+  cashfreePaymentSessionId?: string;
+  cashfreePaymentId?: string;
+  createdAt: string;
+  paidAt?: string;
+  rawWebhookPayload?: any;
+}
+
+const paymentOrderSchema = new Schema<PaymentOrderDoc>(
+  {
+    orderId: { type: String, required: true, unique: true, index: true },
+    userId: { type: String, required: true, index: true },
+    planId: { type: String, required: true },
+    amount: { type: Number, required: true },
+    currency: { type: String, default: "INR" },
+    status: { type: String, enum: ["created", "paid", "failed", "expired"], default: "created" },
+    cashfreePaymentSessionId: String,
+    cashfreePaymentId: String,
+    createdAt: { type: String, required: true },
+    paidAt: String,
+    rawWebhookPayload: Schema.Types.Mixed,
+  },
+  { versionKey: false }
+);
+
+export const PaymentOrderModel = mongoose.model<PaymentOrderDoc>("PaymentOrder", paymentOrderSchema);
+
+export const paymentOrderStore = {
+  async create(order: Omit<PaymentOrderDoc, keyof Document>) {
+    await PaymentOrderModel.create(order);
+  },
+  async getByOrderId(orderId: string) {
+    const doc = await PaymentOrderModel.findOne({ orderId });
+    if (!doc) return null;
+    const obj = doc.toObject();
+    delete (obj as any)._id;
+    return obj;
+  },
+  async markPaid(orderId: string, paymentId: string, rawWebhookPayload?: any) {
+    await PaymentOrderModel.findOneAndUpdate(
+      { orderId },
+      { $set: { status: "paid", cashfreePaymentId: paymentId, paidAt: new Date().toISOString(), rawWebhookPayload } }
+    );
+  },
+  async markFailed(orderId: string, rawWebhookPayload?: any) {
+    await PaymentOrderModel.findOneAndUpdate({ orderId }, { $set: { status: "failed", rawWebhookPayload } });
+  },
+  async listByUser(userId: string) {
+    const docs = await PaymentOrderModel.find({ userId }).sort({ createdAt: -1 });
+    return docs.map((d) => {
+      const obj = d.toObject();
+      delete (obj as any)._id;
+      return obj;
+    });
+  },
+};
 
 // ============================================================================
 // OTP CACHE (short-lived, auto-expires via TTL index)
