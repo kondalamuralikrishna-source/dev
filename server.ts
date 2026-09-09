@@ -5920,6 +5920,46 @@ app.post("/api/auth/consent", requireAuth, async (req, res) => {
   }
 });
 
+// Update editable profile fields (name, avatar, phone). Email is deliberately not editable here
+// -- it's the account's identity key (used for login, password reset, OTP); changing it needs its
+// own verification flow, not a quick profile-form field.
+app.post("/api/auth/update-profile", requireAuth, async (req, res) => {
+  try {
+    const { name, avatarUrl, phone, countryCode } = req.body;
+    const patch: Record<string, any> = {};
+
+    if (name !== undefined) {
+      const cleanName = String(name).trim();
+      if (!cleanName || cleanName.length > 100) {
+        return res.status(400).json({ error: "Name must be between 1 and 100 characters." });
+      }
+      patch.name = cleanName;
+    }
+    if (avatarUrl !== undefined) {
+      const cleanAvatar = String(avatarUrl).trim();
+      if (cleanAvatar && !/^https?:\/\//.test(cleanAvatar)) {
+        return res.status(400).json({ error: "Avatar must be a valid http(s) URL." });
+      }
+      patch.avatarUrl = cleanAvatar || undefined;
+    }
+    if (phone !== undefined) patch.phone = String(phone).trim() || undefined;
+    if (countryCode !== undefined) patch.countryCode = String(countryCode).trim() || undefined;
+
+    if (Object.keys(patch).length === 0) {
+      return res.status(400).json({ error: "No editable fields provided." });
+    }
+
+    const updated = await userStore.update(req.authUser!.id, patch);
+    if (!updated) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json({ success: true, user: updated });
+  } catch (err: any) {
+    console.error("Error in /api/auth/update-profile:", err);
+    res.status(500).json({ error: "Failed to update profile" });
+  }
+});
+
 // ============================================================================
 // MONETIZATION: SUBSCRIPTION TIERS & CASHFREE PAYMENTS
 // (Board Strategy Sept 2026: Freemium + 7-Day Sachet Pass + Multi-Tier Subscription)

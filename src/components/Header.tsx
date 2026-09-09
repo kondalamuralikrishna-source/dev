@@ -9,6 +9,7 @@ import {
   Bell,
   Search,
   Menu,
+  UserCog,
 } from "lucide-react";
 import { CEFRLevel, UserProgress, UserAccount } from "../types";
 import { LegalTab } from "./LegalModal";
@@ -46,6 +47,7 @@ interface HeaderProps {
   onOpenArchitectureDoc?: () => void;
   onOpenMobileMenu?: () => void;
   onOpenPricing?: () => void;
+  onOpenEditProfile?: () => void;
 }
 
 // Slim top bar (search, notifications, stats, user menu). Primary navigation lives in <Sidebar>.
@@ -58,6 +60,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenLegalModal,
   onOpenMobileMenu,
   onOpenPricing,
+  onOpenEditProfile,
 }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { t } = useTranslation();
@@ -213,6 +216,21 @@ export const Header: React.FC<HeaderProps> = ({
                         {t("header.active_learner_account", "Active Learner Account")}
                       </span>
                     </div>
+
+                    {onOpenEditProfile && (
+                      <button
+                        type="button"
+                        id="btn-open-edit-profile"
+                        onClick={() => {
+                          onOpenEditProfile();
+                          setUserDropdownOpen(false);
+                        }}
+                        className="w-full px-4 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
+                      >
+                        <UserCog size={15} className="text-slate-500" />
+                        <span>Edit Profile</span>
+                      </button>
+                    )}
 
                     {onOpenLegalModal && (
                       <button

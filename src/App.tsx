@@ -19,6 +19,7 @@ import { AuthModal } from "./components/AuthModal";
 import { LegalModal, LegalTab } from "./components/LegalModal";
 import { ConsentGateModal } from "./components/ConsentGateModal";
 import { PricingModal } from "./components/PricingModal";
+import { ProfileEditModal } from "./components/ProfileEditModal";
 import { LoginPage } from "./components/LoginPage";
 import { PlacementAssessmentModal } from "./components/PlacementAssessmentModal";
 import { SpokenAssessmentScreen } from "./components/SpokenAssessmentScreen";
@@ -84,6 +85,7 @@ export default function App() {
   const [legalInitialTab, setLegalInitialTab] = useState<LegalTab>("terms");
   const [isArchitectureModalOpen, setIsArchitectureModalOpen] = useState<boolean>(false);
   const [isPricingModalOpen, setIsPricingModalOpen] = useState<boolean>(false);
+  const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState<boolean>(false);
   const [paymentStatusMsg, setPaymentStatusMsg] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
@@ -597,6 +599,7 @@ export default function App() {
             onOpenArchitectureDoc={() => setIsArchitectureModalOpen(true)}
             onOpenMobileMenu={() => setIsMobileSidebarOpen(true)}
             onOpenPricing={() => setIsPricingModalOpen(true)}
+            onOpenEditProfile={() => setIsEditProfileModalOpen(true)}
           />
         ) : null}
 
@@ -910,6 +913,16 @@ export default function App() {
 
       {/* Subscription tier upgrade / Cashfree checkout modal */}
       <PricingModal isOpen={isPricingModalOpen} onClose={() => setIsPricingModalOpen(false)} />
+
+      {/* Edit Profile (name, avatar, phone) */}
+      {currentUser && isEditProfileModalOpen && (
+        <ProfileEditModal
+          isOpen={isEditProfileModalOpen}
+          onClose={() => setIsEditProfileModalOpen(false)}
+          currentUser={currentUser}
+          onProfileUpdated={(updatedUser) => setCurrentUser(updatedUser)}
+        />
+      )}
 
       {/* Post-checkout confirmation banner (dismissable) */}
       {paymentStatusMsg && (
