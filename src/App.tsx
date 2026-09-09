@@ -935,18 +935,10 @@ export default function App() {
       )}
 
       {/* Global Footer */}
-      <footer className="border-t border-slate-200 bg-white py-4 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p>© 2026 Fluenxia English LMS • Powered by Google Gemini AI & Google Auth</p>
-          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-xs">
-            <button
-              type="button"
-              onClick={() => setIsArchitectureModalOpen(true)}
-              className="text-emerald-700 hover:text-emerald-900 font-bold hover:underline cursor-pointer transition-colors"
-            >
-              System Architecture (PDF)
-            </button>
-            <span>•</span>
+      <footer className="border-t border-slate-200 bg-white py-3 text-center text-xs text-slate-500">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <p>© 2026 Fluenxia</p>
+          <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
             <button
               type="button"
               onClick={() => handleOpenLegalModal("terms")}
@@ -967,19 +959,8 @@ export default function App() {
               href="mailto:support@fluenxaapp.com"
               className="text-slate-600 hover:text-indigo-600 font-semibold hover:underline transition-colors"
             >
-              Support: support@fluenxaapp.com
+              Support
             </a>
-            <span>•</span>
-            <a
-              href="mailto:sales@fluenxaapp.com"
-              className="text-slate-600 hover:text-indigo-600 font-semibold hover:underline transition-colors"
-            >
-              Sales: sales@fluenxaapp.com
-            </a>
-            <span>•</span>
-            <span className="text-slate-400">CEFR A1–C1 Standard</span>
-            <span>•</span>
-            <span className="text-slate-400">Google OAuth & TLS 1.3</span>
           </div>
         </div>
       </footer>
