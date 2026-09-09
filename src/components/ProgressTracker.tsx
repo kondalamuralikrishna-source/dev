@@ -47,15 +47,36 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
 
   const allWords = VOCABULARY_COLLECTIONS.flatMap((c) => c.words);
   const savedWords = allWords.filter((w) => progress.savedVocabIds.includes(w.id));
+  const vocabMasteryPercent = allWords.length > 0
+    ? Math.round((progress.masteredVocabIds.length / allWords.length) * 100)
+    : 0;
 
-  // Average quiz score
+  // Average quiz score — honestly 0 (not a fabricated "85%") when no quizzes have been taken yet.
   const quizScoresList: number[] = Object.values(progress.quizScores || {});
   const avgQuizScore =
     quizScoresList.length > 0
       ? Math.round(
           quizScoresList.reduce((a, b) => a + b, 0) / quizScoresList.length
         )
-      : 85;
+      : 0;
+
+  const stressAvgScore =
+    progress.stressTestsCompleted && progress.stressTestsCompleted.length > 0
+      ? Math.round(
+          progress.stressTestsCompleted.reduce((a, b) => a + b.score, 0) /
+            progress.stressTestsCompleted.length
+        )
+      : null;
+
+  // Real conversational-fluency signal: averaged from actual After-Action Audit reports saved
+  // after Roleplay Coach / FluidConvo sessions — not a fabricated constant.
+  const fluencyAvgScore =
+    progress.afterActionAudits && progress.afterActionAudits.length > 0
+      ? Math.round(
+          progress.afterActionAudits.reduce((a, b) => a + (b.overallFluencyScore || 0), 0) /
+            progress.afterActionAudits.length
+        )
+      : null;
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-16 animate-in fade-in duration-300">
@@ -204,93 +225,88 @@ export const ProgressTracker: React.FC<ProgressTrackerProps> = ({
         </div>
 
         <div className="space-y-4">
-          {/* Grammar & Syntax */}
+          {/* Grammar & Syntax — real percentage of grammar lessons completed */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-bold text-slate-700">
               <span>{t("progress.grammar_syntax_rules", "Grammar & Syntax Rules")}</span>
-              <span className="text-blue-600">
-                {Math.min(100, Math.max(30, lessonProgressPercent))}%
-              </span>
+              <span className="text-blue-600">{lessonProgressPercent}%</span>
             </div>
             <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-blue-600 rounded-full transition-all duration-700"
-                style={{ width: `${Math.min(100, Math.max(30, lessonProgressPercent))}%` }}
+                style={{ width: `${lessonProgressPercent}%` }}
               />
             </div>
           </div>
 
-          {/* Vocabulary Breadth */}
+          {/* Vocabulary Breadth — real percentage of vocabulary mastered */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-bold text-slate-700">
               <span>{t("progress.vocab_idiomatic", "Vocabulary & Idiomatic Expressions")}</span>
-              <span className="text-emerald-600">
-                {Math.min(100, Math.max(40, (progress.masteredVocabIds.length / allWords.length) * 100))}%
-              </span>
+              <span className="text-emerald-600">{vocabMasteryPercent}%</span>
             </div>
             <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-emerald-500 rounded-full transition-all duration-700"
-                style={{
-                  width: `${Math.min(100, Math.max(40, (progress.masteredVocabIds.length / allWords.length) * 100))}%`,
-                }}
+                style={{ width: `${vocabMasteryPercent}%` }}
               />
             </div>
           </div>
 
-          {/* Conversational Fluency */}
+          {/* Conversational Fluency — averaged from real After-Action Audit reports (Roleplay
+              Coach / FluidConvo sessions); honestly empty until at least one exists. */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-bold text-slate-700">
               <span>{t("progress.conversational_fluency", "Conversational Fluency & Roleplays")}</span>
-              <span className="text-amber-600">75%</span>
+              {fluencyAvgScore !== null ? (
+                <span className="text-amber-600">{fluencyAvgScore}%</span>
+              ) : (
+                <span className="text-slate-400 font-medium normal-case">
+                  {t("progress.no_data_yet", "No sessions completed yet")}
+                </span>
+              )}
             </div>
             <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-amber-500 rounded-full transition-all duration-700"
-                style={{ width: `75%` }}
+                style={{ width: `${fluencyAvgScore ?? 0}%` }}
               />
             </div>
           </div>
 
-          {/* Pronunciation & Phonetics */}
+          {/* Pronunciation & Phonetics — no per-session pronunciation score is tracked yet, so
+              this is honestly empty rather than a fabricated number. */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-bold text-slate-700">
               <span>{t("progress.pronunciation_clarity", "Pronunciation Clarity & Syllable Stress")}</span>
-              <span className="text-rose-600">82%</span>
+              <span className="text-slate-400 font-medium normal-case">
+                {t("progress.no_data_yet", "No sessions completed yet")}
+              </span>
             </div>
             <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-rose-500 rounded-full transition-all duration-700"
-                style={{ width: `82%` }}
-              />
+              <div className="h-full bg-rose-500 rounded-full transition-all duration-700" style={{ width: "0%" }} />
             </div>
           </div>
 
-          {/* High-Pressure Speaking & Stress Composure */}
+          {/* High-Pressure Speaking & Stress Composure — real average of completed stress tests */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-bold text-slate-700">
               <span>{t("progress.speaking_under_pressure", "Speaking Under Pressure & Crisis Composure")}</span>
               <span className="text-rose-700 font-black">
-                {progress.stressTestsCompleted && progress.stressTestsCompleted.length > 0
-                  ? `${Math.round(
-                      progress.stressTestsCompleted.reduce((a, b) => a + b.score, 0) /
-                        progress.stressTestsCompleted.length
-                    )}%`
-                  : "70%"}
+                {stressAvgScore !== null ? (
+                  `${stressAvgScore}%`
+                ) : (
+                  <span className="text-slate-400 font-medium normal-case">
+                    {t("progress.no_data_yet", "No sessions completed yet")}
+                  </span>
+                )}
               </span>
             </div>
             <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
               <div
                 className="h-full bg-gradient-to-r from-amber-500 to-rose-600 rounded-full transition-all duration-700"
                 style={{
-                  width: `${
-                    progress.stressTestsCompleted && progress.stressTestsCompleted.length > 0
-                      ? Math.round(
-                          progress.stressTestsCompleted.reduce((a, b) => a + b.score, 0) /
-                            progress.stressTestsCompleted.length
-                        )
-                      : 70
-                  }%`,
+                  width: `${stressAvgScore ?? 0}%`,
                 }}
               />
             </div>

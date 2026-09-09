@@ -151,220 +151,41 @@ export function getOffsetDateString(offsetDays: number): string {
   return d.toISOString().split("T")[0];
 }
 
-export const INITIAL_ERROR_MEMORY_BANK: ErrorMemoryItem[] = [
-  {
-    id: "err_subj_verb_1",
-    category: "Grammar & Syntax",
-    errorSnippet: "She don't like the proposal",
-    correction: "She doesn't like the proposal",
-    explanation: "Subject-verb agreement: third-person singular (she/he/it) requires 'doesn't' in the negative simple present tense.",
-    sourceContext: "Executive Boardroom Simulation",
-    frequency: 3,
-    detectedAt: Date.now() - 86400000 * 2,
-    lastRetestedAt: Date.now() - 3600000 * 5,
-    status: "retesting_under_pressure",
-    masteryScore: 65,
-    retestAttempts: [
-      {
-        timestamp: Date.now() - 3600000 * 5,
-        passed: true,
-        contextSnippet: "Handling surprise timeline dispute",
-        userSpeech: "She doesn't believe the current deadline is feasible.",
-        feedback: "Perfect 3rd-person singular agreement under time pressure!",
-      },
-    ],
-  },
-  {
-    id: "err_pron_comf_2",
-    category: "Pronunciation & Phonetics",
-    errorSnippet: "com-for-TA-ble (4 syllables with hard 'T')",
-    correction: "/ˈkʌmf.tə.bəl/ (3 syllables: COMF-ter-ble)",
-    explanation: "In standard native English, the middle 'or' is elided into a 3-syllable unit with primary stress on the first syllable.",
-    sourceContext: "Pronunciation Acoustic Lab",
-    frequency: 2,
-    detectedAt: Date.now() - 86400000 * 3,
-    status: "in_drill",
-    masteryScore: 45,
-    retestAttempts: [],
-  },
-  {
-    id: "err_prag_diplomat_3",
-    category: "Pragmatics & Register",
-    errorSnippet: "You must change this design immediately",
-    correction: "Could we perhaps explore adjusting the design to better align with the brief?",
-    explanation: "In professional corporate discourse, avoid blunt imperative commands ('You must...'). Use modal softening ('Could we perhaps...') for face-saving diplomacy.",
-    sourceContext: "Crisis & Conflict Management",
-    frequency: 4,
-    detectedAt: Date.now() - 86400000 * 1,
-    status: "retesting_under_pressure",
-    masteryScore: 78,
-    retestAttempts: [
-      {
-        timestamp: Date.now() - 3600000 * 12,
-        passed: true,
-        contextSnippet: "Pushback on scope creep",
-        userSpeech: "It might be advantageous to revisit the milestone parameters first.",
-        feedback: "Exceptional diplomatic stance marker usage.",
-      },
-    ],
-  },
-  {
-    id: "err_jargon_scale_4",
-    category: "Vocabulary & Jargon",
-    errorSnippet: "We need to make it bigger fast",
-    correction: "We need to optimize unit economics and accelerate operational throughput",
-    explanation: "Elevate colloquial phrasing to domain-specific executive terminology during investor pitches and technical reviews.",
-    sourceContext: "Investor Pitch & Q&A",
-    frequency: 2,
-    detectedAt: Date.now() - 86400000 * 4,
-    status: "in_drill",
-    masteryScore: 55,
-    retestAttempts: [],
-  },
-  {
-    id: "err_filler_cluster_5",
-    category: "Fluency & Fillers",
-    errorSnippet: "Like, basically, um, our team did, you know...",
-    correction: "Our team executed the multi-stage rollout seamlessly.",
-    explanation: "Hesitation cluster detected (4 fillers in 8 words). Anchor vocal resonance and substitute silent syntactic pauses for filler words.",
-    sourceContext: "Hot Seat Speaking Stress Test",
-    frequency: 5,
-    detectedAt: Date.now() - 86400000 * 2,
-    status: "retesting_under_pressure",
-    masteryScore: 70,
-    retestAttempts: [],
-  },
-];
 
-export const INITIAL_AFTER_ACTION_AUDIT: AfterActionAuditReport = {
-  sessionId: "audit_init_demo_1",
-  sessionTitle: "Series A Investor Pitch & Hostile Q&A",
-  sessionType: "domain_scenario",
-  completedAt: Date.now() - 3600000 * 3,
-  durationSeconds: 195,
-  totalWordsSpoken: 342,
-  overallFluencyScore: 88,
-  lexicalReach: {
-    cefrDistribution: {
-      a1_a2: 42,
-      b1_b2: 38,
-      c1_c2: 20,
-    },
-    uniqueVocabularyCount: 168,
-    typeTokenRatio: 0.49,
-    sophisticatedWordsUsed: [
-      "trajectory",
-      "frictionless",
-      "amortization",
-      "scalable",
-      "countermeasure",
-      "defensible",
-      "retention",
-    ],
-    repetitiveWords: ["really", "actually", "thing"],
-  },
-  fillerWordAnalysis: {
-    totalFillers: 6,
-    fillerRatioPercent: 1.75,
-    fillerBreakdown: [
-      { word: "um", count: 3 },
-      { word: "like", count: 2 },
-      { word: "you know", count: 1 },
-    ],
-    rating: "Elite Articulation (<2%)",
-  },
-  syntacticCrutches: [
-    {
-      crutchPattern: "Over-reliance on 'I think that...'",
-      occurrences: 4,
-      exampleQuotes: [
-        "I think that our CAC is defensible.",
-        "I think that the market is expanding.",
-      ],
-      alternativeStructures: [
-        "Our data confirms that...",
-        "The empirical evidence indicates that...",
-        "From an operational standpoint...",
-      ],
-    },
-  ],
-  fluencyVelocity: {
-    avgWpm: 138,
-    targetWpmBand: "Optimal Conversational (120-160 WPM)",
-    turnTakingLatencyMs: 380,
-    longPausesCount: 2,
-  },
-  pragmaticImpact: {
-    diplomacyScore: 92,
-    assertivenessScore: 88,
-    registerConsistency: "Executive / Boardroom Pitch",
-  },
-  lineByLineRevisions: [
-    {
-      userSpoken: "We have very big growth and our clients love us.",
-      executivePolishRewrite:
-        "We have achieved exponential quarter-over-quarter expansion driven by high Net Promoter Scores and net revenue retention.",
-      rationale: "Replaces vague qualitative claims with concrete executive metrics.",
-      audioPlayable: true,
-    },
-    {
-      userSpoken: "If competitors copy us, we can do it faster.",
-      executivePolishRewrite:
-        "Our multi-sided proprietary data moat and high switching costs insulate us effectively against copycats.",
-      rationale: "Articulates competitive defensibility using authoritative domain terminology.",
-      audioPlayable: true,
-    },
-    {
-      userSpoken: "I think we need 2 million dollars for hire more people.",
-      executivePolishRewrite:
-        "We are seeking a $2M capital infusion to scale strategic engineering headcount and accelerate go-to-market distribution.",
-      rationale: "Elevates informal phrasing into standard venture capital funding language.",
-      audioPlayable: true,
-    },
-  ],
-  executiveSummary:
-    "Strong, confident delivery with an optimal 138 WPM cadence and elite <2% filler ratio. High lexical reach with 20% C1-C2 vocabulary. Growth area: reduce reliance on subjective openers like 'I think that' in favor of objective empirical assertions.",
-  roiGainsSummary: [
-    "+18% increase in executive domain jargon density compared to baseline",
-    "Turn-taking response latency decreased to 380ms under hostile investor interruption",
-    "Filler word count reduced from 14 in prior session down to 6",
-  ],
-};
-
+// Honest zero-state for a brand-new learner (guest or freshly registered) — no XP, streak,
+// completed lessons, saved words, achievements, or session history should exist until the
+// learner actually does something. This used to seed fabricated "starter" progress (a fake
+// 3-day streak, a pre-completed lesson, invented error-memory and after-action audit reports
+// from sessions that never happened) which was silently migrated into real accounts on signup.
 export function getDefaultProgress(): UserProgress {
   const today = getTodayDateString();
   return {
-    xp: 120, // Starter XP
-    streakDays: 3,
+    xp: 0,
+    streakDays: 0,
     lastActiveDate: today,
     dailyGoalType: "minutes",
     dailyGoalMinutes: 15,
     dailyGoalLessons: 2,
     dailyGoalTargetStreak: 14, // 14-day streak habit goal
-    minutesToday: 5,
-    lessonsToday: 1,
+    minutesToday: 0,
+    lessonsToday: 0,
     todayGoalCompleted: false,
-    dailyActivityHistory: [
-      { date: getOffsetDateString(-3), minutes: 15, lessons: 2, goalMet: true },
-      { date: getOffsetDateString(-2), minutes: 20, lessons: 3, goalMet: true },
-      { date: getOffsetDateString(-1), minutes: 15, lessons: 2, goalMet: true },
-      { date: today, minutes: 5, lessons: 1, goalMet: false },
-    ],
-    completedLessonIds: ["grammar_1"],
+    dailyActivityHistory: [],
+    completedLessonIds: [],
     completedQuizIds: [],
     quizScores: {},
-    savedVocabIds: ["v_greeting_1", "v_business_1"],
+    savedVocabIds: [],
     masteredVocabIds: [],
     weakTopics: [],
-    achievements: ["first_lesson", "streak_3"],
+    achievements: [],
     selectedLevel: "A1",
     unlockedLevels: ["A1"], // Default to A1 unlocked; placement assessment updates this
     assessmentCompleted: false,
     completedBenchmarkExams: [],
     speechSpeed: 0.9,
     stressTestsCompleted: [],
-    errorMemoryBank: INITIAL_ERROR_MEMORY_BANK,
-    afterActionAudits: [INITIAL_AFTER_ACTION_AUDIT],
+    errorMemoryBank: [],
+    afterActionAudits: [],
   };
 }
 
@@ -808,7 +629,7 @@ export function trackErrorSlip(
   sourceContext: string = "Conversational Flow"
 ): UserProgress {
   const current = loadUserProgress();
-  const bank = current.errorMemoryBank || INITIAL_ERROR_MEMORY_BANK;
+  const bank = current.errorMemoryBank || [];
 
   // Check if identical or very similar error already exists
   const existingIdx = bank.findIndex(
@@ -863,7 +684,7 @@ export function recordErrorRetestAttempt(
   feedback: string
 ): UserProgress {
   const current = loadUserProgress();
-  const bank = current.errorMemoryBank || INITIAL_ERROR_MEMORY_BANK;
+  const bank = current.errorMemoryBank || [];
 
   const updatedBank = bank.map((item) => {
     if (item.id !== errorId) return item;
@@ -910,7 +731,7 @@ export function recordErrorRetestAttempt(
 
 export function deleteErrorMemoryItem(errorId: string): UserProgress {
   const current = loadUserProgress();
-  const bank = (current.errorMemoryBank || INITIAL_ERROR_MEMORY_BANK).filter((e) => e.id !== errorId);
+  const bank = (current.errorMemoryBank || []).filter((e) => e.id !== errorId);
   const updatedProgress: UserProgress = {
     ...current,
     errorMemoryBank: bank,

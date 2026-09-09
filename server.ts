@@ -5562,20 +5562,23 @@ app.post("/api/auth/register", async (req, res) => {
     const assignedRole = isOwnerEmail ? "owner" : isAdminEmail ? "admin" : "student";
     const newUserId = `usr_${Date.now()}`;
 
-    // Base initial progress or migrate guest progress if learner was practicing as guest
+    // Base initial progress (honest zero-state) or migrate guest progress if the learner was
+    // practicing as a guest before signing up. This used to fabricate a starter history (200 XP,
+    // a pre-completed lesson, a pre-saved word, a pre-unlocked achievement) for every new real
+    // account, which is misleading — a brand-new account should start at zero on everything.
     let initialProgress = {
-      xp: 200,
-      streakDays: 1,
+      xp: 0,
+      streakDays: 0,
       lastActiveDate: new Date().toISOString().split("T")[0],
       dailyGoalMinutes: 15,
-      minutesToday: 5,
-      completedLessonIds: ["grammar_1"],
+      minutesToday: 0,
+      completedLessonIds: [] as string[],
       completedQuizIds: [],
       quizScores: {},
-      savedVocabIds: ["v_greeting_1"],
+      savedVocabIds: [] as string[],
       masteredVocabIds: [],
       weakTopics: [],
-      achievements: ["first_lesson"],
+      achievements: [] as string[],
       selectedLevel: targetLevel || "B1",
       speechSpeed: 0.9,
       stressTestsCompleted: [],

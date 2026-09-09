@@ -1950,6 +1950,7 @@ export const REGIONAL_DICTIONARY: Record<string, Record<RegionalLanguageCode, st
   "spoken.next_task": { en: "Next Task", te: "తదుపరి టాస్క్", hi: "अगला कार्य", ta: "அடுத்த பணி", kn: "ಮುಂದಿನ ಕಾರ್ಯ", bn: "পরবর্তী কাজ", mr: "पुढील कार्य" },
   "spoken.complete_diagnose": { en: "Complete & Diagnose CEFR Band", te: "పూర్తి చేసి CEFR బ్యాండ్‌ను నిర్ధారించండి", hi: "पूर्ण करें और CEFR बैंड का निदान करें", ta: "முடித்து CEFR நிலையை நோயறி", kn: "ಪೂರ್ಣಗೊಳಿಸಿ ಮತ್ತು CEFR ಬ್ಯಾಂಡ್ ಅನ್ನು ರೋಗನಿರ್ಣಯ ಮಾಡಿ", bn: "সম্পন্ন করুন ও CEFR ব্যান্ড নির্ণয় করুন", mr: "पूर्ण करा व CEFR बँड निदान करा" },
   "spoken.analyzing_speech": { en: "Analyzing Speech with Gemini AI...", te: "Gemini AIతో ప్రసంగాన్ని విశ్లేషిస్తోంది...", hi: "Gemini AI के साथ बोली का विश्लेषण किया जा रहा है...", ta: "Gemini AI உடன் பேச்சு பகுப்பாய்வு செய்யப்படுகிறது...", kn: "Gemini AI ಜೊತೆ ಭಾಷಣವನ್ನು ವಿಶ್ಲೇಷಿಸಲಾಗುತ್ತಿದೆ...", bn: "Gemini AI দিয়ে বক্তৃতা বিশ্লেষণ করা হচ্ছে...", mr: "Gemini AI सह भाषणाचे विश्लेषण होत आहे..." },
+  "progress.no_data_yet": { en: "No sessions completed yet", te: "ఇంకా సెషన్‌లు పూర్తి కాలేదు", hi: "अभी तक कोई सत्र पूरा नहीं हुआ", ta: "இன்னும் அமர்வுகள் முடிக்கப்படவில்லை", kn: "ಇನ್ನೂ ಯಾವುದೇ ಸೆಷನ್ ಪೂರ್ಣಗೊಂಡಿಲ್ಲ", bn: "এখনও কোনো সেশন সম্পন্ন হয়নি", mr: "अद्याप कोणतेही सत्र पूर्ण झाले नाही" },
 };
 
 /**
