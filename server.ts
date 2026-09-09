@@ -4646,45 +4646,12 @@ app.get([
 });
 
 // Official Brand Logo Endpoint (Vector SVG & Icon support for Google Branding Verification)
+// Legacy path aliases kept for anything still linking to the old filenames (e.g. cached HTML,
+// external references) -- all now serve the current official brand icon (Sept 2026 refresh)
+// instead of the old dynamically-generated "LINGUAFLOW" SVG monogram.
 app.get(["/app-logo.svg", "/logo.svg", "/logo.png", "/app-logo.png", "/linguaflow-logo.svg", "/icon.png"], (req, res) => {
-  const svgLogo = `<svg viewBox="0 0 600 600" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <style>
-      .bg-rect { fill: #FBF8F1; }
-      .brand-teal { fill: #005A5B; }
-      .serif-title {
-        font-family: "Didot", "Bodoni MT", "Cinzel", "Playfair Display", "Times New Roman", serif;
-        font-size: 42px;
-        font-weight: 700;
-        letter-spacing: 0.22em;
-        fill: #005A5B;
-        text-anchor: middle;
-      }
-      .sans-sub {
-        font-family: -apple-system, BlinkMacSystemFont, "Montserrat", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: 0.28em;
-        fill: #005A5B;
-        text-anchor: middle;
-      }
-    </style>
-  </defs>
-  <rect width="600" height="600" rx="32" class="bg-rect" />
-  <g id="monogram" transform="translate(300, 240) scale(1.15)">
-    <path class="brand-teal" d="M 120 -85 C 105 -95, 80 -98, 45 -88 C 10 -78, -25 -50, -45 -15 C -58 7, -62 30, -50 48 C -38 65, -12 78, 25 78 C 65 78, 92 60, 92 38 C 92 18, 72 10, 52 14 C 42 16, 35 22, 38 28 C 40 33, 46 34, 52 32 C 62 28, 72 32, 72 40 C 72 52, 45 66, 12 66 C -25 66, -55 50, -68 30 C -80 12, -78 -12, -62 -36 C -40 -70, 0 -98, 48 -105 C 85 -110, 118 -98, 128 -82 C 132 -75, 128 -70, 120 -72 C 115 -74, 110 -78, 102 -80 C 75 -86, 38 -72, 10 -48 C -15 -28, -32 -2, -38 25 C -40 35, -38 45, -30 52 C -22 58, -8 60, 12 55 C 32 50, 48 38, 55 24 C 58 18, 55 12, 48 10 C 38 8, 25 15, 18 28 C 15 35, 18 40, 24 40 C 28 40, 32 36, 30 32 C 28 28, 24 28, 22 30 C 20 32, 22 35, 25 35 C 28 35, 30 32, 30 28 C 30 20, 42 16, 50 18 C 62 22, 70 32, 68 45 C 65 58, 45 68, 18 68 C -12 68, -38 55, -45 38 C -52 20, -48 -2, -32 -26 C -12 -55, 20 -78, 58 -85 C 80 -89, 102 -85, 118 -75 C 122 -72, 125 -78, 120 -85 Z" />
-    <path class="brand-teal" d="M 52 -92 C 40 -65, 18 -22, -8 24 C -22 48, -38 72, -56 86 C -75 100, -100 105, -118 95 C -135 85, -138 62, -125 45 C -112 28, -88 20, -68 28 C -55 33, -48 42, -50 50 C -52 58, -60 62, -68 58 C -78 52, -88 55, -95 62 C -102 70, -100 80, -90 85 C -78 90, -58 85, -42 72 C -24 58, -8 34, 6 8 C 32 -38, 52 -78, 62 -95 C 65 -100, 58 -102, 52 -92 Z" />
-    <path class="brand-teal" d="M -5 -25 C 2 -38, 15 -48, 26 -48 C 35 -48, 40 -40, 36 -30 C 30 -16, 12 -2, -8 10 C -18 16, -26 18, -30 15 C -35 12, -34 2, -26 -10 C -18 -22, -5 -32, 8 -38 C 18 -42, 28 -40, 30 -32 C 32 -22, 18 -8, 0 4 C -12 12, -20 12, -22 8 C -24 4, -18 -2, -10 -8 C 2 -16, 15 -25, 20 -32 C 22 -36, 18 -38, 12 -36 C 2 -32, -10 -20, -18 -8 C -24 0, -25 8, -20 12 C -15 16, -5 14, 8 6 C 24 -4, 40 -18, 45 -32 C 48 -42, 40 -52, 28 -52 C 12 -52, -4 -38, -12 -22 C -15 -16, -10 -12, -5 -15 C -2 -17, -4 -22, -5 -25 Z" />
-    <path class="brand-teal" d="M -75 -12 C -45 -16, 0 -15, 48 -22 C 70 -25, 92 -32, 105 -38 C 110 -40, 112 -36, 108 -34 C 92 -26, 68 -20, 44 -16 C -2 -10, -48 -10, -78 -6 C -82 -5, -82 -11, -75 -12 Z" />
-    <path class="brand-teal" d="M -30 42 C -2 -2, 28 -28, 52 -45 C 56 -48, 58 -44, 54 -42 C 30 -24, 0 3, -28 46 C -31 50, -34 46, -30 42 Z" />
-    <path class="brand-teal" d="M 8 -40 C 14 -46, 22 -50, 28 -48 C 32 -46, 32 -42, 28 -40 C 22 -38, 14 -40, 8 -40 Z" />
-  </g>
-  <text x="300" y="440" class="serif-title">LINGUAFLOW</text>
-  <text x="300" y="480" class="sans-sub">LANGUAGE &amp; COMMUNICATION SOLUTIONS</text>
-</svg>`;
-  res.setHeader("Content-Type", "image/svg+xml; charset=utf-8");
   res.setHeader("Cache-Control", "public, max-age=86400");
-  res.send(svgLogo);
+  res.sendFile(path.join(process.cwd(), "public", "brand", "icon-color.png"));
 });
 
 // Comprehensive, Google OAuth Trust & Safety Compliant Privacy Policy
@@ -4696,7 +4663,7 @@ app.get("/privacy", (req, res) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy - Fluenxia: English Mastery LMS & AI Tutor</title>
-  <link rel="icon" type="image/svg+xml" href="/app-logo.svg">
+  <link rel="icon" type="image/png" href="/app-logo.svg">
   <style>
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.65; max-width: 860px; margin: 0 auto; padding: 32px 20px 60px; color: #1e293b; background: #FBF8F1; }
@@ -4816,7 +4783,7 @@ app.get("/terms", (req, res) => {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Terms of Service - Fluenxia: English Mastery LMS & AI Tutor</title>
-  <link rel="icon" type="image/svg+xml" href="/app-logo.svg">
+  <link rel="icon" type="image/png" href="/app-logo.svg">
   <style>
     * { box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; line-height: 1.65; max-width: 860px; margin: 0 auto; padding: 32px 20px 60px; color: #1e293b; background: #FBF8F1; }
@@ -4902,7 +4869,7 @@ app.get(["/architecture", "/architecture-doc", "/api/architecture/doc"], (req, r
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>System Architecture Whitepaper - Fluenxia: English Mastery LMS & AI Tutor</title>
-  <link rel="icon" type="image/svg+xml" href="/app-logo.svg">
+  <link rel="icon" type="image/png" href="/app-logo.svg">
   <style>
     @media print {
       body { background: white !important; padding: 0 !important; }
