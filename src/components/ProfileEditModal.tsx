@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { X, User, Check, Loader2, RefreshCw } from "lucide-react";
+import React, { useRef, useState } from "react";
+import { X, User, Check, Loader2, Camera } from "lucide-react";
 import { UserAccount } from "../types";
 
 interface ProfileEditModalProps {
@@ -9,15 +9,41 @@ interface ProfileEditModalProps {
   onProfileUpdated: (updatedUser: UserAccount) => void;
 }
 
-// A fixed set of preset avatar seeds so "pick an avatar" doesn't require file upload
-// infrastructure -- consistent with the dicebear-based placeholder avatars already used
-// everywhere else in the app (new signups, admin lists, activity feed, etc.).
-const AVATAR_PRESETS = [
-  "Explorer", "Scholar", "Voyager", "Aurora", "Nova", "Atlas", "Comet", "Willow",
-];
+function defaultAvatarFor(name: string) {
+  return `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(name)}`;
+}
 
-function avatarUrlFor(seed: string) {
-  return `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(seed)}`;
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5MB raw file cap, before resizing
+const AVATAR_DIMENSION = 256; // resized square output -- keeps the stored data URI small
+
+// Resizes/crops the image to a small square JPEG data URI client-side, so the uploaded photo
+// never needs its own file-storage backend (which wouldn't survive a Render redeploy anyway --
+// see the anonymous-attempts-telemetry lesson) and stays well under MongoDB's document size limit.
+function resizeImageToDataUri(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Couldn't read that file."));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("That file doesn't look like a valid image."));
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = AVATAR_DIMENSION;
+        canvas.height = AVATAR_DIMENSION;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return reject(new Error("Couldn't process that image."));
+
+        // Center-crop to a square before scaling, so non-square photos don't get squished.
+        const side = Math.min(img.width, img.height);
+        const sx = (img.width - side) / 2;
+        const sy = (img.height - side) / 2;
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, AVATAR_DIMENSION, AVATAR_DIMENSION);
+        resolve(canvas.toDataURL("image/jpeg", 0.85));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  });
 }
 
 export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
@@ -28,15 +54,40 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
 }) => {
   const [name, setName] = useState(currentUser.name);
   const [phone, setPhone] = useState(currentUser.phone || "");
-  const [selectedAvatarUrl, setSelectedAvatarUrl] = useState(
-    currentUser.avatarUrl || avatarUrlFor(currentUser.name)
-  );
-  const [customAvatarUrl, setCustomAvatarUrl] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState(currentUser.avatarUrl || defaultAvatarFor(currentUser.name));
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
+
+  const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file later
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      setErrorMsg("Please choose an image file.");
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setErrorMsg("That image is too large -- please choose one under 5MB.");
+      return;
+    }
+
+    setErrorMsg(null);
+    setIsProcessingImage(true);
+    try {
+      const dataUri = await resizeImageToDataUri(file);
+      setAvatarUrl(dataUri);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Couldn't process that image.");
+    } finally {
+      setIsProcessingImage(false);
+    }
+  };
 
   const handleSave = async () => {
     const cleanName = name.trim();
@@ -55,11 +106,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
-        body: JSON.stringify({
-          name: cleanName,
-          avatarUrl: customAvatarUrl.trim() || selectedAvatarUrl,
-          phone: phone.trim(),
-        }),
+        body: JSON.stringify({ name: cleanName, avatarUrl, phone: phone.trim() }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to update profile.");
@@ -75,8 +122,6 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
       setIsSaving(false);
     }
   };
-
-  const activeAvatar = customAvatarUrl.trim() || selectedAvatarUrl;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
@@ -102,51 +147,42 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
           </div>
         )}
 
-        {/* Avatar preview + presets */}
+        {/* Photo upload */}
         <div className="flex flex-col items-center gap-3">
-          <img src={activeAvatar} alt="Avatar preview" className="w-20 h-20 rounded-2xl border border-slate-200 object-cover bg-slate-50" />
-          <div className="grid grid-cols-4 gap-2 w-full">
-            {AVATAR_PRESETS.map((seed) => {
-              const url = avatarUrlFor(seed);
-              const isSelected = !customAvatarUrl.trim() && selectedAvatarUrl === url;
-              return (
-                <button
-                  key={seed}
-                  type="button"
-                  onClick={() => {
-                    setSelectedAvatarUrl(url);
-                    setCustomAvatarUrl("");
-                  }}
-                  className={`p-1 rounded-xl border-2 transition-all ${
-                    isSelected ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <img src={url} alt={seed} className="w-full aspect-square rounded-lg" />
-                </button>
-              );
-            })}
-          </div>
           <button
             type="button"
-            onClick={() => {
-              setSelectedAvatarUrl(avatarUrlFor(`${Date.now()}`));
-              setCustomAvatarUrl("");
-            }}
-            className="flex items-center gap-1.5 text-[11px] font-bold text-blue-600 hover:text-blue-800"
+            onClick={() => fileInputRef.current?.click()}
+            className="relative group"
+            title="Change photo"
           >
-            <RefreshCw size={12} /> Shuffle for more options
+            <img
+              src={avatarUrl}
+              alt="Profile photo"
+              className="w-24 h-24 rounded-full border border-slate-200 object-cover bg-slate-50"
+            />
+            <div className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/40 flex items-center justify-center transition-all">
+              {isProcessingImage ? (
+                <Loader2 size={20} className="text-white animate-spin" />
+              ) : (
+                <Camera size={20} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+              )}
+            </div>
           </button>
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-slate-700 mb-1">Custom Avatar URL (optional)</label>
           <input
-            type="url"
-            value={customAvatarUrl}
-            onChange={(e) => setCustomAvatarUrl(e.target.value)}
-            placeholder="https://example.com/my-photo.jpg"
-            className="w-full h-10 px-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileSelected}
           />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isProcessingImage}
+            className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 disabled:opacity-50"
+          >
+            <Camera size={13} /> {isProcessingImage ? "Processing..." : "Upload Photo"}
+          </button>
         </div>
 
         <div>
@@ -180,7 +216,7 @@ export const ProfileEditModal: React.FC<ProfileEditModalProps> = ({
         <button
           type="button"
           onClick={handleSave}
-          disabled={isSaving}
+          disabled={isSaving || isProcessingImage}
           className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-sm rounded-2xl shadow-md transition-all disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {isSaving ? <Loader2 size={16} className="animate-spin" /> : "Save Changes"}

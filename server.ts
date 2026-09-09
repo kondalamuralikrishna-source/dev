@@ -5937,8 +5937,15 @@ app.post("/api/auth/update-profile", requireAuth, async (req, res) => {
     }
     if (avatarUrl !== undefined) {
       const cleanAvatar = String(avatarUrl).trim();
-      if (cleanAvatar && !/^https?:\/\//.test(cleanAvatar)) {
-        return res.status(400).json({ error: "Avatar must be a valid http(s) URL." });
+      const isHttpUrl = /^https?:\/\//.test(cleanAvatar);
+      const isImageDataUri = /^data:image\/(png|jpe?g|webp|gif);base64,/.test(cleanAvatar);
+      if (cleanAvatar && !isHttpUrl && !isImageDataUri) {
+        return res.status(400).json({ error: "Avatar must be a valid image URL or uploaded image." });
+      }
+      // Uploaded photos are resized to ~256px client-side before reaching here, so a legitimate
+      // one should be well under this -- this cap is just a defensive ceiling against abuse.
+      if (isImageDataUri && cleanAvatar.length > 2_000_000) {
+        return res.status(400).json({ error: "That image is too large. Please choose a smaller photo." });
       }
       patch.avatarUrl = cleanAvatar || undefined;
     }
