@@ -17,6 +17,7 @@ import { AdminGate } from "./components/AdminGate";
 import { StudentGateForAdmin } from "./components/StudentGateForAdmin";
 import { AuthModal } from "./components/AuthModal";
 import { LegalModal, LegalTab } from "./components/LegalModal";
+import { ConsentGateModal } from "./components/ConsentGateModal";
 import { LoginPage } from "./components/LoginPage";
 import { PlacementAssessmentModal } from "./components/PlacementAssessmentModal";
 import { SpokenAssessmentScreen } from "./components/SpokenAssessmentScreen";
@@ -843,6 +844,19 @@ export default function App() {
         onClose={() => setIsLegalModalOpen(false)}
         initialTab={legalInitialTab}
       />
+
+      {/* One-time blocking consent gate for accounts created via Google/Apple sign-in, which
+          never show our Terms/Privacy/age confirmation the way the email+password signup form
+          does. Student accounts only -- admin/owner accounts are pre-existing/trusted internal
+          logins, not the compliance target here. */}
+      {currentUser && currentUser.role === "student" && !currentUser.consent?.ageAndTermsAcceptedAt && (
+        <ConsentGateModal
+          currentUser={currentUser}
+          onConsentRecorded={(updatedUser) => setCurrentUser(updatedUser)}
+          onOpenLegalModal={handleOpenLegalModal}
+          onLogout={handleLogout}
+        />
+      )}
 
       {/* System Architecture Whitepaper & PDF Export Modal */}
       <ArchitectureDocModal

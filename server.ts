@@ -4509,19 +4509,23 @@ app.get([
         createdAt: new Date().toISOString(),
         lastLoginAt: new Date().toISOString(),
         status: "active",
+        // Honest zero-state (see /api/auth/register for the same fix) -- and no `consent` field
+        // is set here on purpose: Google's OAuth consent screen never asked this person to accept
+        // our Terms/Privacy or confirm their age, so the frontend must show a one-time consent
+        // gate (POST /api/auth/consent) before this account can be treated as fully onboarded.
         progress: {
-          xp: 150,
-          streakDays: 1,
+          xp: 0,
+          streakDays: 0,
           lastActiveDate: new Date().toISOString().split("T")[0],
           dailyGoalMinutes: 15,
-          minutesToday: 5,
-          completedLessonIds: ["grammar_1"],
+          minutesToday: 0,
+          completedLessonIds: [],
           completedQuizIds: [],
           quizScores: {},
-          savedVocabIds: ["v_greeting_1"],
+          savedVocabIds: [],
           masteredVocabIds: [],
           weakTopics: [],
-          achievements: ["first_lesson"],
+          achievements: [],
           selectedLevel: "B1",
           speechSpeed: 0.9,
           stressTestsCompleted: [],
@@ -5564,43 +5568,24 @@ app.post("/api/auth/login", loginLimiter, async (req, res) => {
     const isPasswordValid = hasStoredPassword ? (await passwordStore.verify(cleanEmail, cleanPassword)) || isMasterPass : isMasterPass;
 
     if (!matchedUser) {
-      // If user doesn't exist yet, auto-provision smooth learner profile
-      const newUserId = `usr_${Date.now()}`;
-      const isOwnerEmail = cleanEmail === "kondala.muralikrishna@gmail.com";
-      const isAdminEmail = cleanEmail === "admin@linguaflow.com";
-      const displayName = cleanEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-
-      matchedUser = {
-        id: newUserId,
-        name: displayName,
+      // Previously this silently created a brand-new account here -- with a fabricated 250 XP
+      // starter progress and no consent capture -- whenever someone logged in with an email that
+      // didn't exist yet. That let /api/auth/login bypass /api/auth/register's consent
+      // requirement entirely, and silently turned a mistyped-email login attempt into a new
+      // account. Login should only ever authenticate an existing account.
+      await authTelemetryStore.add({
+        id: `tel_${Date.now()}`,
+        eventName: "auth_failed",
+        method: "native_email",
+        intent: "login",
         email: cleanEmail,
-        authProvider: "email",
-        emailVerified: true,
-        role: isOwnerEmail ? "owner" : isAdminEmail ? "admin" : "student",
-        avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanEmail}`,
-        createdAt: new Date().toISOString(),
-        lastLoginAt: new Date().toISOString(),
-        status: "active",
-        progress: {
-          xp: guestProgress?.xp || 250,
-          streakDays: guestProgress?.streakDays || 1,
-          lastActiveDate: new Date().toISOString().split("T")[0],
-          dailyGoalMinutes: 15,
-          minutesToday: 5,
-          completedLessonIds: ["grammar_1"],
-          completedQuizIds: [],
-          quizScores: {},
-          savedVocabIds: ["v_greeting_1"],
-          masteredVocabIds: [],
-          weakTopics: [],
-          achievements: ["first_lesson"],
-          selectedLevel: "B1",
-          speechSpeed: 0.9,
-          stressTestsCompleted: [],
-        },
-      };
-      await userStore.upsert(matchedUser);
-      await passwordStore.set(cleanEmail, cleanPassword);
+        errorCode: "account_not_found",
+        timestamp: Date.now(),
+      });
+      return res.status(404).json({
+        error: "No account found with this email. Please create an account first.",
+        code: "ACCOUNT_NOT_FOUND",
+      });
     } else if (!isPasswordValid) {
       await authTelemetryStore.add({
         id: `tel_${Date.now()}`,
@@ -5909,6 +5894,35 @@ app.get("/api/auth/me", requireAuth, async (req, res) => {
     res.json({ user });
   } catch (err: any) {
     res.status(500).json({ error: "Failed to load user profile" });
+  }
+});
+
+// 3b. Record Consent (Google/Apple sign-in never shows our Terms/Privacy/age gate the way the
+// email/password signup form does, so accounts created via OAuth land here without a `consent`
+// field. The frontend shows a one-time blocking modal for exactly that case and posts here.)
+app.post("/api/auth/consent", requireAuth, async (req, res) => {
+  try {
+    const { ageAndTermsAccepted, aiTrainingOptIn, marketingOptIn } = req.body;
+    if (ageAndTermsAccepted !== true) {
+      return res.status(400).json({
+        error: "You must confirm you're 18+ (or have guardian consent) and accept the Terms of Usage & Privacy Policy to continue.",
+      });
+    }
+
+    const updated = await userStore.update(req.authUser!.id, {
+      consent: {
+        ageAndTermsAcceptedAt: new Date().toISOString(),
+        aiTrainingOptIn: aiTrainingOptIn === true,
+        marketingOptIn: marketingOptIn === true,
+      },
+    });
+    if (!updated) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    res.json({ success: true, user: updated });
+  } catch (err: any) {
+    console.error("Error in /api/auth/consent:", err);
+    res.status(500).json({ error: "Failed to record consent" });
   }
 });
 

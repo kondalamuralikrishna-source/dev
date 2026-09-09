@@ -580,6 +580,11 @@ export interface UserAccount {
   authProvider?: "google" | "apple" | "email" | "phone" | "guest";
   emailVerified?: boolean;
   isGuest?: boolean;
+  consent?: {
+    ageAndTermsAcceptedAt?: string;
+    aiTrainingOptIn?: boolean;
+    marketingOptIn?: boolean;
+  };
 }
 
 export interface GoogleAuthStatus {
