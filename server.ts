@@ -6,7 +6,17 @@ import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import { GoogleGenAI, Type } from "@google/genai";
 import nodemailer from "nodemailer";
-import { connectDB, userStore, passwordStore, otpStore, passwordResetStore, seedIfEmpty } from "./db";
+import {
+  connectDB,
+  userStore,
+  passwordStore,
+  otpStore,
+  passwordResetStore,
+  seedIfEmpty,
+  activityLogStore,
+  authTelemetryStore,
+  anonymousAttemptStore,
+} from "./db";
 import { signAuthToken, requireAuth, requireRole, isDevAuthAllowed } from "./auth";
 import cors from "cors";
 import rateLimit from "express-rate-limit";
@@ -493,111 +503,7 @@ export interface AnonymousAttemptRecordServer {
   client_session_hash: string;
 }
 
-const TELEMETRY_FILE = path.join(process.cwd(), "anonymous_attempts_telemetry.json");
-
-let anonymousAttempts: AnonymousAttemptRecordServer[] = [];
-
-// Seed or load telemetry
-function initializeTelemetryStore() {
-  try {
-    if (fs.existsSync(TELEMETRY_FILE)) {
-      const data = fs.readFileSync(TELEMETRY_FILE, "utf-8");
-      anonymousAttempts = JSON.parse(data);
-      console.log(`Loaded ${anonymousAttempts.length} anonymous attempt records from disk.`);
-      return;
-    }
-  } catch (err) {
-    console.warn("Failed to load telemetry file from disk, initializing in-memory store:", err);
-  }
-
-  // Initial seed with historical benchmark baseline data so query/export endpoints work immediately
-  const now = Date.now();
-  const seedAttempts: AnonymousAttemptRecordServer[] = [
-    {
-      id: "att_9a12c41",
-      timestamp: new Date(now - 1000 * 60 * 180).toISOString(),
-      test_type: "spoken_assessment",
-      target_cefr_level: "B2",
-      achieved_cefr_or_score: "B2",
-      score_numeric: 84,
-      plagiarism_risk: "LOW",
-      similarity_percentage: 6,
-      flagged_passages_count: 0,
-      word_count: 182,
-      integrity_status: "passed",
-      client_session_hash: "anon_8f2a1b",
-    },
-    {
-      id: "att_8b44d19",
-      timestamp: new Date(now - 1000 * 60 * 135).toISOString(),
-      test_type: "writing_diagnostic",
-      target_cefr_level: "B2",
-      achieved_cefr_or_score: "B1",
-      score_numeric: 72,
-      plagiarism_risk: "LOW",
-      similarity_percentage: 8,
-      flagged_passages_count: 1,
-      word_count: 145,
-      integrity_status: "passed",
-      client_session_hash: "anon_4e92d7",
-    },
-    {
-      id: "att_7f33e88",
-      timestamp: new Date(now - 1000 * 60 * 90).toISOString(),
-      test_type: "spoken_assessment",
-      target_cefr_level: "B2",
-      achieved_cefr_or_score: "A1",
-      score_numeric: 35,
-      plagiarism_risk: "HIGH",
-      similarity_percentage: 88,
-      flagged_passages_count: 2,
-      word_count: 110,
-      integrity_status: "flagged",
-      client_session_hash: "anon_6c18f3",
-    },
-    {
-      id: "att_6e22f71",
-      timestamp: new Date(now - 1000 * 60 * 45).toISOString(),
-      test_type: "grammar_diagnostic",
-      target_cefr_level: "B1",
-      achieved_cefr_or_score: "85/100",
-      score_numeric: 85,
-      plagiarism_risk: "LOW",
-      similarity_percentage: 4,
-      flagged_passages_count: 0,
-      word_count: 96,
-      integrity_status: "passed",
-      client_session_hash: "anon_1d55a9",
-    },
-    {
-      id: "att_5a99b33",
-      timestamp: new Date(now - 1000 * 60 * 15).toISOString(),
-      test_type: "integrity_studio_scan",
-      target_cefr_level: "C1",
-      achieved_cefr_or_score: "C1",
-      score_numeric: 91,
-      plagiarism_risk: "LOW",
-      similarity_percentage: 5,
-      flagged_passages_count: 0,
-      word_count: 215,
-      integrity_status: "passed",
-      client_session_hash: "anon_7a33c2",
-    },
-  ];
-
-  anonymousAttempts = seedAttempts;
-  persistTelemetryStore();
-}
-
-function persistTelemetryStore() {
-  try {
-    fs.writeFileSync(TELEMETRY_FILE, JSON.stringify(anonymousAttempts, null, 2), "utf-8");
-  } catch (err) {
-    console.warn("Failed to persist telemetry store to disk:", err);
-  }
-}
-
-export function recordAnonymousAttempt(record: Omit<AnonymousAttemptRecordServer, "id" | "timestamp"> & { timestamp?: string }) {
+export async function recordAnonymousAttempt(record: Omit<AnonymousAttemptRecordServer, "id" | "timestamp"> & { timestamp?: string }) {
   const id = `att_${crypto.randomBytes(4).toString("hex")}`;
   const timestamp = record.timestamp || new Date().toISOString();
   const entry: AnonymousAttemptRecordServer = {
@@ -605,15 +511,12 @@ export function recordAnonymousAttempt(record: Omit<AnonymousAttemptRecordServer
     timestamp,
     ...record,
   };
-  anonymousAttempts.unshift(entry);
-  if (anonymousAttempts.length > 5000) {
-    anonymousAttempts = anonymousAttempts.slice(0, 5000);
-  }
-  persistTelemetryStore();
+  await anonymousAttemptStore.add(entry);
   return entry;
 }
 
-export function getAnonymousTelemetryStats() {
+export async function getAnonymousTelemetryStats() {
+  const anonymousAttempts = await anonymousAttemptStore.all();
   const total = anonymousAttempts.length;
   const now = Date.now();
   const oneDayAgo = now - 24 * 60 * 60 * 1000;
@@ -729,9 +632,9 @@ export async function generateAnonymousAttemptsCSV(): Promise<string> {
         score,
         Number(score) >= 90 ? "Mastered (A+)" : Number(score) >= 80 ? "Proficient (A)" : "In Progress (B)",
         "N/A",
-        0,
+        "N/A",
         "Verified Student",
-        "0%",
+        "N/A",
         user.lastLoginAt || new Date().toISOString(),
       ]);
     }
@@ -749,17 +652,17 @@ export async function generateAnonymousAttemptsCSV(): Promise<string> {
         `"${test.scenarioTitle.replace(/"/g, '""')}"`,
         test.score,
         `"${test.grade || (test.score >= 90 ? "Crisis Commander" : "Composed Diplomat")}"`,
-        test.wpm || 135,
-        test.fillersCount ?? 1,
+        test.wpm ?? "N/A",
+        test.fillersCount ?? "N/A",
         "Authentic Audio Verified",
-        "Low Risk (2%)",
+        "N/A",
         test.completedAt || new Date().toISOString(),
       ]);
     }
   }
 
   // 2. Anonymous Assessment Telemetry Records
-  for (const item of anonymousAttempts) {
+  for (const item of await anonymousAttemptStore.all()) {
     const testCategory =
       item.test_type === "spoken_assessment"
         ? "Spoken Assessment (Speech AI)"
@@ -783,8 +686,8 @@ export async function generateAnonymousAttemptsCSV(): Promise<string> {
       `"${item.test_type.replace(/_/g, " ").toUpperCase()}"`,
       item.score_numeric,
       `"${(item.achieved_cefr_or_score || "").replace(/"/g, '""')}"`,
-      item.test_type === "spoken_assessment" || item.test_type === "fluidconvo_roleplay" ? 140 : "N/A",
-      0,
+      "N/A",
+      "N/A",
       item.integrity_status,
       `${item.similarity_percentage}%`,
       item.timestamp,
@@ -793,9 +696,6 @@ export async function generateAnonymousAttemptsCSV(): Promise<string> {
 
   return [headers.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
 }
-
-// Initialize telemetry on startup
-initializeTelemetryStore();
 
 // 1. Health check
 app.get("/api/health", (req, res) => {
@@ -807,8 +707,8 @@ app.get("/api/health", (req, res) => {
 // ============================================================================
 
 // GET /api/stats and GET /api/attempts/stats (Option C: JSON Query Endpoint)
-app.get(["/api/stats", "/api/attempts/stats"], (req, res) => {
-  const stats = getAnonymousTelemetryStats();
+app.get(["/api/stats", "/api/attempts/stats"], async (req, res) => {
+  const stats = await getAnonymousTelemetryStats();
   res.json(stats);
 });
 
@@ -821,7 +721,7 @@ app.get(["/api/stats/export.csv", "/api/attempts/export.csv", "/api/attempts/exp
 });
 
 // POST /api/attempts/record (Explicit logging route)
-app.post("/api/attempts/record", (req, res) => {
+app.post("/api/attempts/record", async (req, res) => {
   try {
     const {
       test_type = "spoken_assessment",
@@ -838,7 +738,7 @@ app.post("/api/attempts/record", (req, res) => {
 
     const sessionHash = client_session_hash || `anon_${crypto.randomBytes(3).toString("hex")}`;
 
-    const recorded = recordAnonymousAttempt({
+    const recorded = await recordAnonymousAttempt({
       test_type,
       target_cefr_level,
       achieved_cefr_or_score,
@@ -859,10 +759,9 @@ app.post("/api/attempts/record", (req, res) => {
 });
 
 // POST /api/attempts/reset (Admin / developer utility to reset counts if desired)
-app.post("/api/attempts/reset", (req, res) => {
+app.post("/api/attempts/reset", async (req, res) => {
   try {
-    anonymousAttempts = [];
-    persistTelemetryStore();
+    await anonymousAttemptStore.clearAll();
     res.json({ status: "reset_successful", total_attempts: 0 });
   } catch (err: any) {
     res.status(500).json({ error: "Failed to reset telemetry" });
@@ -1036,7 +935,7 @@ Please perform the complete educational assessment and automated plagiarism & in
     const wordCount = textStr.split(/\s+/).filter(Boolean).length;
     const testType = req.body.testType || (prompt?.toLowerCase().includes("grammar") ? "grammar_diagnostic" : "writing_diagnostic");
 
-    recordAnonymousAttempt({
+    await recordAnonymousAttempt({
       test_type: testType,
       target_cefr_level: level || "B2",
       achieved_cefr_or_score: `${finalPayload.assessment.score}/100`,
@@ -1061,7 +960,7 @@ Please perform the complete educational assessment and automated plagiarism & in
     const sessionHash = (req.body.client_session_hash) || `anon_${crypto.createHash("md5").update(text.slice(0, 50) + Date.now()).digest("hex").slice(0, 6)}`;
     const testType = req.body.testType || "writing_diagnostic";
 
-    recordAnonymousAttempt({
+    await recordAnonymousAttempt({
       test_type: testType,
       target_cefr_level: req.body.level || "B2",
       achieved_cefr_or_score: `${computedScore}/100`,
@@ -3098,10 +2997,10 @@ Please diagnose the candidate's true CEFR level from A1 to C2 based on the actua
     // Auto-record anonymous telemetry (Option C)
     const spokenSimVal = parseInt((spokenPlagiarismAnalysis?.estimated_similarity_score || "0").replace(/[^0-9]/g, ""), 10) || 0;
     const spokenWordCount = (allTranscriptsText || "").split(/\s+/).filter(Boolean).length;
-    const spokenScoreNum = typeof fluencyNum === "number" ? fluencyNum : 80;
+    const spokenScoreNum = typeof fluencyNum === "number" ? fluencyNum : 0;
     const spokenHash = (req.body.client_session_hash) || `anon_${crypto.createHash("md5").update(allTranscriptsText.slice(0, 50) + Date.now()).digest("hex").slice(0, 6)}`;
 
-    recordAnonymousAttempt({
+    await recordAnonymousAttempt({
       test_type: "spoken_assessment",
       target_cefr_level: req.body.targetLevel || "B2",
       achieved_cefr_or_score: rating,
@@ -4063,11 +3962,8 @@ interface ServerActivityItem {
   timestamp: number;
 }
 
-// Activity feed & auth telemetry remain in-memory (regenerable analytics, not user-identity data).
-// Persistent, identity-critical data (accounts, passwords, OTPs, password-reset tokens) now lives in
-// MongoDB via the userStore/passwordStore/otpStore/passwordResetStore modules imported from ./db.
-const authTelemetryStore: any[] = [];
-const activityLogStore: ServerActivityItem[] = [];
+// Activity feed & auth telemetry are now persisted in MongoDB (activityLogStore/authTelemetryStore
+// imported from ./db) rather than in-memory arrays that were wiped on every server restart/redeploy.
 
 // Bootstraps exactly one real account — the owner — from environment variables, only when the users
 // collection is empty. No hardcoded credentials ship in this file: if OWNER_EMAIL/OWNER_PASSWORD
@@ -4280,7 +4176,7 @@ app.post("/api/auth/verify-otp", otpVerifyLimiter, async (req, res) => {
       await userStore.upsert(matchedUser);
 
       // Log registration to activity feed
-      activityLogStore.unshift({
+      await activityLogStore.add({
         id: `act_${Date.now()}`,
         userId: matchedUser.id,
         userName: matchedUser.name,
@@ -4298,7 +4194,7 @@ app.post("/api/auth/verify-otp", otpVerifyLimiter, async (req, res) => {
       await userStore.upsert(matchedUser);
 
       // Log login to activity feed
-      activityLogStore.unshift({
+      await activityLogStore.add({
         id: `act_${Date.now()}`,
         userId: matchedUser.id,
         userName: matchedUser.name,
@@ -4311,10 +4207,6 @@ app.post("/api/auth/verify-otp", otpVerifyLimiter, async (req, res) => {
       });
     }
 
-    // Keep activity log capped at 50
-    if (activityLogStore.length > 50) {
-      activityLogStore.length = 50;
-    }
 
     const token = signAuthToken(matchedUser);
     res.json({
@@ -4637,7 +4529,7 @@ app.get([
       };
       await userStore.upsert(matchedUser);
 
-      activityLogStore.unshift({
+      await activityLogStore.add({
         id: `act_${Date.now()}`,
         userId: matchedUser.id,
         userName: matchedUser.name,
@@ -4658,7 +4550,7 @@ app.get([
       if (isAdminEmail && matchedUser.role !== "owner") matchedUser.role = "admin";
       await userStore.upsert(matchedUser);
 
-      activityLogStore.unshift({
+      await activityLogStore.add({
         id: `act_${Date.now()}`,
         userId: matchedUser.id,
         userName: matchedUser.name,
@@ -4671,7 +4563,6 @@ app.get([
       });
     }
 
-    if (activityLogStore.length > 50) activityLogStore.length = 50;
 
     const token = signAuthToken(matchedUser);
 
@@ -5274,7 +5165,7 @@ app.post("/api/auth/google/signin", async (req, res) => {
       };
       await userStore.upsert(matchedUser);
 
-      activityLogStore.unshift({
+      await activityLogStore.add({
         id: `act_${Date.now()}`,
         userId: matchedUser.id,
         userName: matchedUser.name,
@@ -5295,7 +5186,7 @@ app.post("/api/auth/google/signin", async (req, res) => {
       if (isAdminEmail && matchedUser.role !== "owner") matchedUser.role = "admin";
       await userStore.upsert(matchedUser);
 
-      activityLogStore.unshift({
+      await activityLogStore.add({
         id: `act_${Date.now()}`,
         userId: matchedUser.id,
         userName: matchedUser.name,
@@ -5308,7 +5199,6 @@ app.post("/api/auth/google/signin", async (req, res) => {
       });
     }
 
-    if (activityLogStore.length > 50) activityLogStore.length = 50;
 
     const token = signAuthToken(matchedUser);
     res.json({
@@ -5395,7 +5285,7 @@ app.post("/api/auth/admin/signin", async (req, res) => {
       await userStore.upsert(adminUser);
     }
 
-    activityLogStore.unshift({
+    await activityLogStore.add({
       id: `act_${Date.now()}`,
       userId: adminUser.id,
       userName: adminUser.name,
@@ -5407,7 +5297,6 @@ app.post("/api/auth/admin/signin", async (req, res) => {
       timestamp: Date.now(),
     });
 
-    if (activityLogStore.length > 50) activityLogStore.length = 50;
 
     const token = signAuthToken(adminUser);
     res.json({
@@ -5481,7 +5370,7 @@ app.post("/api/auth/student/signin", async (req, res) => {
       };
       await userStore.upsert(studentUser);
 
-      activityLogStore.unshift({
+      await activityLogStore.add({
         id: `act_${Date.now()}`,
         userId: studentUser.id,
         userName: studentUser.name,
@@ -5499,7 +5388,7 @@ app.post("/api/auth/student/signin", async (req, res) => {
       }
       await userStore.upsert(studentUser);
 
-      activityLogStore.unshift({
+      await activityLogStore.add({
         id: `act_${Date.now()}`,
         userId: studentUser.id,
         userName: studentUser.name,
@@ -5512,7 +5401,6 @@ app.post("/api/auth/student/signin", async (req, res) => {
       });
     }
 
-    if (activityLogStore.length > 50) activityLogStore.length = 50;
 
     const token = signAuthToken(studentUser);
     res.json({
@@ -5620,7 +5508,7 @@ app.post("/api/auth/register", async (req, res) => {
     await userStore.upsert(newUser);
     await passwordStore.set(cleanEmail, cleanPassword);
 
-    activityLogStore.unshift({
+    await activityLogStore.add({
       id: `act_${Date.now()}`,
       userId: newUser.id,
       userName: newUser.name,
@@ -5631,9 +5519,8 @@ app.post("/api/auth/register", async (req, res) => {
       detail: `Created profile for ${cleanEmail} with ${initialProgress.xp} XP migrated.`,
       timestamp: Date.now(),
     });
-    if (activityLogStore.length > 50) activityLogStore.length = 50;
 
-    authTelemetryStore.unshift({
+    await authTelemetryStore.add({
       id: `tel_${Date.now()}`,
       eventName: "auth_completed",
       method: "native_email",
@@ -5643,7 +5530,6 @@ app.post("/api/auth/register", async (req, res) => {
       migratedGuestXp: guestProgress?.xp || 0,
       timestamp: Date.now(),
     });
-    if (authTelemetryStore.length > 100) authTelemetryStore.length = 100;
 
     const token = signAuthToken(newUser);
     res.json({
@@ -5716,7 +5602,7 @@ app.post("/api/auth/login", loginLimiter, async (req, res) => {
       await userStore.upsert(matchedUser);
       await passwordStore.set(cleanEmail, cleanPassword);
     } else if (!isPasswordValid) {
-      authTelemetryStore.unshift({
+      await authTelemetryStore.add({
         id: `tel_${Date.now()}`,
         eventName: "auth_failed",
         method: "native_email",
@@ -5743,7 +5629,7 @@ app.post("/api/auth/login", loginLimiter, async (req, res) => {
     matchedUser.lastLoginAt = new Date().toISOString();
     await userStore.upsert(matchedUser);
 
-    activityLogStore.unshift({
+    await activityLogStore.add({
       id: `act_${Date.now()}`,
       userId: matchedUser.id,
       userName: matchedUser.name,
@@ -5754,9 +5640,8 @@ app.post("/api/auth/login", loginLimiter, async (req, res) => {
       detail: `Signed in: ${cleanEmail}`,
       timestamp: Date.now(),
     });
-    if (activityLogStore.length > 50) activityLogStore.length = 50;
 
-    authTelemetryStore.unshift({
+    await authTelemetryStore.add({
       id: `tel_${Date.now()}`,
       eventName: "auth_completed",
       method: "native_email",
@@ -5765,7 +5650,6 @@ app.post("/api/auth/login", loginLimiter, async (req, res) => {
       isNewUser: false,
       timestamp: Date.now(),
     });
-    if (authTelemetryStore.length > 100) authTelemetryStore.length = 100;
 
     const token = signAuthToken(matchedUser);
     res.json({
@@ -5842,7 +5726,7 @@ app.post("/api/auth/apple/signin", async (req, res) => {
       await userStore.upsert(matchedUser);
     }
 
-    activityLogStore.unshift({
+    await activityLogStore.add({
       id: `act_${Date.now()}`,
       userId: matchedUser.id,
       userName: matchedUser.name,
@@ -5853,9 +5737,8 @@ app.post("/api/auth/apple/signin", async (req, res) => {
       detail: `Signed in with Apple: ${cleanEmail}`,
       timestamp: Date.now(),
     });
-    if (activityLogStore.length > 50) activityLogStore.length = 50;
 
-    authTelemetryStore.unshift({
+    await authTelemetryStore.add({
       id: `tel_${Date.now()}`,
       eventName: "auth_completed",
       method: "apple_sso",
@@ -5915,7 +5798,7 @@ app.post("/api/auth/forgot-password", async (req, res) => {
       });
     }
 
-    authTelemetryStore.unshift({
+    await authTelemetryStore.add({
       id: `tel_${Date.now()}`,
       eventName: "password_reset_requested",
       email: cleanEmail,
@@ -5969,16 +5852,15 @@ app.post("/api/auth/reset-password", async (req, res) => {
 });
 
 // 2l. Auth Telemetry Ingestion Endpoint
-app.post("/api/auth/telemetry", (req, res) => {
+app.post("/api/auth/telemetry", async (req, res) => {
   try {
     const event = req.body;
     if (event && event.eventName) {
-      authTelemetryStore.unshift({
+      await authTelemetryStore.add({
         id: `tel_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
         ...event,
         timestamp: event.timestamp || Date.now(),
       });
-      if (authTelemetryStore.length > 200) authTelemetryStore.length = 200;
     }
     res.json({ success: true });
   } catch (err: any) {
@@ -5987,16 +5869,17 @@ app.post("/api/auth/telemetry", (req, res) => {
 });
 
 // 2m. Admin Auth Telemetry Summary Endpoint
-app.get("/api/admin/auth-telemetry", requireAuth, requireRole("admin", "owner"), (req, res) => {
+app.get("/api/admin/auth-telemetry", requireAuth, requireRole("admin", "owner"), async (req, res) => {
   try {
-    const totalEvents = authTelemetryStore.length;
-    const completedLogins = authTelemetryStore.filter((e) => e.eventName === "auth_completed" && e.intent === "login").length;
-    const completedSignups = authTelemetryStore.filter((e) => e.eventName === "auth_completed" && e.intent === "signup").length;
-    const googleLogins = authTelemetryStore.filter((e) => e.method === "google_sso").length;
-    const appleLogins = authTelemetryStore.filter((e) => e.method === "apple_sso").length;
-    const emailLogins = authTelemetryStore.filter((e) => e.method === "native_email").length;
-    const failedAttempts = authTelemetryStore.filter((e) => e.eventName === "auth_failed").length;
-    const resetRequests = authTelemetryStore.filter((e) => e.eventName === "password_reset_requested").length;
+    const allEvents = await authTelemetryStore.all();
+    const totalEvents = allEvents.length;
+    const completedLogins = allEvents.filter((e) => e.eventName === "auth_completed" && e.intent === "login").length;
+    const completedSignups = allEvents.filter((e) => e.eventName === "auth_completed" && e.intent === "signup").length;
+    const googleLogins = allEvents.filter((e) => e.method === "google_sso").length;
+    const appleLogins = allEvents.filter((e) => e.method === "apple_sso").length;
+    const emailLogins = allEvents.filter((e) => e.method === "native_email").length;
+    const failedAttempts = allEvents.filter((e) => e.eventName === "auth_failed").length;
+    const resetRequests = allEvents.filter((e) => e.eventName === "password_reset_requested").length;
 
     res.json({
       totalEvents,
@@ -6009,7 +5892,7 @@ app.get("/api/admin/auth-telemetry", requireAuth, requireRole("admin", "owner"),
       },
       failedAttempts,
       resetRequests,
-      recentEvents: authTelemetryStore.slice(0, 25),
+      recentEvents: allEvents.slice(0, 25),
     });
   } catch (err: any) {
     res.status(500).json({ error: "Failed to fetch auth telemetry" });
@@ -6076,8 +5959,7 @@ app.post("/api/admin/activity-log", requireAuth, async (req, res) => {
       score,
       timestamp: Date.now(),
     };
-    activityLogStore.unshift(item);
-    if (activityLogStore.length > 50) activityLogStore.length = 50;
+    await activityLogStore.add(item);
 
     res.json({ success: true, item });
   } catch (err: any) {
@@ -6089,6 +5971,7 @@ app.post("/api/admin/activity-log", requireAuth, async (req, res) => {
 app.get("/api/admin/analytics", requireAuth, requireRole("admin", "owner"), async (req, res) => {
   try {
     const allUsers = (await userStore.getAll());
+    const allActivity = await activityLogStore.all();
     const totalLearners = allUsers.length;
     const activeToday = allUsers.filter((u) => {
       const today = new Date().toISOString().split("T")[0];
@@ -6170,7 +6053,7 @@ app.get("/api/admin/analytics", requireAuth, requireRole("admin", "owner"), asyn
       const dayEndMs = dayStartMs + dayMs;
 
       const activeUserIds = new Set(
-        activityLogStore
+        allActivity
           .filter((a) => a.timestamp >= dayStartMs && a.timestamp < dayEndMs)
           .map((a) => a.userId)
       );
@@ -6272,8 +6155,8 @@ app.get("/api/admin/analytics", requireAuth, requireRole("admin", "owner"), asyn
       activityTrends,
       dailyActivity,
       pillarUsage,
-      recentActivityFeed: activityLogStore.slice(0, 15),
-      recentActivity: activityLogStore.slice(0, 15),
+      recentActivityFeed: allActivity.slice(0, 15),
+      recentActivity: allActivity.slice(0, 15),
       hardestGrammarTopics,
       topStressScenarios,
     });
@@ -6304,7 +6187,7 @@ app.get("/api/admin/activities", requireAuth, requireRole("admin", "owner"), asy
     const roleFilter = String(req.query.role || "ALL").trim();
     const search = String(req.query.search || "").trim().toLowerCase();
 
-    let filtered = [...activityLogStore];
+    let filtered = await activityLogStore.all();
 
     if (typeFilter && typeFilter !== "ALL") {
       filtered = filtered.filter((item) => item.type === typeFilter);
@@ -6364,7 +6247,7 @@ app.post(["/api/admin/user/:id/grant-xp", "/api/admin/grant-xp"], requireAuth, r
     user.progress.xp = Math.max(0, (user.progress.xp || 0) + amount);
     await userStore.upsert(user);
 
-    activityLogStore.unshift({
+    await activityLogStore.add({
       id: `act_${Date.now()}`,
       userId: user.id,
       userName: user.name,

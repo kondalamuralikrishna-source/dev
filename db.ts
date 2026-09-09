@@ -208,6 +208,204 @@ export const passwordResetStore = {
   },
 };
 
+// ============================================================================
+// ACTIVITY LOG (admin "recent activity" feed) — previously an in-memory array capped at 50
+// entries and wiped on every server restart/redeploy. Now persisted so history survives restarts.
+// ============================================================================
+
+export interface ActivityLogDoc extends Document {
+  id: string;
+  userId: string;
+  userName: string;
+  userRole: "student" | "admin" | "owner";
+  avatarUrl?: string;
+  type: "quiz" | "lesson" | "stress" | "chat" | "vocab" | "login";
+  title: string;
+  detail: string;
+  score?: number;
+  timestamp: number;
+}
+
+const activityLogSchema = new Schema<ActivityLogDoc>(
+  {
+    id: { type: String, required: true, unique: true },
+    userId: { type: String, required: true, index: true },
+    userName: { type: String, required: true },
+    userRole: { type: String, enum: ["student", "admin", "owner"], required: true },
+    avatarUrl: String,
+    type: { type: String, enum: ["quiz", "lesson", "stress", "chat", "vocab", "login"], required: true },
+    title: { type: String, required: true },
+    detail: { type: String, required: true },
+    score: Number,
+    timestamp: { type: Number, required: true, index: true },
+  },
+  { versionKey: false }
+);
+
+export const ActivityLogModel = mongoose.model<ActivityLogDoc>("ActivityLog", activityLogSchema);
+
+const ACTIVITY_LOG_MAX_ROWS = 2000;
+
+export const activityLogStore = {
+  async add(item: Omit<ActivityLogDoc, keyof Document>) {
+    await ActivityLogModel.create(item);
+    // Bound unbounded growth without limiting the useful history the way the old
+    // in-memory 50-item cap did — trim only once we're well past a generous ceiling.
+    const count = await ActivityLogModel.countDocuments();
+    if (count > ACTIVITY_LOG_MAX_ROWS) {
+      const excess = count - ACTIVITY_LOG_MAX_ROWS;
+      const oldest = await ActivityLogModel.find({}, { _id: 1 }).sort({ timestamp: 1 }).limit(excess);
+      await ActivityLogModel.deleteMany({ _id: { $in: oldest.map((d) => d._id) } });
+    }
+  },
+  async recent(limit = 50) {
+    const docs = await ActivityLogModel.find({}).sort({ timestamp: -1 }).limit(limit);
+    return docs.map((d) => {
+      const obj = d.toObject();
+      delete obj._id;
+      return obj;
+    });
+  },
+  async all() {
+    const docs = await ActivityLogModel.find({}).sort({ timestamp: -1 });
+    return docs.map((d) => {
+      const obj = d.toObject();
+      delete obj._id;
+      return obj;
+    });
+  },
+};
+
+// ============================================================================
+// AUTH TELEMETRY — previously an in-memory array capped at 100-200 entries, wiped on restart.
+// Event shape varies by call site (auth_completed/auth_failed/password_reset_requested/client-
+// reported events), so it's stored as a flexible document rather than a rigid schema.
+// ============================================================================
+
+interface AuthTelemetryDoc extends Document {
+  id: string;
+  timestamp: number;
+  data: Record<string, any>;
+}
+
+const authTelemetrySchema = new Schema<AuthTelemetryDoc>(
+  {
+    id: { type: String, required: true, unique: true },
+    timestamp: { type: Number, required: true, index: true },
+    data: { type: Schema.Types.Mixed, default: {} },
+  },
+  { versionKey: false }
+);
+
+export const AuthTelemetryModel = mongoose.model<AuthTelemetryDoc>("AuthTelemetry", authTelemetrySchema);
+
+const AUTH_TELEMETRY_MAX_ROWS = 5000;
+
+export const authTelemetryStore = {
+  async add(event: Record<string, any>) {
+    const id = event.id || `tel_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const timestamp = event.timestamp || Date.now();
+    await AuthTelemetryModel.create({ id, timestamp, data: { ...event, id, timestamp } });
+    const count = await AuthTelemetryModel.countDocuments();
+    if (count > AUTH_TELEMETRY_MAX_ROWS) {
+      const excess = count - AUTH_TELEMETRY_MAX_ROWS;
+      const oldest = await AuthTelemetryModel.find({}, { _id: 1 }).sort({ timestamp: 1 }).limit(excess);
+      await AuthTelemetryModel.deleteMany({ _id: { $in: oldest.map((d) => d._id) } });
+    }
+  },
+  async recent(limit = 25) {
+    const docs = await AuthTelemetryModel.find({}).sort({ timestamp: -1 }).limit(limit);
+    return docs.map((d) => d.data);
+  },
+  async all() {
+    const docs = await AuthTelemetryModel.find({}).sort({ timestamp: -1 });
+    return docs.map((d) => d.data);
+  },
+  async count(filter: (e: Record<string, any>) => boolean) {
+    const all = await authTelemetryStore.all();
+    return all.filter(filter).length;
+  },
+};
+
+// ============================================================================
+// ANONYMOUS ATTEMPT TELEMETRY — previously read from / written to a JSON file on the server's
+// local disk (anonymous_attempts_telemetry.json), which is lost on Render's ephemeral filesystem
+// across redeploys/restarts unless a persistent disk is explicitly attached. Now in MongoDB.
+// ============================================================================
+
+export interface AnonymousAttemptDoc extends Document {
+  id: string;
+  timestamp: string;
+  test_type: "spoken_assessment" | "writing_diagnostic" | "grammar_diagnostic" | "integrity_studio_scan" | "fluidconvo_roleplay" | "speech_coaching";
+  target_cefr_level?: string;
+  achieved_cefr_or_score: string;
+  score_numeric: number;
+  plagiarism_risk: "LOW" | "MEDIUM" | "HIGH";
+  similarity_percentage: number;
+  flagged_passages_count: number;
+  word_count: number;
+  integrity_status: "passed" | "flagged" | "review_needed";
+  client_session_hash: string;
+}
+
+const anonymousAttemptSchema = new Schema<AnonymousAttemptDoc>(
+  {
+    id: { type: String, required: true, unique: true },
+    timestamp: { type: String, required: true, index: true },
+    test_type: {
+      type: String,
+      enum: ["spoken_assessment", "writing_diagnostic", "grammar_diagnostic", "integrity_studio_scan", "fluidconvo_roleplay", "speech_coaching"],
+      required: true,
+    },
+    target_cefr_level: String,
+    achieved_cefr_or_score: { type: String, required: true },
+    score_numeric: { type: Number, required: true },
+    plagiarism_risk: { type: String, enum: ["LOW", "MEDIUM", "HIGH"], required: true },
+    similarity_percentage: { type: Number, required: true },
+    flagged_passages_count: { type: Number, required: true },
+    word_count: { type: Number, required: true },
+    integrity_status: { type: String, enum: ["passed", "flagged", "review_needed"], required: true },
+    client_session_hash: { type: String, required: true },
+  },
+  { versionKey: false }
+);
+
+export const AnonymousAttemptModel = mongoose.model<AnonymousAttemptDoc>("AnonymousAttempt", anonymousAttemptSchema);
+
+const ANONYMOUS_ATTEMPT_MAX_ROWS = 5000;
+
+function toPlainAttempt(doc: AnonymousAttemptDoc) {
+  const obj = doc.toObject();
+  delete obj._id;
+  return obj;
+}
+
+export const anonymousAttemptStore = {
+  async add(entry: Omit<AnonymousAttemptDoc, keyof Document>) {
+    await AnonymousAttemptModel.create(entry);
+    const count = await AnonymousAttemptModel.countDocuments();
+    if (count > ANONYMOUS_ATTEMPT_MAX_ROWS) {
+      const excess = count - ANONYMOUS_ATTEMPT_MAX_ROWS;
+      const oldest = await AnonymousAttemptModel.find({}, { _id: 1 }).sort({ timestamp: 1 }).limit(excess);
+      await AnonymousAttemptModel.deleteMany({ _id: { $in: oldest.map((d) => d._id) } });
+    }
+  },
+  async all() {
+    const docs = await AnonymousAttemptModel.find({}).sort({ timestamp: -1 });
+    return docs.map(toPlainAttempt);
+  },
+  async recent(limit = 100) {
+    const docs = await AnonymousAttemptModel.find({}).sort({ timestamp: -1 }).limit(limit);
+    return docs.map(toPlainAttempt);
+  },
+  async count() {
+    return AnonymousAttemptModel.countDocuments();
+  },
+  async clearAll() {
+    await AnonymousAttemptModel.deleteMany({});
+  },
+};
+
 export async function seedIfEmpty(seedFn: () => Promise<void> | void) {
   const count = await UserModel.countDocuments();
   if (count === 0) {
