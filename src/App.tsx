@@ -81,6 +81,7 @@ export default function App() {
   const [isLegalModalOpen, setIsLegalModalOpen] = useState<boolean>(false);
   const [legalInitialTab, setLegalInitialTab] = useState<LegalTab>("terms");
   const [isArchitectureModalOpen, setIsArchitectureModalOpen] = useState<boolean>(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState<boolean>(false);
 
   // Assessment & Level Advancement state
   const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState<boolean>(false);
@@ -521,7 +522,13 @@ export default function App() {
     <div className="min-h-screen bg-slate-100/70 text-slate-900 font-sans selection:bg-indigo-500 selection:text-white flex">
       {/* Left sidebar navigation (student portal only — admin keeps its existing top-nav shell) */}
       {portal === "student" && !isOwnerOrAdmin && (
-        <Sidebar activeTab={studentTab} setActiveTab={setStudentTab} onLogout={handleLogout} />
+        <Sidebar
+          activeTab={studentTab}
+          setActiveTab={setStudentTab}
+          onLogout={handleLogout}
+          isMobileOpen={isMobileSidebarOpen}
+          onCloseMobile={() => setIsMobileSidebarOpen(false)}
+        />
       )}
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -546,6 +553,7 @@ export default function App() {
             onLogout={handleLogout}
             onOpenLegalModal={handleOpenLegalModal}
             onOpenArchitectureDoc={() => setIsArchitectureModalOpen(true)}
+            onOpenMobileMenu={() => setIsMobileSidebarOpen(true)}
           />
         ) : null}
 

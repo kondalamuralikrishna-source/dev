@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Globe, Check, ChevronDown, Sparkles, Languages, HelpCircle } from "lucide-react";
 import { useTranslation } from "../context/TranslationContext";
-import { RegionalLanguageCode } from "../types";
+import { RegionalLanguageCode, RegionalLanguageConfig } from "../types";
 
 interface LanguageSelectorProps {
   variant?: "header" | "compact" | "card" | "admin" | "banner" | "floating" | "login";
@@ -33,6 +33,11 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     setLanguage(code);
     setIsOpen(false);
   };
+
+  // English's name and native name are both literally "English" — showing both reads as a
+  // redundant "English (English)". Only append the native-script name when it differs.
+  const formatLanguageLabel = (l: RegionalLanguageConfig) =>
+    l.nativeName && l.nativeName !== l.name ? `${l.name} (${l.nativeName})` : l.name;
 
   // BANNER / CARD VARIANT (Prominent on Dashboard & Learning Modules)
   if (variant === "banner" || variant === "card") {
@@ -80,7 +85,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
               >
                 {languages.map((l) => (
                   <option key={l.code} value={l.code}>
-                    {l.flagBadge.split(" ")[0]} {l.name} — {l.nativeName}
+                    {l.flagBadge.split(" ")[0]} {formatLanguageLabel(l)}
                   </option>
                 ))}
               </select>
@@ -123,11 +128,15 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     return (
       <div
         id="floating-translation-widget"
-        className={`fixed bottom-4 right-4 z-50 animate-in fade-in slide-in-from-bottom-2 ${className}`}
+        // On phones this sits just under the sticky header instead of bottom-right, since the
+        // bottom-right corner is where most screens in this app place their primary CTA button
+        // (e.g. "Retake Diagnostic", "Submit Answers") — anchoring it there caused it to overlap
+        // and block those buttons on small viewports.
+        className={`fixed top-16 right-2 sm:top-auto sm:bottom-4 sm:right-4 z-50 animate-in fade-in slide-in-from-bottom-2 max-w-[calc(100vw-1rem)] ${className}`}
       >
-        <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-2 rounded-2xl shadow-2xl border-2 border-amber-400 dark:border-amber-500 flex items-center gap-2 ring-2 ring-amber-400/20">
+        <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-md p-1.5 sm:p-2 rounded-2xl shadow-2xl border-2 border-amber-400 dark:border-amber-500 flex items-center gap-1.5 sm:gap-2 ring-2 ring-amber-400/20">
           <div className="flex items-center gap-1.5 pl-1">
-            <span className="w-6 h-6 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs shadow-xs">
+            <span className="w-6 h-6 rounded-lg bg-amber-500 text-slate-950 flex items-center justify-center font-bold text-xs shadow-xs shrink-0">
               <Globe size={14} />
             </span>
             <span className="text-xs font-black text-slate-800 dark:text-white hidden sm:inline">
@@ -143,11 +152,11 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
             aria-label="Select Mother Tongue Language"
             value={currentLanguage}
             onChange={(e) => handleSelect(e.target.value as RegionalLanguageCode)}
-            className="text-xs font-bold bg-amber-50 dark:bg-slate-800 text-slate-900 dark:text-amber-300 py-1.5 px-2.5 rounded-xl border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
+            className="text-xs font-bold bg-amber-50 dark:bg-slate-800 text-slate-900 dark:text-amber-300 py-1.5 px-2 sm:px-2.5 rounded-xl border border-amber-300 focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer max-w-[42vw] sm:max-w-none truncate"
           >
             {languages.map((l) => (
               <option key={l.code} value={l.code}>
-                {l.flagBadge.split(" ")[0]} {l.name} ({l.nativeName})
+                {l.flagBadge.split(" ")[0]} {formatLanguageLabel(l)}
               </option>
             ))}
           </select>
@@ -189,7 +198,7 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
         >
           {languages.map((l) => (
             <option key={l.code} value={l.code}>
-              {l.flagBadge.split(" ")[0]} {l.nativeName} ({l.name})
+              {l.flagBadge.split(" ")[0]} {formatLanguageLabel(l)}
             </option>
           ))}
         </select>

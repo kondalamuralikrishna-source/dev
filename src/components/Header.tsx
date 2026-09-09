@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Bell,
   Search,
+  Menu,
 } from "lucide-react";
 import { CEFRLevel, UserProgress, UserAccount } from "../types";
 import { LegalTab } from "./LegalModal";
@@ -42,6 +43,7 @@ interface HeaderProps {
   onLogout: () => void;
   onOpenLegalModal?: (tab?: LegalTab) => void;
   onOpenArchitectureDoc?: () => void;
+  onOpenMobileMenu?: () => void;
 }
 
 // Slim top bar (search, notifications, stats, user menu). Primary navigation lives in <Sidebar>.
@@ -52,6 +54,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAuthModal,
   onLogout,
   onOpenLegalModal,
+  onOpenMobileMenu,
 }) => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const { t } = useTranslation();
@@ -62,6 +65,19 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-xs sticky top-0 z-30">
       <div className="px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-3">
+        {/* Hamburger — opens the Sidebar as a slide-in drawer below the lg breakpoint, where the
+            static sidebar column is hidden and this is otherwise the only way to switch tabs. */}
+        {onOpenMobileMenu && (
+          <button
+            type="button"
+            onClick={onOpenMobileMenu}
+            aria-label="Open menu"
+            className="lg:hidden p-2 -ml-1 rounded-xl text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-colors shrink-0"
+          >
+            <Menu size={20} />
+          </button>
+        )}
+
         {/* Search (visual, matches design — filters nothing yet) */}
         <div className="hidden md:flex items-center flex-1 max-w-md">
           <div className="relative w-full">

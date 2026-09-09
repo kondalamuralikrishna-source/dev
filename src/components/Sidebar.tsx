@@ -13,8 +13,10 @@ import {
   ShieldAlert,
   CheckCircle2,
   LogOut,
+  X,
 } from "lucide-react";
 import { LinguaFlowLogo } from "./LinguaFlowLogo";
+import { LanguageSelector } from "./LanguageSelector";
 import { useTranslation } from "../context/TranslationContext";
 import type { NavTab } from "./Header";
 
@@ -22,6 +24,11 @@ interface SidebarProps {
   activeTab: NavTab;
   setActiveTab: (tab: NavTab) => void;
   onLogout: () => void;
+  // Below the lg breakpoint this sidebar is normally hidden entirely (no static column). These
+  // props let it double as a slide-in drawer, opened via a hamburger button in <Header>, so
+  // phones/tablets still have a way to switch tabs and reach the language selector.
+  isMobileOpen?: boolean;
+  onCloseMobile?: () => void;
 }
 
 interface NavItem {
@@ -37,8 +44,19 @@ interface NavGroup {
   items: NavItem[];
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLogout }) => {
+export const Sidebar: React.FC<SidebarProps> = ({
+  activeTab,
+  setActiveTab,
+  onLogout,
+  isMobileOpen = false,
+  onCloseMobile,
+}) => {
   const { t } = useTranslation();
+
+  const handleSelectTab = (tab: NavTab) => {
+    setActiveTab(tab);
+    onCloseMobile?.();
+  };
 
   const groups: NavGroup[] = [
     {
@@ -80,15 +98,46 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
   ];
 
   return (
-    <aside className="hidden lg:flex lg:flex-col w-64 shrink-0 bg-slate-900 text-slate-300 h-screen sticky top-0 self-start">
+    <>
+      {/* Backdrop — mobile/tablet only, closes the drawer on tap */}
+      {isMobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-slate-950/60 lg:hidden"
+          onClick={onCloseMobile}
+          aria-hidden="true"
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col w-64 shrink-0 bg-slate-900 text-slate-300 h-full transform transition-transform duration-200 ease-in-out ${
+          isMobileOpen ? "translate-x-0" : "-translate-x-full"
+        } lg:translate-x-0 lg:static lg:h-screen lg:sticky lg:top-0 lg:self-start`}
+      >
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-5 py-5 border-b border-slate-800/80">
-        <div className="p-1 rounded-lg bg-white/95 flex items-center justify-center">
-          <LinguaFlowLogo variant="mark" size="xs" />
+      <div className="flex items-center justify-between gap-2.5 px-5 py-5 border-b border-slate-800/80">
+        <div className="flex items-center gap-2.5">
+          <div className="p-1 rounded-lg bg-white/95 flex items-center justify-center">
+            <LinguaFlowLogo variant="mark" size="xs" />
+          </div>
+          <span className="font-black text-base text-white tracking-tight">
+            FLUENXI<span className="text-blue-400">A</span>
+          </span>
         </div>
-        <span className="font-black text-base text-white tracking-tight">
-          FLUENXI<span className="text-blue-400">A</span>
-        </span>
+        {/* Close button — mobile/tablet drawer only */}
+        <button
+          type="button"
+          onClick={onCloseMobile}
+          aria-label="Close menu"
+          className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white transition-colors"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      {/* Mother Tongue / Regional Language — only surfaced here on mobile/tablet, since the
+          Header's own copy of this control is hidden below the lg breakpoint. */}
+      <div className="lg:hidden px-4 pt-3">
+        <LanguageSelector variant="header" className="w-full" />
       </div>
 
       {/* Nav groups */}
@@ -107,7 +156,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
                     key={item.tab}
                     id={`sidebar-tab-${item.tab}`}
                     type="button"
-                    onClick={() => setActiveTab(item.tab)}
+                    onClick={() => handleSelectTab(item.tab)}
                     className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-semibold transition-all ${
                       isActive
                         ? "bg-blue-600 text-white shadow-sm"
@@ -140,6 +189,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onLog
           <span>Sign Out</span>
         </button>
       </div>
-    </aside>
+      </aside>
+    </>
   );
 };
