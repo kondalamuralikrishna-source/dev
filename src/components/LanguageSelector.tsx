@@ -114,7 +114,9 @@ export const LanguageSelector: React.FC<LanguageSelectorProps> = ({
               >
                 <span>{lang.flagBadge.split(" ")[0]}</span>
                 <span>{lang.nativeName}</span>
-                <span className="text-[10px] opacity-75 font-semibold">({lang.name})</span>
+                {lang.nativeName !== lang.name && (
+                  <span className="text-[10px] opacity-75 font-semibold">({lang.name})</span>
+                )}
               </button>
             );
           })}
