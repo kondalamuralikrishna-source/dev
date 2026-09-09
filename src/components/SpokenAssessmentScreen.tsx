@@ -358,8 +358,12 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
 
       const responsesPayload = SPOKEN_ASSESSMENT_TASKS.map((task) => {
         const resp = recordedResponses[task.id];
-        const text = resp?.transcript || "Spoken response recorded successfully.";
-        const duration = resp?.durationSeconds || 35;
+        // Honest: if the learner never actually recorded/transcribed a response,
+        // send an empty transcript and zero duration rather than fabricating a
+        // fake "Spoken response recorded successfully." transcript and a
+        // plausible-looking 35s duration that never happened.
+        const text = resp?.transcript || "";
+        const duration = resp?.durationSeconds || 0;
         const wordsInText = text.trim() ? text.trim().split(/\s+/).length : 0;
         const fillerMatches = text.match(fillerRegex) || [];
 
@@ -378,14 +382,18 @@ export const SpokenAssessmentScreen: React.FC<SpokenAssessmentScreenProps> = ({
       });
 
       const totalMinutes = Math.max(0.5, totalSeconds / 60);
-      const computedWpm = Math.round(totalWords / totalMinutes);
-      const computedPauseRate = Number((Math.max(1, totalSeconds / 25)).toFixed(1));
-      const computedFillerRatio = totalWords > 0 ? Number(((totalFillers / totalWords) * 100).toFixed(1)) : 2.0;
-      // Phoneme accuracy estimation based on duration/word consistency
-      const computedPhonemeScore = Math.min(96, Math.max(72, Math.round(85 + (computedWpm > 100 && computedWpm < 165 ? 6 : -4))));
+      const computedWpm = totalSeconds > 0 ? Math.round(totalWords / totalMinutes) : 0;
+      const computedPauseRate = totalSeconds > 0 ? Number((Math.max(1, totalSeconds / 25)).toFixed(1)) : 0;
+      const computedFillerRatio = totalWords > 0 ? Number(((totalFillers / totalWords) * 100).toFixed(1)) : 0;
+      // Rough phoneme-accuracy estimate from speech-rate consistency -- only meaningful
+      // when the learner actually spoke; honest 0 when there is no real speech to estimate from.
+      const computedPhonemeScore =
+        totalWords > 0
+          ? Math.min(96, Math.max(72, Math.round(85 + (computedWpm > 100 && computedWpm < 165 ? 6 : -4))))
+          : 0;
 
       const audioMetrics = {
-        speech_rate_wpm: computedWpm > 0 ? computedWpm : 132,
+        speech_rate_wpm: computedWpm,
         pause_rate_per_min: computedPauseRate,
         filler_ratio_percent: computedFillerRatio,
         phoneme_accuracy_score: computedPhonemeScore,

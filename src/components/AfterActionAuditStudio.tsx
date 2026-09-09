@@ -206,7 +206,7 @@ export const AfterActionAuditStudio: React.FC<AfterActionAuditStudioProps> = ({
                   1. Lexical Reach & CEFR Distribution
                 </h3>
                 <span className="text-xs font-black text-indigo-600">
-                  {currentAudit.lexicalReach?.c1_c2 || 20}% Advanced
+                  {currentAudit.lexicalReach?.c1_c2 ?? 0}% Advanced
                 </span>
               </div>
 

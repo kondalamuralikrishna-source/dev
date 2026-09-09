@@ -760,35 +760,36 @@ export const NextGenSpeechEvaluatorStudio: React.FC<NextGenSpeechEvaluatorStudio
         {/* TAB 2: 3D VOCAL TRACT ARTICULATOR MODEL */}
         {activeTab === "vocal_tract" && (
           <div className="space-y-6">
-            <VocalTractArticulatorVisualizer
-              targetSound={selectedSegmentalSound?.target_sound || "/θ/"}
-              producedSound={selectedSegmentalSound?.produced_sound || "[s]"}
-              soundLocation={selectedSegmentalSound?.location || "thought"}
-              articulatoryCorrection={
-                selectedSegmentalSound?.articulatory_correction ||
-                "Rest the tip of your tongue lightly between the upper and lower incisors without contacting the alveolar ridge."
-              }
-              visualCueDescription={latestScaffolding?.visual_cue_description}
-            />
+            {selectedSegmentalSound ? (
+              <VocalTractArticulatorVisualizer
+                targetSound={selectedSegmentalSound.target_sound}
+                producedSound={selectedSegmentalSound.produced_sound}
+                soundLocation={selectedSegmentalSound.location}
+                articulatoryCorrection={selectedSegmentalSound.articulatory_correction}
+                visualCueDescription={latestScaffolding?.visual_cue_description}
+              />
+            ) : (
+              <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 text-xs text-slate-400 text-center">
+                No articulation issue selected yet -- submit a spoken response and select a flagged sound to see its vocal-tract breakdown here.
+              </div>
+            )}
           </div>
         )}
 
         {/* TAB 3: PROSODY & PITCH CONTOURS */}
         {activeTab === "prosody" && (
           <div className="space-y-6">
-            <PitchIntonationVisualizer
-              suprasegmentals={
-                latestEvaluation?.suprasegmental_feedback || {
-                  pitch_and_intonation:
-                    "Demonstrates clause-level pitch emphasis on strategic keywords with a decisive falling terminal tone on declarative assertions.",
-                  rhythm_and_timing:
-                    "Natural stress-timed delivery (~138 WPM) with appropriate vowel compression on unstressed prepositions and articles.",
-                  prosodic_gaming_detected: "false - Authentic human prosody with natural variation.",
-                }
-              }
-              transcript={latestUserMessage?.text || "We achieve sub-second latency without risking state inconsistency."}
-              wpm={latestUserMessage?.wpm || 138}
-            />
+            {latestEvaluation?.suprasegmental_feedback && latestUserMessage?.text ? (
+              <PitchIntonationVisualizer
+                suprasegmentals={latestEvaluation.suprasegmental_feedback}
+                transcript={latestUserMessage.text}
+                wpm={latestUserMessage?.wpm}
+              />
+            ) : (
+              <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 text-xs text-slate-400 text-center">
+                No prosody analysis yet -- submit a spoken response to see your real pitch and rhythm breakdown here.
+              </div>
+            )}
           </div>
         )}
 
@@ -805,46 +806,27 @@ export const NextGenSpeechEvaluatorStudio: React.FC<NextGenSpeechEvaluatorStudio
               <span className="text-xs text-slate-400">Strict Schema Compliant</span>
             </div>
 
-            <div className="bg-slate-950 rounded-2xl p-4 border border-slate-800/80 font-mono text-xs text-emerald-400 overflow-x-auto max-h-[420px]">
-              <pre>
-                {JSON.stringify(
-                  {
-                    conversational_response:
-                      messages.find((m) => m.sender === "interlocutor" && m.evaluation)?.text ||
-                      activeScenario.interlocutorOpeningLine,
-                    evaluation: latestEvaluation || {
-                      functional_intelligibility_score: "8.5/10 - High Comprehensibility",
-                      spontaneous_grammar_and_syntax:
-                        "Spontaneous clause chaining successfully communicated architectural guarantees under pressure.",
-                      segmental_feedback: [
-                        {
-                          target_sound: "/θ/",
-                          produced_sound: "[s]",
-                          location: "thought",
-                          articulatory_correction:
-                            "Place the tongue tip lightly between the incisors rather than contacting the alveolar ridge.",
-                        },
-                      ],
-                      suprasegmental_feedback: {
-                        pitch_and_intonation:
-                          "Clear pitch modulation on contrastive architectural units.",
-                        rhythm_and_timing:
-                          "Consistent stress-timed cadence with appropriate reduction of unstressed syllables.",
-                        prosodic_gaming_detected: "false",
-                      },
+            {latestEvaluation ? (
+              <div className="bg-slate-950 rounded-2xl p-4 border border-slate-800/80 font-mono text-xs text-emerald-400 overflow-x-auto max-h-[420px]">
+                <pre>
+                  {JSON.stringify(
+                    {
+                      conversational_response:
+                        messages.find((m) => m.sender === "interlocutor" && m.evaluation)?.text ||
+                        activeScenario.interlocutorOpeningLine,
+                      evaluation: latestEvaluation,
+                      pedagogical_scaffolding: latestScaffolding || null,
                     },
-                    pedagogical_scaffolding: latestScaffolding || {
-                      actionable_drills:
-                        "Re-state the architectural tradeoff using a nuclear pitch fall on *latency*.",
-                      visual_cue_description:
-                        "Elevate tongue tip toward the dental margin with 15-degree jaw drop.",
-                    },
-                  },
-                  null,
-                  2
-                )}
-              </pre>
-            </div>
+                    null,
+                    2
+                  )}
+                </pre>
+              </div>
+            ) : (
+              <div className="p-6 rounded-2xl bg-slate-950 border border-slate-800/80 text-xs text-slate-400 text-center">
+                No evaluation yet -- submit a spoken response to see the real JSON response here.
+              </div>
+            )}
           </div>
         )}
       </div>

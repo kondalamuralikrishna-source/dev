@@ -13,14 +13,14 @@ import { SuprasegmentalFeedback } from "../types";
 
 interface PitchIntonationVisualizerProps {
   suprasegmentals: SuprasegmentalFeedback;
-  transcript?: string;
+  transcript: string;
   wpm?: number;
 }
 
 export const PitchIntonationVisualizer: React.FC<PitchIntonationVisualizerProps> = ({
   suprasegmentals,
-  transcript = "We achieve sub-second latency without risking state inconsistency.",
-  wpm = 138,
+  transcript,
+  wpm,
 }) => {
   const [selectedContourType, setSelectedContourType] = useState<"natural" | "flat" | "exaggerated">("natural");
 
@@ -216,7 +216,7 @@ export const PitchIntonationVisualizer: React.FC<PitchIntonationVisualizerProps>
                 Stress-Timed Cadence & Velocity
               </div>
               <span className="font-mono text-indigo-400 font-bold bg-indigo-950/80 px-2 py-0.5 rounded border border-indigo-800/60">
-                {wpm} WPM
+                {typeof wpm === "number" ? `${wpm} WPM` : "WPM N/A"}
               </span>
             </div>
             <p className="text-slate-300 leading-relaxed text-[11.5px]">

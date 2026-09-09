@@ -145,16 +145,12 @@ export const AIChatTutor: React.FC<AIChatTutorProps> = ({
         {
           id: `ast_err_${Date.now()}`,
           role: "assistant",
-          content: "That's a very natural sentence! What other details would you like to explore next in our conversation?",
+          // Honest: don't fabricate a compliment ("very natural sentence!") about
+          // input we never actually evaluated because the request failed.
+          content: "Sorry, I couldn't process that message. Could you try sending it again?",
           timestamp: Date.now(),
-          suggestedReplies: [
-            "Could you explain the difference between 'say' and 'tell'?",
-            "What is a more formal way to phrase this?",
-          ],
-          vocabularyHighlights: [
-            { word: "perspective", definition: "A particular attitude toward or way of regarding something; a point of view.", phonetic: "/pərˈspek.tɪv/" },
-            { word: "fluency", definition: "The ability to speak or write a foreign language easily and accurately.", phonetic: "/ˈfluː.ən.si/" }
-          ]
+          suggestedReplies: [],
+          vocabularyHighlights: [],
         },
       ]);
     } finally {

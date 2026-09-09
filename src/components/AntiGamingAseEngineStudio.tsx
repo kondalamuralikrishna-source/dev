@@ -210,9 +210,13 @@ export const AntiGamingAseEngineStudio: React.FC<AntiGamingAseEngineStudioProps>
       });
 
       const data = await response.json();
-      
+
+      // Honest: if the evaluator didn't return a score, treat it as 0 rather than
+      // assuming a plausible-looking 85/88 the learner never earned.
+      const hasJointScore = typeof data.jointCommunicativeScore === "number";
+
       // Calculate final joint score applying the Relevancy Multiplier (0.0 to 1.0)
-      const baseJoint = data.jointCommunicativeScore ?? 85;
+      const baseJoint = hasJointScore ? data.jointCommunicativeScore : 0;
       const finalJointWithMultiplier = localRelevancyCheck.isOffTopic
         ? 0
         : Math.round(baseJoint * localRelevancyCheck.relevancyMultiplier);
@@ -222,9 +226,13 @@ export const AntiGamingAseEngineStudio: React.FC<AntiGamingAseEngineStudioProps>
         timestamp: Date.now(),
         inputMetrics: payload,
         jointCommunicativeScore: finalJointWithMultiplier,
-        rawUnpenalizedScore: data.rawUnpenalizedScore ?? 88,
+        rawUnpenalizedScore: typeof data.rawUnpenalizedScore === "number" ? data.rawUnpenalizedScore : 0,
         antiGamingPenaltyTotal: localRelevancyCheck.isOffTopic ? 100 : (data.antiGamingPenaltyTotal ?? 0),
-        gamingRiskLevel: localRelevancyCheck.isOffTopic ? "FLAGGED_STRUCTURAL_GAMING" : (data.gamingRiskLevel ?? "AUTHENTIC_NATURAL"),
+        // Never default an unknown result to "AUTHENTIC_NATURAL" -- that's a false
+        // clearance. Fall back to the cautious middle tier instead.
+        gamingRiskLevel: localRelevancyCheck.isOffTopic
+          ? "FLAGGED_STRUCTURAL_GAMING"
+          : data.gamingRiskLevel ?? "SUSPECTED_METRIC_IMBALANCE",
         authenticityAudit: data.authenticityAudit || {
           is_relevant_to_prompt: !localRelevancyCheck.isOffTopic,
           is_read_aloud_detected: localRelevancyCheck.isOffTopic,
@@ -234,10 +242,10 @@ export const AntiGamingAseEngineStudio: React.FC<AntiGamingAseEngineStudioProps>
           cap_reason: localRelevancyCheck.reason,
         },
         subScores: data.subScores ?? {
-          naturalnessScore: 86,
-          expressivenessScore: 84,
-          communicativeAccuracyScore: localRelevancyCheck.isOffTopic ? 0 : 90,
-          structuralIntegrityScore: localRelevancyCheck.isOffTopic ? 0 : 92,
+          naturalnessScore: 0,
+          expressivenessScore: 0,
+          communicativeAccuracyScore: 0,
+          structuralIntegrityScore: 0,
         },
         detectedViolations: localRelevancyCheck.isOffTopic
           ? [
@@ -278,12 +286,9 @@ export const AntiGamingAseEngineStudio: React.FC<AntiGamingAseEngineStudioProps>
         ],
         synthesisReport:
           data.synthesisReport ??
-          "Joint multi-metric analysis completed with robust cross-metric coupling and natural acoustic prosody.",
+          "Analysis incomplete -- the evaluator did not return a synthesis report for this attempt.",
         radarBreakdown: data.radarBreakdown ?? [],
-        actionableRemediation: data.actionableRemediation ?? [
-          "Maintain speech cadence within 130-155 WPM.",
-          "Use authentic terminal falling pitch contours.",
-        ],
+        actionableRemediation: data.actionableRemediation ?? [],
       };
 
       setEvaluationResult(result);
@@ -321,20 +326,25 @@ export const AntiGamingAseEngineStudio: React.FC<AntiGamingAseEngineStudioProps>
         Math.min(0.45, (liveTranscript.split(/[,.?]/).length * 0.4) / durationSeconds)
       );
 
+      // Note: this client has no real audio-DSP pipeline (no spectral/pitch analysis),
+      // so speechRateWpm/pauseRatio are the only metrics genuinely derived from the
+      // actual recording. The remaining acoustic fields are honest placeholders (not
+      // per-recording fabrications with fake decimal precision) since real values
+      // aren't measurable client-side without new signal-processing infrastructure.
       const liveMetrics: AseMetricInput = {
-        speechRateWpm: Math.max(70, Math.min(260, computedWpm || 135)),
+        speechRateWpm: wordsCount > 0 ? Math.max(70, Math.min(260, computedWpm)) : 0,
         pauseRatio: parseFloat(estimatedPause.toFixed(2)),
-        spectralEnergyDb: -16.8,
-        semanticCoherenceScore: wordsCount > 10 ? 88 : 65,
-        grammarScore: wordsCount > 10 ? 86 : 70,
+        spectralEnergyDb: 0,
+        semanticCoherenceScore: 0,
+        grammarScore: 0,
         pitchContourDynamics: {
-          f0StdDevHz: 34,
-          pitchRangeSemitones: 7.8,
-          artificialFlatnessIndex: 12,
+          f0StdDevHz: 0,
+          pitchRangeSemitones: 0,
+          artificialFlatnessIndex: 0,
           unnaturalJumpsCount: 0,
-          contourDescription: "Spontaneous oral articulation recorded via live microphone.",
+          contourDescription: "Not measured -- no client-side acoustic analysis available.",
         },
-        transcribedText: liveTranscript || "Sample spoken response captured during test.",
+        transcribedText: liveTranscript || "",
         topicPrompt: topicPrompt || "Oral presentation test",
       };
 

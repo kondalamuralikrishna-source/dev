@@ -205,6 +205,7 @@ export const AcousticSpeechScienceStudio: React.FC<AcousticSpeechScienceStudioPr
   // Analysis Result & UI State
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [diagnosticResult, setDiagnosticResult] = useState<AcousticDiagnosticResult | null>(null);
+  const [diagnosticError, setDiagnosticError] = useState<string | null>(null);
   const [rawJsonCopied, setRawJsonCopied] = useState<boolean>(false);
   const [activeSubTab, setActiveSubTab] = useState<"overview" | "phonemes" | "vowel_space" | "timing" | "json">("overview");
 
@@ -278,57 +279,20 @@ export const AcousticSpeechScienceStudio: React.FC<AcousticSpeechScienceStudioPr
         diagnostic_timestamp: Date.now(),
         sample_duration_ms: 3850,
       });
+      setDiagnosticError(null);
 
       if (onGrantXp) {
         onGrantXp(45, "Acoustic Signal Processing & Computational Phonetics Diagnostic Completed");
       }
     } catch (err) {
       console.error("Error executing acoustic speech diagnostic:", err);
-      // Fallback display
-      setDiagnosticResult({
-        signal_integrity_audit: {
-          snr_rating: noiseFloorDbfs < -40 ? "Optimal" : noiseFloorDbfs < -32 ? "Acceptable" : "Poor",
-          clipping_detected: preNormRmsDb > -2.0,
-          hardware_normalization_applied: true,
-          confidence_degradation_factor: noiseFloorDbfs > -32 ? 0.24 : 0.04,
-        },
-        fluency_and_timing_metrics: {
-          gross_wpm: 122,
-          net_articulation_wpm: 146,
-          pause_breakdown: {
-            syntactic_thinking_pauses_count: silencePauses.filter((p) => p.is_clause_boundary).length || 1,
-            hesitation_pauses_count: silencePauses.filter((p) => !p.is_clause_boundary && (p.end_ms - p.start_ms > 200)).length || 1,
-            latency_buffer_artifacts_excluded_count: packetJitterMs > 30 ? 1 : 0,
-            total_valid_pause_duration_ms: 950,
-          },
-        },
-        phoneme_diagnostic_layer: [
-          {
-            word: "think",
-            target_ipa: "/θ/",
-            realized_ipa: "/t/",
-            error_type: "Substitution",
-            acoustic_confidence: 0.72,
-            diagnostic_note: "Dental fricative /θ/ replaced with alveolar stop /t/. Uncertainty factor applied due to noise floor (-28 dBFS).",
-          },
-          {
-            word: "through",
-            target_ipa: "/θ/",
-            realized_ipa: "/t/",
-            error_type: "Substitution",
-            acoustic_confidence: 0.70,
-            diagnostic_note: "Voiceless dental fricative substituted by plosive /t/ in onset position.",
-          },
-        ],
-        remediation_targets: [
-          {
-            phoneme: "/θ/",
-            issue_description: "Interdental fricative /θ/ realized as voiceless alveolar plosive /t/.",
-            recommended_drill: "Place tongue tip between teeth. Continuous airflow without explosive burst: 'think' vs 'tink'.",
-          },
-        ],
-        diagnostic_timestamp: Date.now(),
-      });
+      // Be honest that the diagnostic failed instead of fabricating a specific
+      // phoneme-error report (e.g. a "think" -> /t/ substitution) that has
+      // nothing to do with what this learner actually said.
+      setDiagnosticResult(null);
+      setDiagnosticError(
+        "We couldn't complete the acoustic diagnostic for this recording. Please try again."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -926,6 +890,12 @@ export const AcousticSpeechScienceStudio: React.FC<AcousticSpeechScienceStudioPr
         {/* ========================================================================= */}
         {/* DIAGNOSTIC RESULTS DISPLAY */}
         {/* ========================================================================= */}
+        {diagnosticError && !diagnosticResult && (
+          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-300 flex items-center gap-2">
+            <AlertTriangle size={14} className="shrink-0" />
+            <span>{diagnosticError}</span>
+          </div>
+        )}
         {diagnosticResult && (
           <div className="space-y-6">
             {/* Sub-tab Navigation */}

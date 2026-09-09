@@ -197,7 +197,9 @@ export function loadUserProgress(): UserProgress {
     const parsed = JSON.parse(raw);
 
     const today = getTodayDateString();
-    let streakDays = parsed.streakDays || 1;
+    // Honest: preserve a real streak of 0 (e.g. a brand-new account) instead of
+    // `|| 1` silently coercing a legitimate zero into a fabricated 1-day streak.
+    let streakDays = parsed.streakDays ?? 0;
     let minutesToday = parsed.minutesToday ?? 0;
     let lessonsToday = parsed.lessonsToday ?? 0;
     let todayGoalCompleted = parsed.todayGoalCompleted ?? false;
@@ -477,7 +479,9 @@ export function updateStreak(): UserProgress {
   const currDate = new Date(today);
   const diffDays = Math.floor((currDate.getTime() - lastDate.getTime()) / (1000 * 3600 * 24));
 
-  let streak = current.streakDays || 1;
+  // Honest: don't turn a real 0-day streak into a fabricated 1 just because this
+  // ran (updateStreak fires on every app mount, not only on genuine activity).
+  let streak = current.streakDays ?? 0;
   if (diffDays === 1) {
     streak += 1;
   } else if (diffDays > 1) {

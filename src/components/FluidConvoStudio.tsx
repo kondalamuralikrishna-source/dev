@@ -99,6 +99,7 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
 
   // Final Session Report
   const [sessionReport, setSessionReport] = useState<FluidConvoSessionReport | null>(null);
+  const [reportError, setReportError] = useState<string | null>(null);
 
   // Speech Recognition and Audio Refs
   const recognitionRef = useRef<any>(null);
@@ -328,26 +329,30 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
 
       const data = await response.json();
 
+      // Honest 0 / neutral placeholders when the API doesn't return a metric --
+      // never substitute a plausible-looking high score the learner didn't earn.
+      const hasIntelligibilityScore = typeof data.semanticIntelligibilityScore === "number";
       const newTurn: FluidConvoTurnAnalysis = {
         turnIndex: currentTurnIndex + 1,
         userSpokenText: spokenText,
         modelReply: data.reply || "Understood. Let's proceed with the details.",
-        semanticIntelligibilityScore: data.semanticIntelligibilityScore || 92,
-        phoneticFidelityScore: data.phoneticFidelityScore || 88,
-        dialectPreservedBonus: data.dialectPreservedBonus ?? true,
-        falsePenaltyAvoided: data.falsePenaltyAvoided ?? true,
+        semanticIntelligibilityScore: hasIntelligibilityScore ? data.semanticIntelligibilityScore : 0,
+        phoneticFidelityScore: typeof data.phoneticFidelityScore === "number" ? data.phoneticFidelityScore : 0,
+        dialectPreservedBonus: data.dialectPreservedBonus ?? false,
+        falsePenaltyAvoided: data.falsePenaltyAvoided ?? false,
         turnTakingLatencyMs: latencyMs,
-        backchannelCuesGenerated: data.backchannelCues || ["Affirmative node", "Contextual alignment"],
+        backchannelCuesGenerated: data.backchannelCues || [],
         interruptionOccurred: interruptionDetected,
         frictionLevel: frictionLevel,
         frictionType: data.frictionType,
         meaningAlteringShifts: data.meaningAlteringShifts || [],
-        pragmaticHeatmapScore:
-          (data.semanticIntelligibilityScore || 90) >= 88
-            ? "green"
-            : (data.semanticIntelligibilityScore || 90) >= 70
-            ? "amber"
-            : "rose",
+        pragmaticHeatmapScore: !hasIntelligibilityScore
+          ? "amber"
+          : data.semanticIntelligibilityScore >= 88
+          ? "green"
+          : data.semanticIntelligibilityScore >= 70
+          ? "amber"
+          : "rose",
       };
 
       setTurns((prev) => [...prev, newTurn]);
@@ -374,23 +379,25 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
       console.error("Error in processUserTurn:", err);
       setIsAiProcessing(false);
 
-      // Fallback turn
-      const fallbackTurn: FluidConvoTurnAnalysis = {
+      // Be honest that this turn could not be evaluated instead of fabricating
+      // a high-scoring analysis (90%/88%) the learner never earned.
+      const failedTurn: FluidConvoTurnAnalysis = {
         turnIndex: currentTurnIndex + 1,
         userSpokenText: spokenText,
-        modelReply: "I see your point clearly. Let's make sure we lock in this solution before our timeline runs out.",
-        semanticIntelligibilityScore: 90,
-        phoneticFidelityScore: 88,
-        dialectPreservedBonus: true,
-        falsePenaltyAvoided: true,
+        modelReply: "Sorry, I couldn't process that turn. Let's continue -- please try again.",
+        semanticIntelligibilityScore: 0,
+        phoneticFidelityScore: 0,
+        dialectPreservedBonus: false,
+        falsePenaltyAvoided: false,
         turnTakingLatencyMs: latencyMs,
-        backchannelCuesGenerated: ["mm-hmm", "understood"],
+        backchannelCuesGenerated: [],
         interruptionOccurred: interruptionDetected,
         frictionLevel: frictionLevel,
         meaningAlteringShifts: [],
-        pragmaticHeatmapScore: "green",
-      };
-      setTurns((prev) => [...prev, fallbackTurn]);
+        pragmaticHeatmapScore: "rose",
+        evaluationFailed: true,
+      } as FluidConvoTurnAnalysis;
+      setTurns((prev) => [...prev, failedTurn]);
       setCurrentTurnIndex((prev) => prev + 1);
     }
   };
@@ -429,45 +436,22 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
 
       const report: FluidConvoSessionReport = await response.json();
       setSessionReport(report);
-      onAddXp(report.xpEarned || 120);
+      setReportError(null);
+      // Only grant XP when the server actually returned an earned amount -- never
+      // assume a flat 120 XP when the field is missing.
+      if (typeof report.xpEarned === "number" && report.xpEarned > 0) {
+        onAddXp(report.xpEarned);
+      }
     } catch (err) {
       console.error("Error generating session report:", err);
-      // Fallback report
-      const fallbackReport: FluidConvoSessionReport = {
-        sessionId: `fc_${Date.now()}`,
-        scenarioId: activeScenario.id,
-        scenarioTitle: activeScenario.title,
-        dialectUsed: selectedDialect,
-        overallIntelligibilityScore: 92,
-        accentPenaltyFreeScore: 98,
-        avgTurnTakingLatencyMs: Math.round(
-          turns.reduce((acc, t) => acc + t.turnTakingLatencyMs, 0) / Math.max(1, turns.length)
-        ) || 340,
-        totalTurns: turns.length,
-        interruptionHandlingRate: 96,
-        frictionResistanceScore: 89,
-        xpEarned: 120,
-        turns: turns,
-        keyPhoneticBreakdowns: [
-          {
-            spokenWord: "ship",
-            intendedWord: "ship",
-            phonemicContrast: "/ɪ/ vs /iː/ (ship vs sheep)",
-            severity: "acceptable-dialect-variation",
-            explanation: "Vowel duration was calibrated accurately without altering semantic payload.",
-            articulatoryFix: "Maintained relaxed jaw and stable vocal projection.",
-          },
-        ],
-        pedagogicalAdvice: [
-          "Superb semantic intent mapping — your core message was communicated 100% clearly despite ambient boardroom noise.",
-          "Turn-taking latency averaged 340ms, well within the target < 450ms conversational reflex benchmark.",
-          "Keep lower jaw dropped slightly when articulating /ɪ/ lax vowels to prevent minimal pair shifts.",
-        ],
-        dialectPreservationPraise: `All natural ${activeDialectProfile.name} phonetic patterns (such as retroflex stops and syllable-timed cadence) were preserved with 0% false penalty!`,
-        timestamp: Date.now(),
-      };
-      setSessionReport(fallbackReport);
-      onAddXp(120);
+      // Be honest that the report could not be generated instead of fabricating a
+      // near-perfect session report (92%/98%/96%/89%, invented phonetic praise, and
+      // a "ship vs sheep" breakdown the learner never actually said) and awarding
+      // 120 XP the learner never earned.
+      setSessionReport(null);
+      setReportError(
+        "We couldn't generate your session report this time. Your conversation history is preserved -- please try ending the session again."
+      );
     }
   };
 
@@ -562,6 +546,12 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
         completionGoal="Complete a live spoken dialogue session to receive acoustic latency and phoneme shift metrics."
         xpReward={120}
       />
+
+      {reportError && !sessionReport && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 font-semibold flex items-center gap-2">
+          <span>{reportError}</span>
+        </div>
+      )}
 
       {!isSessionActive && !sessionReport ? (
         /* Configuration & Pre-flight Controls */

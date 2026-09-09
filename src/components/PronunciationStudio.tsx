@@ -143,21 +143,16 @@ export const PronunciationStudio: React.FC<PronunciationStudioProps> = ({
       }
     } catch (err) {
       console.error("Pronunciation analysis error:", err);
-      // Fallback
-      setFeedbackResult({
-        score: 85,
-        targetIPA: selectedDrill.ipa || "/ˈhɛloʊ/",
-        wordBreakdown: targetPhrase.split(" ").map((w) => ({
-          word: w,
-          ipa: `/${w.toLowerCase()}/`,
-          syllables: w.toUpperCase(),
-          status: "perfect",
-          tip: "Good articulation and vowel resonance.",
-        })),
-        intonationNotes: "Clear pitch melody with standard sentence stress.",
-        commonPitfall: "Dropping unstressed syllable clarity.",
-        coachingAdvice: "Link consecutive consonant-vowel transitions for smoother flow.",
-      });
+      // Be honest that analysis failed instead of fabricating a plausible-looking
+      // score and "perfect" feedback the user never actually earned.
+      setFeedbackResult(null);
+      setMicNotice(
+        t(
+          "pronunciation.analysis_failed",
+          "We couldn't analyze your pronunciation this time. Please try recording again."
+        )
+      );
+      setTimeout(() => setMicNotice(null), 5000);
     } finally {
       setIsAnalyzing(false);
     }

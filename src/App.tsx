@@ -236,7 +236,8 @@ export default function App() {
         const diffDays = Math.floor(
           (new Date(today).getTime() - new Date(lastActive).getTime()) / (1000 * 3600 * 24)
         );
-        let streak = prev.streakDays || 1;
+        // Honest: don't coerce a real 0-day streak into a fabricated 1 on mere page load.
+        let streak = prev.streakDays ?? 0;
         if (diffDays === 1) streak += 1;
         else if (diffDays > 1) streak = 1;
         return { ...prev, streakDays: streak, lastActiveDate: today };

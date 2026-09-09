@@ -44,6 +44,7 @@ export const GrammarDoctor: React.FC<GrammarDoctorProps> = ({ progress }) => {
   );
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<GrammarExplanationResult | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const { t } = useTranslation();
   const translatedSummary = useAutoText(result?.summary, "doctor_summary");
   const translatedTenseAndAspect = useAutoText(result?.tenseAndAspect, "doctor_tense_aspect");
@@ -76,35 +77,14 @@ export const GrammarDoctor: React.FC<GrammarDoctorProps> = ({ progress }) => {
 
       const data = await response.json();
       setResult(data);
+      setAnalysisError(null);
     } catch (err) {
       console.error("Grammar doctor error:", err);
-      // Fallback
-      setResult({
-        summary:
-          "This sentence demonstrates a Third Conditional structure expressing an unreal past condition and its hypothetical past result.",
-        partsOfSpeech: [
-          { token: "If", role: "Subordinating Conjunction", explanation: "Introduces the conditional clause." },
-          { token: "had known", role: "Past Perfect Verb", explanation: "Expresses unfulfilled past condition." },
-          { token: "would have notified", role: "Perfect Modal Verb", explanation: "Expresses hypothetical past outcome." },
-        ],
-        tenseAndAspect: "Third Conditional (Past Perfect + Modal Perfect)",
-        keyRules: [
-          "Use past perfect (had + V3) in the if-clause to speak about unreal past events.",
-          "Use 'would have + past participle' in the main result clause.",
-        ],
-        commonMistakes: [
-          {
-            incorrect: "If I would have known, I would have notified you.",
-            correct: "If I had known, I would have notified you.",
-            why: "Never use 'would have' inside the 'if' condition clause.",
-          },
-        ],
-        practiceExamples: [
-          "If she had caught the bus, she wouldn't have been late.",
-          "If we had left earlier, we would have avoided the traffic.",
-          "They would have bought the house if it had been cheaper.",
-        ],
-      });
+      // Be honest that analysis failed instead of showing a fabricated
+      // "Third Conditional" breakdown that has nothing to do with the
+      // sentence the learner actually submitted.
+      setResult(null);
+      setAnalysisError("We couldn't analyze this sentence right now. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -214,6 +194,13 @@ export const GrammarDoctor: React.FC<GrammarDoctorProps> = ({ progress }) => {
           </div>
         </div>
       </div>
+
+      {analysisError && !result && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-800 font-semibold flex items-center gap-2">
+          <AlertCircle size={16} className="shrink-0" />
+          <span>{analysisError}</span>
+        </div>
+      )}
 
       {/* ANALYSIS RESULTS */}
       {result && (

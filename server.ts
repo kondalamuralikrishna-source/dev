@@ -4258,18 +4258,20 @@ app.post("/api/auth/verify-otp", otpVerifyLimiter, async (req, res) => {
         lastLoginAt: new Date().toISOString(),
         status: "active",
         progress: {
-          xp: 120,
-          streakDays: 1,
+          // Honest zero-state: a brand-new account starts with no XP, no streak, no
+          // completed lessons/vocab/achievements. See /api/auth/register for the same fix.
+          xp: 0,
+          streakDays: 0,
           lastActiveDate: new Date().toISOString().split("T")[0],
           dailyGoalMinutes: 15,
-          minutesToday: 5,
-          completedLessonIds: ["grammar_1"],
+          minutesToday: 0,
+          completedLessonIds: [],
           completedQuizIds: [],
           quizScores: {},
-          savedVocabIds: ["v_greeting_1"],
+          savedVocabIds: [],
           masteredVocabIds: [],
           weakTopics: [],
-          achievements: ["first_lesson"],
+          achievements: [],
           selectedLevel: "B1",
           speechSpeed: 0.9,
           stressTestsCompleted: [],
@@ -6094,7 +6096,7 @@ app.get("/api/admin/analytics", requireAuth, requireRole("admin", "owner"), asyn
     }).length;
 
     const totalXpEarned = allUsers.reduce((sum, u) => sum + (u.progress?.xp || 0), 0);
-    const totalLearningMinutes = allUsers.reduce((sum, u) => sum + (u.progress?.minutesToday || 0), 0) + 1420;
+    const totalLearningMinutes = allUsers.reduce((sum, u) => sum + (u.progress?.minutesToday || 0), 0);
 
     // Aggregate quiz scores
     const allQuizScores: number[] = [];
@@ -6103,9 +6105,10 @@ app.get("/api/admin/analytics", requireAuth, requireRole("admin", "owner"), asyn
         Object.values(u.progress.quizScores).forEach((sc) => allQuizScores.push(Number(sc)));
       }
     });
+    // Honest 0 when nobody has taken a quiz yet -- do not fabricate a plausible-looking average.
     const avgQuizScore = allQuizScores.length > 0
       ? Math.round(allQuizScores.reduce((a, b) => a + b, 0) / allQuizScores.length)
-      : 88;
+      : 0;
 
     // Aggregate stress scores
     const allStressScores: number[] = [];
@@ -6116,9 +6119,10 @@ app.get("/api/admin/analytics", requireAuth, requireRole("admin", "owner"), asyn
         u.progress.stressTestsCompleted.forEach((s: any) => allStressScores.push(s.score));
       }
     });
+    // Honest 0 when nobody has completed a stress drill yet.
     const avgStressScore = allStressScores.length > 0
       ? Math.round(allStressScores.reduce((a, b) => a + b, 0) / allStressScores.length)
-      : 86;
+      : 0;
 
     const totalLessonsCompleted = allUsers.reduce(
       (sum, u) => sum + (u.progress?.completedLessonIds?.length || 0),
@@ -6142,40 +6146,108 @@ app.get("/api/admin/analytics", requireAuth, requireRole("admin", "owner"), asyn
       }
     });
 
-    // 7-Day Activity Trends
-    const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    const activityTrends = days.map((day, idx) => ({
-      date: day,
-      activeUsers: 14 + (idx * 3) + Math.floor(Math.random() * 4),
-      lessonsFinished: 28 + (idx * 5) + Math.floor(Math.random() * 6),
-      stressDrills: 12 + (idx * 2) + Math.floor(Math.random() * 3),
-      quizzesCompleted: 35 + (idx * 4) + Math.floor(Math.random() * 5),
+    // 7-Day Activity Trends -- derived from real, timestamped records only.
+    // Login/registration events (activityLogStore) and stress-drill history
+    // (stressTestsCompleted, which carries a real timestamp) are the only
+    // per-day-attributable signals this backend actually tracks; completed
+    // lessons/quizzes are stored as plain ID sets with no completion
+    // timestamp, so their daily breakdown is honestly reported as 0 rather
+    // than invented.
+    const dayMs = 24 * 60 * 60 * 1000;
+    const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const allStressHistory: { scenarioTitle: string; score: number; timestamp: number }[] = [];
+    allUsers.forEach((u) => {
+      (u.progress?.stressTestsCompleted || []).forEach((s: any) => {
+        allStressHistory.push({ scenarioTitle: s.scenarioTitle, score: s.score, timestamp: s.timestamp });
+      });
+    });
+
+    const activityTrends = Array.from({ length: 7 }).map((_, idx) => {
+      const dayStart = new Date();
+      dayStart.setHours(0, 0, 0, 0);
+      dayStart.setDate(dayStart.getDate() - (6 - idx));
+      const dayStartMs = dayStart.getTime();
+      const dayEndMs = dayStartMs + dayMs;
+
+      const activeUserIds = new Set(
+        activityLogStore
+          .filter((a) => a.timestamp >= dayStartMs && a.timestamp < dayEndMs)
+          .map((a) => a.userId)
+      );
+      const stressDrills = allStressHistory.filter(
+        (s) => s.timestamp >= dayStartMs && s.timestamp < dayEndMs
+      ).length;
+
+      return {
+        date: dayLabels[dayStart.getDay() === 0 ? 6 : dayStart.getDay() - 1],
+        activeUsers: activeUserIds.size,
+        lessonsFinished: 0, // not trackable per-day with current data model
+        stressDrills,
+        quizzesCompleted: 0, // not trackable per-day with current data model
+      };
+    });
+
+    // Learning Pillar usage distribution -- computed from real aggregate counts
+    // that are actually tracked. Pillars with no backing counter (e.g. AI chat
+    // turns) are omitted rather than shown with a fabricated number.
+    const totalVocabSaved = allUsers.reduce((sum, u) => sum + (u.progress?.savedVocabIds?.length || 0), 0);
+    const totalQuizzesCompletedCount = allUsers.reduce((sum, u) => sum + (u.progress?.completedQuizIds?.length || 0), 0);
+    const pillarRawCounts: { pillar: string; count: number }[] = [
+      { pillar: "Grammar Hub (Lessons)", count: totalLessonsCompleted },
+      { pillar: "Quizzes", count: totalQuizzesCompletedCount },
+      { pillar: "Speaking Stress Test", count: totalStressDrills },
+      { pillar: "Vocabulary Decks", count: totalVocabSaved },
+    ].filter((p) => p.count > 0);
+    const pillarTotal = pillarRawCounts.reduce((sum, p) => sum + p.count, 0);
+    const pillarUsage = pillarRawCounts.map((p) => ({
+      pillar: p.pillar,
+      count: p.count,
+      percentage: pillarTotal > 0 ? Math.round((p.count / pillarTotal) * 100) : 0,
     }));
 
-    // Learning Pillar usage distribution
-    const pillarUsage = [
-      { pillar: "Grammar Hub", count: 342, percentage: 28 },
-      { pillar: "Speaking Stress Test", count: 285, percentage: 24 },
-      { pillar: "Vocabulary Decks", count: 215, percentage: 18 },
-      { pillar: "AI Roleplay & Chat", count: 190, percentage: 16 },
-      { pillar: "Pronunciation Voice", count: 168, percentage: 14 },
-    ];
+    // Hardest Grammar Topics -- derived from the real per-user `weakTopics`
+    // flags rather than an invented topic/failure-rate list. "Level" is the
+    // most common selectedLevel among learners who have that topic flagged
+    // (a real, if approximate, signal) instead of a made-up CEFR tag.
+    const weakTopicStats = new Map<string, { attempts: number; levelCounts: Record<string, number> }>();
+    allUsers.forEach((u) => {
+      (u.progress?.weakTopics || []).forEach((topic: string) => {
+        const entry = weakTopicStats.get(topic) || { attempts: 0, levelCounts: {} };
+        entry.attempts += 1;
+        const lvl = u.progress?.selectedLevel || "B1";
+        entry.levelCounts[lvl] = (entry.levelCounts[lvl] || 0) + 1;
+        weakTopicStats.set(topic, entry);
+      });
+    });
+    const hardestGrammarTopics = Array.from(weakTopicStats.entries())
+      .map(([topic, stats]) => {
+        const level = (Object.entries(stats.levelCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || "B1") as any;
+        return {
+          topic,
+          level,
+          failureRate: totalLearners > 0 ? Math.round((stats.attempts / totalLearners) * 100) : 0,
+          attempts: stats.attempts,
+        };
+      })
+      .sort((a, b) => b.attempts - a.attempts)
+      .slice(0, 6);
 
-    // Hardest Grammar Topics
-    const hardestGrammarTopics = [
-      { topic: "Past Perfect vs Past Continuous", level: "B1" as const, failureRate: 34, attempts: 185 },
-      { topic: "Mixed Conditionals (Second & Third)", level: "B2" as const, failureRate: 42, attempts: 142 },
-      { topic: "Passive Voice in Causative Structures", level: "B2" as const, failureRate: 29, attempts: 120 },
-      { topic: "Subjunctive Mood in Formal Executive Writing", level: "C1" as const, failureRate: 48, attempts: 98 },
-    ];
-
-    // Top Stress Scenarios
-    const topStressScenarios = [
-      { scenarioTitle: "Black Friday Server Outage Crisis", attempts: 89, avgComposure: 84 },
-      { scenarioTitle: "The Hostile Boardroom Interview Challenge", attempts: 72, avgComposure: 89 },
-      { scenarioTitle: "Boarding Gate Closing & Misplaced Passport", attempts: 64, avgComposure: 81 },
-      { scenarioTitle: "30-Second Impatient Billionaire Elevator Pitch", attempts: 58, avgComposure: 86 },
-    ];
+    // Top Stress Scenarios -- aggregated from real stressTestsCompleted history.
+    const scenarioStats = new Map<string, { attempts: number; totalScore: number }>();
+    allStressHistory.forEach((s) => {
+      const entry = scenarioStats.get(s.scenarioTitle) || { attempts: 0, totalScore: 0 };
+      entry.attempts += 1;
+      entry.totalScore += Number(s.score) || 0;
+      scenarioStats.set(s.scenarioTitle, entry);
+    });
+    const topStressScenarios = Array.from(scenarioStats.entries())
+      .map(([scenarioTitle, stats]) => ({
+        scenarioTitle,
+        attempts: stats.attempts,
+        avgComposure: Math.round(stats.totalScore / stats.attempts),
+      }))
+      .sort((a, b) => b.attempts - a.attempts)
+      .slice(0, 6);
 
     const dailyActivity = activityTrends.map((d) => ({
       date: d.date,
@@ -6186,15 +6258,15 @@ app.get("/api/admin/analytics", requireAuth, requireRole("admin", "owner"), asyn
     res.json({
       totalLearners,
       totalUsers: totalLearners,
-      activeToday: Math.max(activeToday, 5),
+      activeToday,
       totalLearningMinutes,
       totalXpEarned,
       avgQuizScore,
       avgScore: avgQuizScore,
       avgStressScore,
-      totalStressDrillsCompleted: Math.max(totalStressDrills, 12),
-      totalStressTests: Math.max(totalStressDrills, 12),
-      totalLessonsCompleted: Math.max(totalLessonsCompleted, 24),
+      totalStressDrillsCompleted: totalStressDrills,
+      totalStressTests: totalStressDrills,
+      totalLessonsCompleted,
       levelDistribution,
       levelBreakdown: levelDistribution,
       activityTrends,

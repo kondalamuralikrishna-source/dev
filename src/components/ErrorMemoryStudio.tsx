@@ -187,10 +187,14 @@ export const ErrorMemoryStudio: React.FC<ErrorMemoryStudioProps> = ({
         }),
       });
       const evalData = await res.json();
-      
-      const isPassed = (evalData.score || 75) >= 70;
+
+      // Honest gate: if the evaluator didn't return a usable score, do not assume
+      // a passing grade of 75 -- treat it as a failed/incomplete evaluation.
+      const hasScore = typeof evalData.score === "number";
+      const isPassed = hasScore && evalData.score >= 70;
       setRetestFeedback({
         ...evalData,
+        score: hasScore ? evalData.score : 0,
         passed: isPassed,
       });
 
@@ -217,11 +221,14 @@ export const ErrorMemoryStudio: React.FC<ErrorMemoryStudioProps> = ({
       }
     } catch (e) {
       console.error("Evaluation error:", e);
+      // Be honest that the retest could not be evaluated instead of fabricating
+      // a passing score and positive feedback the learner never earned.
       setRetestFeedback({
-        score: 82,
-        passed: true,
-        feedback: "Good syntactic execution under time constraints. Target form utilized correctly!",
-        grammarCheck: "No critical agreement errors detected.",
+        score: 0,
+        passed: false,
+        feedback: "We couldn't evaluate this retest attempt. Please try again.",
+        grammarCheck: "",
+        evaluationFailed: true,
       });
     } finally {
       setEvaluatingResult(false);

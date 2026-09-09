@@ -407,10 +407,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <span className="text-2xl sm:text-3xl font-black text-slate-900">
               {analytics?.totalUsers || usersList.length || 0}
             </span>
-            <span className="text-xs font-bold text-emerald-600 flex items-center">
-              <TrendingUp size={12} className="mr-0.5" />
-              100% Google Verified
-            </span>
+            {usersList.length > 0 && (
+              <span className="text-xs font-bold text-emerald-600 flex items-center">
+                <TrendingUp size={12} className="mr-0.5" />
+                {Math.round(
+                  (usersList.filter((u) => u.authProvider === "google").length / usersList.length) * 100
+                )}
+                % Google Verified
+              </span>
+            )}
           </div>
           <p className="text-[11px] text-slate-500">
             Active learner accounts synced via Google & Gmail
@@ -453,11 +458,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-black text-slate-900">
-              {analytics?.avgScore ? `${analytics.avgScore}%` : "88.4%"}
+              {analytics?.avgScore ? `${analytics.avgScore}%` : "No data yet"}
             </span>
-            <span className="text-xs font-bold text-emerald-600 flex items-center">
-              High Mastery
-            </span>
+            {!!analytics?.avgScore && (
+              <span className="text-xs font-bold text-emerald-600 flex items-center">
+                High Mastery
+              </span>
+            )}
           </div>
           <p className="text-[11px] text-slate-500">
             Overall quiz accuracy across A1–C1 curriculum
@@ -476,7 +483,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl sm:text-3xl font-black text-slate-900">
-              {analytics?.totalStressTests || 14}
+              {analytics?.totalStressTests || 0}
             </span>
             <span className="text-xs font-bold text-rose-600">Hot Seat AI</span>
           </div>
@@ -710,17 +717,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
           {/* Bar Chart Bars */}
           <div className="pt-4 flex items-end justify-between gap-2 h-44 px-2">
-            {(analytics?.dailyActivity || analytics?.activityTrends || [
-              { date: "Mon", completions: 18, lessonsFinished: 18 },
-              { date: "Tue", completions: 24, lessonsFinished: 24 },
-              { date: "Wed", completions: 32, lessonsFinished: 32 },
-              { date: "Thu", completions: 28, lessonsFinished: 28 },
-              { date: "Fri", completions: 35, lessonsFinished: 35 },
-              { date: "Sat", completions: 20, lessonsFinished: 20 },
-              { date: "Sun", completions: 30, lessonsFinished: 30 },
-            ]).map((day: any) => {
-              const compCount = day.completions ?? day.lessonsFinished ?? day.activeUsers ?? 15;
-              const heightPercent = Math.min(100, Math.max(15, (compCount / 40) * 100));
+            {(analytics?.dailyActivity || analytics?.activityTrends || []).length === 0 && (
+              <div className="w-full h-full flex items-center justify-center text-xs font-semibold text-slate-400">
+                No activity data yet
+              </div>
+            )}
+            {(analytics?.dailyActivity || analytics?.activityTrends || []).map((day: any) => {
+              const compCount = day.completions ?? day.lessonsFinished ?? day.activeUsers ?? 0;
+              const heightPercent = compCount > 0 ? Math.min(100, Math.max(15, (compCount / 40) * 100)) : 2;
               const displayDate = day.date && String(day.date).includes("-") ? String(day.date).split("-").slice(1).join("/") : String(day.date || "Day");
               return (
                 <div key={day.date || Math.random()} className="flex-1 flex flex-col items-center gap-2 group">
@@ -1069,14 +1073,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <td className="py-3.5 px-3 font-semibold text-slate-700">
                       <div className="truncate max-w-[180px] flex items-center gap-1">
                         <Mail size={13} className="text-slate-400 shrink-0" />
-                        <span>{user.email || "student@gmail.com"}</span>
+                        <span>{user.email || "No email on file"}</span>
                       </div>
                     </td>
 
                     {/* Level & Role */}
                     <td className="py-3.5 px-3">
                       <span className="inline-flex items-center px-2 py-0.5 bg-indigo-50 text-indigo-700 font-extrabold rounded-md text-[11px]">
-                        CEFR {user.progress?.selectedLevel || "B1"}
+                        CEFR {user.progress?.selectedLevel || "Unset"}
                       </span>
                     </td>
 
@@ -1187,7 +1191,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <div>
                 <h3 className="text-lg font-black text-slate-900">{selectedUserDetail.name}</h3>
                 <p className="text-xs text-slate-500">
-                  {selectedUserDetail.email || "student@gmail.com"} • CEFR {selectedUserDetail.progress?.selectedLevel}
+                  {selectedUserDetail.email || "No email on file"} • CEFR {selectedUserDetail.progress?.selectedLevel || "Unset"}
                 </p>
               </div>
             </div>

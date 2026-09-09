@@ -335,25 +335,28 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
           data.interlocutorReply ||
           "Understood. Let's explore how we can proceed with this.",
         timestamp: Date.now(),
+        // Honest 0 / "not evaluated" placeholders when the API doesn't return a
+        // metric -- never substitute a plausible-looking positive score the
+        // learner didn't actually earn.
         grammaticalAccuracy: data.grammaticalAccuracy || {
-          score: 88,
+          score: 0,
           slips: [],
-          strengths: ["Clear syntactic construction"],
+          strengths: [],
         },
         functionalFluency: data.functionalFluency || {
-          score: 85,
-          coherenceRating: "Adequate",
-          wpmEstimated: 130,
-          hesitationObservation: "Fluent and continuous articulation.",
+          score: 0,
+          coherenceRating: "Not evaluated",
+          wpmEstimated: 0,
+          hesitationObservation: "Analysis unavailable for this turn.",
         },
         pragmaticAppropriateness: data.pragmaticAppropriateness || {
-          score: 90,
-          registerRating: "Appropriately Polished",
-          politenessAndHedgingNotes: "Constructive and courteous tone.",
-          toneAssessment: "Polite negotiation stance.",
+          score: 0,
+          registerRating: "Not evaluated",
+          politenessAndHedgingNotes: "Analysis unavailable for this turn.",
+          toneAssessment: "Analysis unavailable for this turn.",
         },
         lexicalRetrieval: data.lexicalRetrieval || {
-          score: 86,
+          score: 0,
           retrievedCollocations: [],
           suggestedUpgrades: [],
         },
