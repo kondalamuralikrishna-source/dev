@@ -119,9 +119,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="p-1 rounded-lg bg-white/95 flex items-center justify-center">
             <LinguaFlowLogo variant="mark" size="xs" />
           </div>
-          <span className="font-black text-base text-white tracking-tight">
-            FLUENXI<span className="text-blue-400">A</span>
-          </span>
+          <div className="flex flex-col leading-none">
+            <span className="font-black text-base text-white tracking-tight">
+              FLUENXI<span className="text-blue-400">A</span>
+            </span>
+            <span className="text-[9px] font-semibold text-slate-400 tracking-wide mt-0.5">
+              Commanding The Cadence Of Clarity
+            </span>
+          </div>
         </div>
         {/* Close button — mobile/tablet drawer only */}
         <button
