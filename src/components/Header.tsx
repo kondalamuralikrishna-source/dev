@@ -14,6 +14,7 @@ import { CEFRLevel, UserProgress, UserAccount } from "../types";
 import { LegalTab } from "./LegalModal";
 import { isLevelUnlocked } from "../utils/storageUtils";
 import { LanguageSelector } from "./LanguageSelector";
+import { LinguaFlowLogo } from "./LinguaFlowLogo";
 import { useTranslation } from "../context/TranslationContext";
 
 export type NavTab =
@@ -78,6 +79,15 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         )}
 
+        {/* Compact brand mark — only shown once the hamburger replaces the Sidebar's own logo
+            (i.e. below lg), so the mobile header isn't just an unlabeled bar of icons. */}
+        <div className="lg:hidden flex items-center gap-1.5 shrink-0">
+          <LinguaFlowLogo variant="mark" size="xs" />
+          <span className="font-black text-sm text-slate-900 tracking-tight">
+            FLUENXI<span className="text-blue-600">A</span>
+          </span>
+        </div>
+
         {/* Search (visual, matches design — filters nothing yet) */}
         <div className="hidden md:flex items-center flex-1 max-w-md">
           <div className="relative w-full">
@@ -97,7 +107,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* CEFR Level Selector */}
-          <div className="relative group">
+          <div className="hidden sm:block relative group">
             <label htmlFor="cefr-level-select" className="sr-only">Select English Level</label>
             <select
               id="cefr-level-select"
@@ -150,8 +160,10 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-white" />
           </button>
 
-          {/* Student Profile / Login Button */}
-          <div className="flex items-center pl-1 border-l border-slate-200">
+          {/* Student Profile / Login Button — hidden on mobile once signed in, since the
+              hamburger drawer already has Sign Out; kept visible for guests (not logged in) so
+              there's still a way to sign in from the mobile header. */}
+          <div className={`items-center pl-1 border-l border-slate-200 ${currentUser ? "hidden sm:flex" : "flex"}`}>
             {currentUser ? (
               <div className="relative">
                 <button
