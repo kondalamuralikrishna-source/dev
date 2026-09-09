@@ -5,7 +5,6 @@ import {
   ChevronDown,
   LogIn,
   LogOut,
-  ShieldCheck,
   Bell,
   Search,
   Menu,
@@ -171,20 +170,21 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
           )}
 
-          {/* Notification bell (visual placeholder — no live notifications yet) */}
+          {/* Notification bell (visual placeholder — no live notifications yet). Hidden on
+              phones to keep the mobile header to hamburger + logo + profile; reappears at sm+. */}
           <button
             type="button"
             aria-label="Notifications"
-            className="relative p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+            className="hidden sm:block relative p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
           >
             <Bell size={18} />
             <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-white" />
           </button>
 
-          {/* Student Profile / Login Button — hidden on mobile once signed in, since the
-              hamburger drawer already has Sign Out; kept visible for guests (not logged in) so
-              there's still a way to sign in from the mobile header. */}
-          <div className={`items-center pl-1 border-l border-slate-200 ${currentUser ? "hidden sm:flex" : "flex"}`}>
+          {/* Student Profile / Login Button — kept visible on mobile even when signed in: the
+              hamburger drawer has Sign Out, but Edit Profile only lives in this dropdown, so
+              hiding the trigger below sm left mobile users with no way to reach it. */}
+          <div className="flex items-center sm:pl-1 sm:border-l border-slate-200">
             {currentUser ? (
               <div className="relative">
                 <button
@@ -234,34 +234,6 @@ export const Header: React.FC<HeaderProps> = ({
                         <span>Edit Profile</span>
                       </button>
                     )}
-
-                    {onOpenLegalModal && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onOpenLegalModal("terms");
-                          setUserDropdownOpen(false);
-                        }}
-                        className="w-full px-4 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
-                      >
-                        <ShieldCheck size={15} className="text-slate-500" />
-                        <span>{t("header.terms_privacy", "Terms & Privacy Policy")}</span>
-                      </button>
-                    )}
-
-                    <div className="border-t border-slate-100 my-1" />
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        onOpenAuthModal();
-                        setUserDropdownOpen(false);
-                      }}
-                      className="w-full px-4 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center gap-2 cursor-pointer"
-                    >
-                      <LogIn size={15} />
-                      <span>{t("header.switch_google_account", "Switch Google Account")}</span>
-                    </button>
 
                     <div className="border-t border-slate-100 my-1" />
 
