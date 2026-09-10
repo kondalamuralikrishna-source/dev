@@ -32,7 +32,6 @@ import { NavTab } from "./Header";
 import { LevelProgressionBanner } from "./LevelProgressionBanner";
 import { DailyStudyGoalCard } from "./DailyStudyGoalCard";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
-import { LanguageSelector } from "./LanguageSelector";
 import { AutoText, useAutoText } from "./AutoText";
 import { VoiceUsageBar } from "./VoiceUsageBar";
 import { useTranslation } from "../context/TranslationContext";
@@ -135,17 +134,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
       {/* Free-tier daily AI voice usage timer (Board Strategy P1: prominent on the home screen) */}
       {onOpenPricing && <VoiceUsageBar onUpgradeClick={onOpenPricing} />}
 
-      {/* High-Visibility Mother Tongue Translation Banner */}
-      <LanguageSelector variant="banner" />
-
       {/* Hero Welcome & Daily Motivation */}
       <div className="bg-gradient-to-br from-blue-700 via-blue-600 to-blue-700 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden">
         {/* Subtle decorative circles */}
         <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-blue-400/10 rounded-full blur-2xl pointer-events-none" />
         <div className="absolute bottom-0 right-1/3 -mb-16 w-64 h-64 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
 
-        <div className="relative z-10 grid grid-cols-1 lg:grid-cols-3 gap-6 items-center">
-          <div className="lg:col-span-2 space-y-4">
+        <div className="relative z-10">
+          <div className="space-y-4">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-blue-200 text-xs font-semibold tracking-wide border border-white/15">
               <Sparkles size={14} className="text-amber-400" />
               <span>{t("dashboard.active_level_badge", "Active CEFR Level")} {progress.selectedLevel} {t("dashboard.lms_portal", "LMS Portal")}</span>
@@ -240,58 +236,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
           </div>
 
-          {/* Daily Progress Gauge Card */}
-          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-5 border border-white/15 space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs uppercase tracking-wider font-bold text-blue-200">
-                {t("dashboard.daily_goal_prefix", "Daily Goal")} • {goalType === "minutes" ? t("dashboard.minutes_unit", "Minutes") : t("progress.lessons_unit", "Lessons")}
-              </span>
-              <span
-                className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                  goalPercent >= 100
-                    ? "bg-emerald-400 text-slate-950"
-                    : "bg-amber-400 text-slate-950"
-                }`}
-              >
-                {goalPercent}% {goalPercent >= 100 ? t("dashboard.goal_met_bang", "Goal Met!") : t("dashboard.done", "Done")}
-              </span>
-            </div>
-
-            <div className="flex items-baseline gap-2">
-              <span className="text-3xl font-black text-white">
-                {currentVal}
-              </span>
-              <span className="text-blue-200 text-sm">
-                / {targetVal} {goalType === "minutes" ? t("dashboard.active_mins", "active mins") : t("dashboard.lessons_lower", "lessons")}
-              </span>
-            </div>
-
-            <div className="w-full h-2.5 bg-white/20 rounded-full overflow-hidden">
-              <div
-                className={`h-full transition-all duration-700 ${
-                  goalPercent >= 100
-                    ? "bg-gradient-to-r from-emerald-400 to-teal-300"
-                    : "bg-gradient-to-r from-amber-400 to-amber-300"
-                }`}
-                style={{ width: `${goalPercent}%` }}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 pt-1 text-center">
-              <div className="bg-white/5 rounded-xl p-2 border border-white/10">
-                <span className="text-xs text-blue-200 block">{t("dashboard.streak", "Streak")}</span>
-                <span className="text-lg font-bold text-amber-300 flex items-center justify-center gap-1">
-                  <Flame size={16} className="fill-amber-400" /> {progress.streakDays} / {progress.dailyGoalTargetStreak || 14}d
-                </span>
-              </div>
-              <div className="bg-white/5 rounded-xl p-2 border border-white/10">
-                <span className="text-xs text-blue-200 block">{t("dashboard.earned_xp", "Earned XP")}</span>
-                <span className="text-lg font-bold text-blue-100 flex items-center justify-center gap-1">
-                  <Zap size={16} className="fill-blue-400 text-blue-400" /> {progress.xp}
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 

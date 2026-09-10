@@ -110,11 +110,10 @@ export default function App() {
   const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState<boolean>(false);
   const [advancementExamTargetLevel, setAdvancementExamTargetLevel] = useState<CEFRLevel | null>(null);
 
-  const isOwnerOrAdmin =
-    currentUser?.role === "owner" ||
-    currentUser?.role === "admin" ||
-    currentUser?.email === "reganakasieswaramma@fluenxaapp.com" ||
-    currentUser?.email === "reganakasieswaramma@fluenxiaapp.com";
+  // currentUser.role is the sole authority here -- it's never re-derived from an email address,
+  // client-side or server-side, so no hardcoded-email fallback is needed (or safe: it would just
+  // ship the owner's real email into the client bundle for no functional benefit).
+  const isOwnerOrAdmin = currentUser?.role === "owner" || currentUser?.role === "admin";
 
   // Owner-managed per-admin section restriction -- owner always has access; an admin with no
   // allowedSections set (the default) also has full access; only a non-empty restriction narrows it.
@@ -368,13 +367,8 @@ export default function App() {
     if (user.progress) {
       setProgress(user.progress);
     }
-    // Route user appropriately based on their assigned role
-    if (
-      user.role === "owner" ||
-      user.role === "admin" ||
-      user.email === "reganakasieswaramma@fluenxaapp.com" ||
-      user.email === "reganakasieswaramma@fluenxiaapp.com"
-    ) {
+    // Route user appropriately based on their assigned role -- role alone, no email fallback.
+    if (user.role === "owner" || user.role === "admin") {
       setPortal("admin");
       setAdminTab("governance");
     } else {
@@ -878,6 +872,7 @@ export default function App() {
                 progress={progress}
                 onGrantXp={handleGrantXp}
                 onRecordStressResult={handleRecordStressResult}
+                onOpenPricing={() => setIsPricingModalOpen(true)}
               />
             )}
 

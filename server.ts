@@ -20,6 +20,7 @@ import {
   paymentOrderStore,
   planStore,
   siteSettingsStore,
+  guestVoiceUsageStore,
   UserModel,
 } from "./db";
 import { signAuthToken, requireAuth, requireRole, isDevAuthAllowed, extractToken, verifyAuthToken } from "./auth";
@@ -152,6 +153,13 @@ dotenv.config();
 
 const app = express();
 const PORT = 3000;
+
+// This app is deployed behind a reverse proxy (Render). Without this, req.ip and
+// express-rate-limit's default IP-based key both resolve to the proxy's address for every
+// request, not the real client -- silently defeating both the existing OTP rate limiters and the
+// guest voice-quota metering below (everyone shares one bucket, or one bucket blocks everyone).
+// "1" trusts exactly one hop of X-Forwarded-For, matching a single reverse-proxy deployment.
+app.set("trust proxy", 1);
 
 // When the frontend is deployed separately (e.g. Vercel) from this backend (e.g. Render), the browser
 // calls this API cross-origin. FRONTEND_ORIGIN allowlists that origin; unset in local/single-deploy setups.
@@ -2097,7 +2105,28 @@ Observed Turn-Taking Latency: ${turnTakingLatencyMs}ms.`;
 });
 
 // B. FluidConvo AI Comprehensive Session Evaluator
+// Post-Call Feedback Drawer depth, per the board doc's tier matrix: Free gets a basic score only,
+// Plus/Sachet/Pro get the full phonetic & grammar breakdown. Strips the premium fields server-side
+// rather than just hiding them in the UI, so a free-tier caller can't just read them out of the
+// network response.
+function toBasicFeedback<T extends Record<string, any>>(payload: T, premiumFields: string[]): T {
+  const basic: any = { ...payload };
+  for (const field of premiumFields) delete basic[field];
+  basic.isBasicFeedback = true;
+  return basic;
+}
+const FLUIDCONVO_PREMIUM_FIELDS = [
+  "accentPenaltyFreeScore",
+  "avgTurnTakingLatencyMs",
+  "interruptionHandlingRate",
+  "frictionResistanceScore",
+  "keyPhoneticBreakdowns",
+  "pedagogicalAdvice",
+  "dialectPreservationPraise",
+];
+
 app.post("/api/gemini/fluidconvo-evaluate", async (req, res) => {
+  const tier = await resolveOptionalTier(req);
   try {
     const { scenario, dialectProfile, frictionLevel, turns = [], durationMinutes = 3 } = req.body;
     const ai = getAI();
@@ -2143,7 +2172,7 @@ Generate a comprehensive diagnostic report:
     });
 
     const parsed = JSON.parse(response.text || "{}");
-    res.json({
+    const fullPayload = {
       sessionId: `fc_${Date.now()}`,
       scenarioId: scenario?.id || "sc_1",
       scenarioTitle: scenario?.title || "Simulation",
@@ -2152,7 +2181,8 @@ Generate a comprehensive diagnostic report:
       totalTurns: turns.length,
       turns,
       timestamp: Date.now(),
-    });
+    };
+    res.json(tier === "free" ? toBasicFeedback(fullPayload, FLUIDCONVO_PREMIUM_FIELDS) : fullPayload);
   } catch (error: any) {
     console.error("Error in /api/gemini/fluidconvo-evaluate:", error);
     const scenario = req.body.scenario || { id: "sc_1", title: "FluidConvo Simulation" };
@@ -2161,7 +2191,7 @@ Generate a comprehensive diagnostic report:
     const avgLatency =
       Math.round(turns.reduce((a: number, t: any) => a + (t.turnTakingLatencyMs || 320), 0) / Math.max(1, turns.length)) || 340;
 
-    res.status(200).json({
+    const fallbackPayload = {
       sessionId: `fc_${Date.now()}`,
       scenarioId: scenario.id,
       scenarioTitle: scenario.title,
@@ -2192,7 +2222,8 @@ Generate a comprehensive diagnostic report:
       ],
       dialectPreservationPraise: `All authentic phonetic traits of ${dialectProfile.name} were preserved with zero false penalization!`,
       timestamp: Date.now(),
-    });
+    };
+    res.status(200).json(tier === "free" ? toBasicFeedback(fallbackPayload, FLUIDCONVO_PREMIUM_FIELDS) : fallbackPayload);
   }
 });
 
@@ -3643,7 +3674,24 @@ Return strict JSON with an array of questions.`;
 });
 
 // 6. Speaking Stress Test & Crisis Speech Evaluation
+const STRESS_SPEAKING_PREMIUM_FIELDS = [
+  "fillerWords",
+  "grammarScore",
+  "grammarMistakes",
+  "pronunciationScore",
+  "pronunciationIssues",
+  "intonationFeedback",
+  "crisisResolutionScore",
+  "tacticalStrengths",
+  "tacticalWeaknesses",
+  "targetStructuresUsed",
+  "calmModelResponse",
+  "calmModelExplanation",
+  "survivalHacks",
+];
+
 app.post("/api/gemini/stress-speaking-evaluate", async (req, res) => {
+  const tier = await resolveOptionalTier(req);
   try {
     const {
       scenarioTitle,
@@ -3803,7 +3851,7 @@ Return strict JSON conforming to the schema.`;
     });
 
     const parsed = JSON.parse(response.text || "{}");
-    res.json(parsed);
+    res.json(tier === "free" ? toBasicFeedback(parsed, STRESS_SPEAKING_PREMIUM_FIELDS) : parsed);
   } catch (error: any) {
     console.error("Error in /api/gemini/stress-speaking-evaluate:", error);
     const spoken = req.body.spokenTranscript || "I understand the situation and I am fixing it right now.";
@@ -3811,7 +3859,7 @@ Return strict JSON conforming to the schema.`;
     const elapsed = req.body.elapsedSeconds || 25;
     const calculatedWpm = Math.round((words.length / (elapsed / 60)) || 120);
 
-    res.status(200).json({
+    const fallbackPayload = {
       overallScore: 84,
       stressGrade: "Composed Diplomat (B+)",
       composureBadge: "Clear Under Pressure",
@@ -3858,13 +3906,22 @@ Return strict JSON conforming to the schema.`;
         "Lead with reassurance ('I understand completely...') to buy mental processing time.",
         "Speak 10% slower than your heartbeat instincts tell you to.",
       ],
-    });
+    };
+    res.status(200).json(tier === "free" ? toBasicFeedback(fallbackPayload, STRESS_SPEAKING_PREMIUM_FIELDS) : fallbackPayload);
   }
 });
 
 // 7. Dynamic AI High-Stress Scenario Generator
-app.post("/api/gemini/generate-stress-scenario", async (req, res) => {
+// Custom Scenario Builder is a Pro-only feature per the board doc's tier matrix -- this previously
+// had no auth at all, so any anonymous caller could generate unlimited custom scenarios for free,
+// which both bypassed the frontend's scenario-count gate and cost real Gemini API spend per call.
+app.post("/api/gemini/generate-stress-scenario", requireAuth, async (req, res) => {
   try {
+    const user = await userStore.getById(req.authUser!.id);
+    if (!user || getEffectiveTier(user) !== "pro") {
+      return res.status(403).json({ error: "Custom Scenario Builder is a Pro-tier feature. Upgrade to Pro to generate custom crisis scenarios." });
+    }
+
     const { topic = "Emergency Flight Cancellation", level = "B2" } = req.body;
     const ai = getAI();
 
@@ -4190,12 +4247,11 @@ app.post("/api/auth/verify-otp", otpVerifyLimiter, async (req, res) => {
       }
     }
 
-    const isOwnerEmail = cleanTarget === "reganakasieswaramma@fluenxiaapp.com";
-    const isAdminEmail = cleanTarget === "admin@linguaflow.com";
-
     if (!matchedUser) {
       const newUserId = `usr_${Date.now()}`;
-      const defaultRole = isOwnerEmail ? "owner" : isAdminEmail ? "admin" : "student";
+      // Every new account starts as "student" -- role is never derived from the email address.
+      // The only legitimate paths to owner/admin are bootstrapOwnerAccount() (OWNER_EMAIL env var,
+      // runs once against an empty DB) and the owner promoting someone via the admin panel.
       const displayName = name || (isEmail ? cleanTarget.split("@")[0] : `Learner ${cleanTarget.slice(-4)}`);
 
       matchedUser = {
@@ -4204,7 +4260,7 @@ app.post("/api/auth/verify-otp", otpVerifyLimiter, async (req, res) => {
         email: isEmail ? cleanTarget : undefined,
         phone: !isEmail ? cleanTarget : undefined,
         countryCode: countryCode || "+1",
-        role: defaultRole,
+        role: "student",
         avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${displayName}`,
         createdAt: new Date().toISOString(),
         lastLoginAt: new Date().toISOString(),
@@ -4244,9 +4300,10 @@ app.post("/api/auth/verify-otp", otpVerifyLimiter, async (req, res) => {
         timestamp: Date.now(),
       });
     } else {
+      // Role is intentionally left untouched here -- it's whatever is already stored for this
+      // account (set at bootstrap or by an owner's explicit promotion), never re-derived from the
+      // email on each login. See the comment on the !matchedUser branch above for why.
       matchedUser.lastLoginAt = new Date().toISOString();
-      if (isOwnerEmail) matchedUser.role = "owner";
-      if (isAdminEmail) matchedUser.role = "admin";
       await userStore.upsert(matchedUser);
 
       // Log login to activity feed
@@ -4546,12 +4603,11 @@ app.get([
       }
     }
 
-    const isOwnerEmail = googleEmail === "reganakasieswaramma@fluenxiaapp.com";
-    const isAdminEmail = googleEmail === "admin@linguaflow.com";
-
     if (!matchedUser) {
       const newUserId = `usr_${Date.now()}`;
-      const defaultRole = isOwnerEmail ? "owner" : isAdminEmail ? "admin" : "student";
+      // Every new account starts as "student" -- role is never derived from the email address.
+      // The only legitimate paths to owner/admin are bootstrapOwnerAccount() (OWNER_EMAIL env var,
+      // runs once against an empty DB) and the owner promoting someone via the admin panel.
 
       matchedUser = {
         id: newUserId,
@@ -4560,7 +4616,7 @@ app.get([
         googleId,
         authProvider: "google",
         emailVerified: true,
-        role: defaultRole,
+        role: "student",
         avatarUrl: googleAvatar,
         createdAt: new Date().toISOString(),
         lastLoginAt: new Date().toISOString(),
@@ -4601,13 +4657,13 @@ app.get([
         timestamp: Date.now(),
       });
     } else {
+      // Role is intentionally left untouched here -- see the comment on the !matchedUser branch
+      // above for why it's never re-derived from the email on each login.
       matchedUser.lastLoginAt = new Date().toISOString();
       matchedUser.googleId = googleId;
       matchedUser.authProvider = "google";
       matchedUser.emailVerified = true;
       if (googleAvatar && !matchedUser.avatarUrl) matchedUser.avatarUrl = googleAvatar;
-      if (isOwnerEmail) matchedUser.role = "owner";
-      if (isAdminEmail && matchedUser.role !== "owner") matchedUser.role = "admin";
       await userStore.upsert(matchedUser);
 
       await activityLogStore.add({
@@ -5110,14 +5166,14 @@ app.post("/api/auth/google/signin", async (req, res) => {
       }
     }
 
-    const isOwnerEmail = cleanEmail === "reganakasieswaramma@fluenxiaapp.com";
-    const isAdminEmail = cleanEmail === "admin@linguaflow.com";
+    // Every new account starts as "student" -- role is never derived from the email address. The
+    // only legitimate paths to owner/admin are bootstrapOwnerAccount() (OWNER_EMAIL env var, runs
+    // once against an empty DB) and the owner promoting someone via the admin panel.
     const displayName = name || cleanEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
     const displayAvatar = avatarUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanEmail}`;
 
     if (!matchedUser) {
       const newUserId = `usr_${Date.now()}`;
-      const defaultRole = isOwnerEmail ? "owner" : isAdminEmail ? "admin" : "student";
 
       matchedUser = {
         id: newUserId,
@@ -5126,7 +5182,7 @@ app.post("/api/auth/google/signin", async (req, res) => {
         googleId: googleId || `google_${Date.now()}`,
         authProvider: "google",
         emailVerified: true,
-        role: defaultRole,
+        role: "student",
         avatarUrl: displayAvatar,
         createdAt: new Date().toISOString(),
         lastLoginAt: new Date().toISOString(),
@@ -5163,13 +5219,13 @@ app.post("/api/auth/google/signin", async (req, res) => {
         timestamp: Date.now(),
       });
     } else {
+      // Role is intentionally left untouched here -- see the comment above for why it's never
+      // re-derived from the email on each login.
       matchedUser.lastLoginAt = new Date().toISOString();
       matchedUser.authProvider = "google";
       matchedUser.emailVerified = true;
       if (googleId) matchedUser.googleId = googleId;
       if (avatarUrl && !matchedUser.avatarUrl) matchedUser.avatarUrl = avatarUrl;
-      if (isOwnerEmail) matchedUser.role = "owner";
-      if (isAdminEmail && matchedUser.role !== "owner") matchedUser.role = "admin";
       await userStore.upsert(matchedUser);
 
       await activityLogStore.add({
@@ -5208,16 +5264,20 @@ app.post("/api/auth/admin/signin", async (req, res) => {
       });
     }
     const { email, passcode, name } = req.body;
-    const cleanEmail = String(email || "reganakasieswaramma@fluenxiaapp.com").trim().toLowerCase();
+    if (!email) {
+      return res.status(400).json({ error: "Email is required." });
+    }
+    const cleanEmail = String(email).trim().toLowerCase();
     const cleanPasscode = String(passcode || "").trim();
 
-    // Valid admin credentials: owner email OR valid security passcode (admin2026 / master key)
-    const isOwnerEmail = cleanEmail === "reganakasieswaramma@fluenxiaapp.com";
-    const isValidPasscode = !cleanPasscode || cleanPasscode === "admin2026" || cleanPasscode === "linguaflow" || cleanPasscode === "123456" || cleanPasscode === "admin";
-
-    if (!isOwnerEmail && !isValidPasscode && !cleanEmail.includes("admin")) {
+    // Dev-only shortcut, gated by isDevAuthAllowed() above -- requires a real passcode (an empty
+    // one is no longer accepted) and an account that already exists with an admin/owner role.
+    // This never creates an account or grants a role; it only lets a developer skip typing a
+    // password for an account that's already privileged, which is the entire point of this route.
+    const isValidPasscode = ["admin2026", "linguaflow", "123456", "admin"].includes(cleanPasscode);
+    if (!isValidPasscode) {
       return res.status(401).json({
-        error: "Invalid Administrator Credentials. Please enter the correct Admin Passcode (admin2026) or use the Platform Owner Gmail account.",
+        error: "Invalid Administrator Credentials. Please enter the correct Admin Passcode (admin2026).",
       });
     }
 
@@ -5229,47 +5289,16 @@ app.post("/api/auth/admin/signin", async (req, res) => {
       }
     }
 
-    const assignedRole = isOwnerEmail ? "owner" : "admin";
-    const displayName = name || (isOwnerEmail ? "Muralikrishna Kondala (Owner)" : "Faculty Administrator");
-
     if (!adminUser) {
-      const newAdminId = isOwnerEmail ? "usr_owner_001" : `usr_admin_${Date.now()}`;
-      adminUser = {
-        id: newAdminId,
-        name: displayName,
-        email: cleanEmail,
-        authProvider: "google",
-        emailVerified: true,
-        role: assignedRole,
-        avatarUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanEmail}`,
-        createdAt: new Date().toISOString(),
-        lastLoginAt: new Date().toISOString(),
-        status: "active",
-        progress: {
-          xp: 1500,
-          streakDays: 14,
-          lastActiveDate: new Date().toISOString().split("T")[0],
-          dailyGoalMinutes: 30,
-          minutesToday: 20,
-          completedLessonIds: ["grammar_1", "grammar_2", "grammar_3"],
-          completedQuizIds: ["quiz_g1", "quiz_g2"],
-          quizScores: { quiz_g1: 100, quiz_g2: 95 },
-          savedVocabIds: [],
-          masteredVocabIds: ["v_greeting_1", "v_greeting_2"],
-          weakTopics: [],
-          achievements: ["first_lesson", "streak_7"],
-          selectedLevel: "C1",
-          speechSpeed: 1.0,
-          stressTestsCompleted: [],
-        },
-      };
-      await userStore.upsert(adminUser);
-    } else {
-      adminUser.role = assignedRole;
-      adminUser.lastLoginAt = new Date().toISOString();
-      if (name) adminUser.name = name;
-      await userStore.upsert(adminUser);
+      return res.status(404).json({ error: "No account found for that email." });
     }
+    if (adminUser.role !== "admin" && adminUser.role !== "owner") {
+      return res.status(403).json({ error: "That account does not have admin or owner access." });
+    }
+
+    adminUser.lastLoginAt = new Date().toISOString();
+    if (name) adminUser.name = name;
+    await userStore.upsert(adminUser);
 
     await activityLogStore.add({
       id: `act_${Date.now()}`,
@@ -5433,9 +5462,10 @@ app.post("/api/auth/register", async (req, res) => {
     }
 
     const displayName = cleanName || cleanEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-    const isOwnerEmail = cleanEmail === "reganakasieswaramma@fluenxiaapp.com";
-    const isAdminEmail = cleanEmail === "admin@linguaflow.com";
-    const assignedRole = isOwnerEmail ? "owner" : isAdminEmail ? "admin" : "student";
+    // Every new account starts as "student" -- role is never derived from the email address. The
+    // only legitimate paths to owner/admin are bootstrapOwnerAccount() (OWNER_EMAIL env var, runs
+    // once against an empty DB) and the owner promoting someone via the admin panel.
+    const assignedRole = "student";
     const newUserId = `usr_${Date.now()}`;
 
     // Base initial progress (honest zero-state) or migrate guest progress if the learner was
@@ -5969,6 +5999,19 @@ function getEffectiveTier(user: ServerUserAccount): "free" | "plus" | "pro" | "s
   return sub.tier;
 }
 
+// Resolves the caller's effective tier without requiring auth -- these feedback-drawer endpoints
+// have always been reachable by guests (same reasoning as enforceVoiceQuota), so this treats a
+// missing/invalid token the same as an existing free-tier account rather than hard-failing.
+async function resolveOptionalTier(req: any): Promise<"free" | "plus" | "pro" | "sachet"> {
+  const token = extractToken(req);
+  if (!token) return "free";
+  const payload = verifyAuthToken(token);
+  if (!payload) return "free";
+  const user = await userStore.getById(payload.id);
+  if (!user) return "free";
+  return getEffectiveTier(user);
+}
+
 // Free tier: 3 minutes/day of AI voice per the board doc. Plus/Pro/Sachet: unlimited.
 const FREE_TIER_DAILY_VOICE_SECONDS = 3 * 60;
 
@@ -6015,20 +6058,33 @@ async function checkAndConsumeVoiceQuota(
 // same as before this feature existed.
 async function enforceVoiceQuota(req: any, res: any, next: any) {
   const token = extractToken(req);
-  if (!token) return next(); // guest -- no account to meter against
+  const payload = token ? verifyAuthToken(token) : null;
 
-  const payload = verifyAuthToken(token);
-  if (!payload) return next(); // invalid/expired token -- treat as guest rather than hard-fail a voice endpoint
+  if (payload) {
+    const quota = await checkAndConsumeVoiceQuota(payload.id);
+    if (!quota.allowed) {
+      return res.status(429).json({
+        error: "You've used your 3 free minutes of AI voice today. Upgrade to Plus or grab a 7-Day Sachet Pass for unlimited voice.",
+        code: "VOICE_QUOTA_EXCEEDED",
+        tier: quota.tier,
+      });
+    }
+    req.authUser = payload;
+    return next();
+  }
 
-  const quota = await checkAndConsumeVoiceQuota(payload.id);
+  // Guest (no token, or an invalid/expired one) -- meter by IP against the same Free-tier daily
+  // cap logged-in accounts get, so "just don't sign in" isn't a way to get unlimited free voice.
+  // req.ip is only trustworthy because app.set("trust proxy", 1) is configured above.
+  const ip = req.ip || "unknown";
+  const quota = await guestVoiceUsageStore.checkAndConsume(ip, 20, FREE_TIER_DAILY_VOICE_SECONDS);
   if (!quota.allowed) {
     return res.status(429).json({
-      error: "You've used your 3 free minutes of AI voice today. Upgrade to Plus or grab a 7-Day Sachet Pass for unlimited voice.",
+      error: "You've used your 3 free minutes of AI voice today. Sign in and upgrade to Plus, or grab a 7-Day Sachet Pass, for unlimited voice.",
       code: "VOICE_QUOTA_EXCEEDED",
-      tier: quota.tier,
+      tier: "free",
     });
   }
-  req.authUser = payload;
   next();
 }
 
@@ -6728,14 +6784,51 @@ app.get("/api/admin/subscriptions", requireAuth, requireRole("admin", "owner"), 
 });
 
 // 7. Get All Registered Users List
+// Avatars can be a base64 data: URI up to ~2MB (see the upload cap in the register/profile
+// routes) -- returning that inline for every row in a list response doesn't scale. The list view
+// gets a lightweight placeholder for large embedded photos; the real image is only fetched by the
+// single-user detail endpoint below, when someone actually opens that user's detail modal.
+const LARGE_AVATAR_THRESHOLD = 2000; // characters; external URLs (dicebear, Google photos) are far shorter than this
+function stripLargeAvatar<T extends { avatarUrl?: string }>(user: T): T {
+  if (user.avatarUrl && user.avatarUrl.length > LARGE_AVATAR_THRESHOLD) {
+    return { ...user, avatarUrl: undefined };
+  }
+  return user;
+}
+
 app.get("/api/admin/users", requireAuth, requireRole("admin", "owner"), requireSection("governance"), async (req, res) => {
   try {
+    const page = Math.max(1, parseInt(String(req.query.page || "1"), 10));
+    const limit = Math.max(1, Math.min(500, parseInt(String(req.query.limit || "200"), 10)));
+
     const allUsers = (await userStore.getAll()).sort(
       (a, b) => new Date(b.lastLoginAt).getTime() - new Date(a.lastLoginAt).getTime()
     );
-    res.json({ users: allUsers });
+
+    const total = allUsers.length;
+    const totalPages = Math.ceil(total / limit) || 1;
+    const startIndex = (page - 1) * limit;
+    const pageUsers = allUsers.slice(startIndex, startIndex + limit).map(stripLargeAvatar);
+
+    res.json({
+      users: pageUsers,
+      pagination: { page, limit, total, totalPages, hasNextPage: page < totalPages, hasPrevPage: page > 1 },
+    });
   } catch (err: any) {
     res.status(500).json({ error: "Failed to retrieve user list" });
+  }
+});
+
+// Single-user detail fetch -- the source of the full-size avatar (and any other field a future
+// detail view needs) for the roster table's per-user "Details" drill-down, since the list
+// endpoint above intentionally omits large embedded photos.
+app.get("/api/admin/user/:id", requireAuth, requireRole("admin", "owner"), requireSection("governance"), async (req, res) => {
+  try {
+    const user = await userStore.getById(req.params.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json({ user });
+  } catch (err: any) {
+    res.status(500).json({ error: "Failed to retrieve user" });
   }
 });
 
@@ -6808,15 +6901,16 @@ app.post(["/api/admin/user/:id/grant-xp", "/api/admin/grant-xp"], requireAuth, r
     user.progress.xp = Math.max(0, (user.progress.xp || 0) + amount);
     await userStore.upsert(user);
 
+    const actor = await userStore.getById(req.authUser!.id);
     await activityLogStore.add({
       id: `act_${Date.now()}`,
       userId: user.id,
       userName: user.name,
       userRole: user.role,
       avatarUrl: user.avatarUrl,
-      type: "login",
-      title: "XP Bonus Granted by Owner",
-      detail: `Awarded +${amount} XP bonus to ${user.name}`,
+      type: "admin_action",
+      title: "XP Bonus Granted",
+      detail: `${actor?.email || req.authUser!.id} awarded +${amount} XP to ${user.name} (${user.email || user.id})`,
       timestamp: Date.now(),
     });
 
@@ -6837,8 +6931,22 @@ app.post(["/api/admin/user/:id/toggle-status", "/api/admin/users/:id/toggle-stat
     if (user.role === "owner") {
       return res.status(400).json({ error: "Cannot suspend application owner" });
     }
+    const previousStatus = user.status;
     user.status = user.status === "active" ? "suspended" : "active";
     await userStore.upsert(user);
+
+    const actor = await userStore.getById(req.authUser!.id);
+    await activityLogStore.add({
+      id: `act_${Date.now()}`,
+      userId: user.id,
+      userName: user.name,
+      userRole: user.role,
+      avatarUrl: user.avatarUrl,
+      type: "admin_action",
+      title: user.status === "suspended" ? "User Suspended" : "User Reactivated",
+      detail: `${actor?.email || req.authUser!.id} changed ${user.email || user.id} from ${previousStatus} to ${user.status}`,
+      timestamp: Date.now(),
+    });
 
     res.json({ success: true, user });
   } catch (err: any) {
@@ -6862,8 +6970,22 @@ app.post("/api/admin/user/:id/change-role", requireAuth, requireRole("owner"), a
     if (user.role === "owner" && role !== "owner") {
       return res.status(400).json({ error: "Cannot demote application owner" });
     }
+    const previousRole = user.role;
     user.role = role;
     await userStore.upsert(user);
+
+    const actor = await userStore.getById(req.authUser!.id);
+    await activityLogStore.add({
+      id: `act_${Date.now()}`,
+      userId: user.id,
+      userName: user.name,
+      userRole: user.role,
+      avatarUrl: user.avatarUrl,
+      type: "admin_action",
+      title: "User Role Changed",
+      detail: `${actor?.email || req.authUser!.id} changed ${user.email || user.id} from ${previousRole} to ${role}`,
+      timestamp: Date.now(),
+    });
 
     res.json({ success: true, user });
   } catch (err: any) {
@@ -6903,6 +7025,23 @@ app.put("/api/admin/user/:id/access", requireAuth, requireRole("owner"), async (
       await UserModel.findOneAndUpdate({ id }, { $set: { allowedSections } });
     }
     const updated = await userStore.getById(id);
+
+    const actor = await userStore.getById(req.authUser!.id);
+    await activityLogStore.add({
+      id: `act_${Date.now()}`,
+      userId: user.id,
+      userName: user.name,
+      userRole: user.role,
+      avatarUrl: user.avatarUrl,
+      type: "admin_action",
+      title: "Admin Access Restrictions Updated",
+      detail:
+        allowedSections === null || allowedSections === undefined
+          ? `${actor?.email || req.authUser!.id} granted ${user.email || user.id} full access`
+          : `${actor?.email || req.authUser!.id} restricted ${user.email || user.id} to: ${allowedSections.join(", ") || "(no sections)"}`,
+      timestamp: Date.now(),
+    });
+
     res.json({ success: true, user: updated });
   } catch (err: any) {
     console.error("Error in PUT /api/admin/user/:id/access:", err);
@@ -6977,7 +7116,20 @@ Return a structured JSON with:
 // ============================================================================
 // 2. GRANULAR PROSODY & PHONETIC FEEDBACK ENDPOINT
 // ============================================================================
+const PROSODY_PREMIUM_FIELDS = [
+  "syllableStressScore",
+  "intonationContourScore",
+  "syllablesPerSecond",
+  "breathControlScore",
+  "syllableStressBreakdown",
+  "pitchContour",
+  "breathSegments",
+  "connectedSpeechFeatures",
+  "actionableMechanicsTips",
+];
+
 app.post("/api/gemini/prosody-phonetic-eval", async (req, res) => {
+  const tier = await resolveOptionalTier(req);
   try {
     const { targetPhrase, spokenTranscript, audioMetrics } = req.body;
     const ai = getAI();
@@ -7058,11 +7210,11 @@ Return a strictly valid JSON object adhering to this schema:
     });
 
     const parsed = JSON.parse(response.text || "{}");
-    res.json(parsed);
+    res.json(tier === "free" ? toBasicFeedback(parsed, PROSODY_PREMIUM_FIELDS) : parsed);
   } catch (error: any) {
     console.error("Error in /api/gemini/prosody-phonetic-eval:", error);
     const target = req.body.targetPhrase || "I'd really appreciate your feedback on the project.";
-    res.status(200).json({
+    const fallbackPayload = {
       targetPhrase: target,
       spokenTranscript: req.body.spokenTranscript || target,
       overallProsodyScore: 89,
@@ -7126,7 +7278,8 @@ Return a strictly valid JSON object adhering to this schema:
         "Maintain soft airflow through the phrase tail to sustain vocal resonance.",
         "Anchor your speech rate between 130-145 WPM to convey effortless executive command.",
       ],
-    });
+    };
+    res.status(200).json(tier === "free" ? toBasicFeedback(fallbackPayload, PROSODY_PREMIUM_FIELDS) : fallbackPayload);
   }
 });
 
@@ -8159,7 +8312,19 @@ Return your evaluation strictly as JSON matching this schema:
   }
 });
 
+const L2_COACH_PREMIUM_FIELDS = [
+  "grammarAccuracyAvg",
+  "functionalFluencyAvg",
+  "pragmaticScoreAvg",
+  "lexicalRetrievalAvg",
+  "detailedFeedbackSummary",
+  "keyGrammarTakeaways",
+  "keyLexicalTakeaways",
+  "pragmaticGrowthPoints",
+];
+
 app.post("/api/gemini/l2-speaking-coach-summary", async (req, res) => {
+  const tier = await resolveOptionalTier(req);
   try {
     const { scenario, turns = [], durationSeconds = 120 } = req.body;
     const ai = getAI();
@@ -8268,10 +8433,10 @@ Strict JSON Output format:
     });
 
     const parsed = JSON.parse(response.text || "{}");
-    res.json(parsed);
+    res.json(tier === "free" ? toBasicFeedback(parsed, L2_COACH_PREMIUM_FIELDS) : parsed);
   } catch (error: any) {
     console.error("Error in /api/gemini/l2-speaking-coach-summary:", error);
-    res.json({
+    const fallbackPayload = {
       overallCommunicativeScore: 88,
       grammarAccuracyAvg: 86,
       functionalFluencyAvg: 85,
@@ -8294,7 +8459,8 @@ Strict JSON Output format:
         "Appropriate register alignment with interlocutor seniority",
       ],
       xpEarned: 100,
-    });
+    };
+    res.json(tier === "free" ? toBasicFeedback(fallbackPayload, L2_COACH_PREMIUM_FIELDS) : fallbackPayload);
   }
 });
 

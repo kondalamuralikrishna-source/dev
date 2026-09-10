@@ -621,7 +621,7 @@ export interface ActivityFeedItem {
   userName: string;
   userRole: UserRole;
   avatarUrl?: string;
-  type: "quiz" | "lesson" | "stress" | "chat" | "vocab" | "login";
+  type: "quiz" | "lesson" | "stress" | "chat" | "vocab" | "login" | "admin_action";
   title: string;
   detail: string;
   score?: number;

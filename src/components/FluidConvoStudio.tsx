@@ -53,6 +53,8 @@ import {
 import { ambientAudioEngine } from "../utils/ambientAudioEngine";
 import { speakText, stopSpeaking, createSpeechRecognizer } from "../utils/speechUtils";
 import { SagittalDiagramModal } from "./SagittalDiagramModal";
+import { useEffectiveTier, FREE_TIER_SCENARIO_LIMIT } from "../utils/useEffectiveTier";
+import { ScenarioLockOverlay } from "./ScenarioLockOverlay";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
 import { AutoText } from "./AutoText";
 import { useTranslation } from "../context/TranslationContext";
@@ -110,6 +112,8 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animFrameRef = useRef<number | null>(null);
   const transcriptEndRef = useRef<HTMLDivElement | null>(null);
+
+  const { tier } = useEffectiveTier();
 
   const activeScenario =
     FLUIDCONVO_SCENARIOS.find((s) => s.id === selectedScenarioId) || FLUIDCONVO_SCENARIOS[0];
@@ -744,22 +748,27 @@ export const FluidConvoStudio: React.FC<FluidConvoStudioProps> = ({
 
               {/* Scenario Cards Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {FLUIDCONVO_SCENARIOS.map((sc) => {
+                {FLUIDCONVO_SCENARIOS.map((sc, scIdx) => {
                   const isSelected = selectedScenarioId === sc.id;
+                  const isLocked = tier === "free" && scIdx >= FREE_TIER_SCENARIO_LIMIT;
                   return (
                     <div
                       key={sc.id}
                       onClick={() => {
+                        if (isLocked) return;
                         setSelectedScenarioId(sc.id);
                         setFrictionLevel(sc.defaultFriction);
                         setAmbientSound(sc.defaultAmbient);
                       }}
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                      className={`relative p-4 rounded-2xl border transition-all flex flex-col justify-between ${
+                        isLocked ? "cursor-default" : "cursor-pointer"
+                      } ${
                         isSelected
                           ? "bg-gradient-to-br from-indigo-50 to-teal-50/40 border-indigo-400 ring-2 ring-indigo-500/20 shadow-md"
                           : "bg-slate-50/50 border-slate-200 hover:bg-slate-100/60"
                       }`}
                     >
+                      {isLocked && <ScenarioLockOverlay onUpgradeClick={onOpenPricing} />}
                       <div className="space-y-2.5">
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-center gap-2">

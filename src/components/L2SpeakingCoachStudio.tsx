@@ -4,6 +4,7 @@ import {
   MicOff,
   Send,
   Sparkles,
+  Lock,
   RefreshCw,
   Volume2,
   VolumeX,
@@ -48,6 +49,8 @@ import {
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
 import { AutoText } from "./AutoText";
 import { useTranslation } from "../context/TranslationContext";
+import { useEffectiveTier, FREE_TIER_SCENARIO_LIMIT } from "../utils/useEffectiveTier";
+import { ScenarioLockOverlay } from "./ScenarioLockOverlay";
 
 interface L2SpeakingCoachStudioProps {
   progress: UserProgress;
@@ -63,6 +66,7 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
   onOpenPricing,
 }) => {
   const { t } = useTranslation();
+  const { tier } = useEffectiveTier();
   // Scenario & Setup state
   const [scenarios, setScenarios] = useState<L2CoachScenario[]>(
     L2_SPEAKING_COACH_SCENARIOS
@@ -568,11 +572,22 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
 
             <button
               type="button"
-              onClick={() => setIsCustomModalOpen(true)}
+              onClick={() => {
+                // Custom Scenario Builder is Pro-only per the board doc's tier matrix -- Free,
+                // Plus, and Sachet all get the fixed scenario library, not the builder. Custom
+                // scenarios also get an id (custom_<timestamp>) that isn't in the base array, so
+                // without this gate the free-scenario-limit check below would never apply to them.
+                if (tier !== "pro") {
+                  onOpenPricing?.();
+                  return;
+                }
+                setIsCustomModalOpen(true);
+              }}
               className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 active:scale-95 text-white text-xs font-black rounded-xl shadow-xs flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
             >
               <Plus size={15} />
               <span>{t("roleplay.create_custom", "Create Custom Roleplay")}</span>
+              {tier !== "pro" && <Lock size={12} className="ml-0.5" />}
             </button>
           </div>
 
@@ -580,16 +595,24 @@ export const L2SpeakingCoachStudio: React.FC<L2SpeakingCoachStudioProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {filteredScenarios.map((sc) => {
               const isSelected = sc.id === selectedScenarioId;
+              const overallIdx = L2_SPEAKING_COACH_SCENARIOS.findIndex((s) => s.id === sc.id);
+              const isLocked = tier === "free" && overallIdx >= FREE_TIER_SCENARIO_LIMIT;
               return (
                 <div
                   key={sc.id}
-                  onClick={() => setSelectedScenarioId(sc.id)}
-                  className={`p-5 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                  onClick={() => {
+                    if (isLocked) return;
+                    setSelectedScenarioId(sc.id);
+                  }}
+                  className={`relative p-5 rounded-2xl border transition-all flex flex-col justify-between ${
+                    isLocked ? "cursor-default" : "cursor-pointer"
+                  } ${
                     isSelected
                       ? "bg-teal-50/70 border-teal-500 shadow-md ring-2 ring-teal-500/20"
                       : "bg-white border-slate-200 hover:border-slate-300 hover:shadow-sm"
                   }`}
                 >
+                  {isLocked && <ScenarioLockOverlay onUpgradeClick={onOpenPricing} />}
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-3">
                       <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 border border-slate-200">

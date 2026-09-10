@@ -158,6 +158,12 @@ export const AdminActivityLog: React.FC<AdminActivityLogProps> = ({
           bg: "bg-emerald-50 text-emerald-700 border-emerald-200",
           label: "Vocabulary",
         };
+      case "admin_action":
+        return {
+          icon: <ShieldCheck size={13} className="text-purple-500" />,
+          bg: "bg-purple-50 text-purple-700 border-purple-200",
+          label: "Admin Action",
+        };
       case "login":
       default:
         return {
@@ -230,6 +236,7 @@ export const AdminActivityLog: React.FC<AdminActivityLogProps> = ({
               <option value="chat">AI Roleplay</option>
               <option value="vocab">Vocabulary Decks</option>
               <option value="login">Authentication / Login</option>
+              <option value="admin_action">Admin Actions</option>
             </select>
           </div>
 

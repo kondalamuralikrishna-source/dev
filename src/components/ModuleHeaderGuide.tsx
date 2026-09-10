@@ -52,8 +52,31 @@ export const ModuleHeaderGuide: React.FC<ModuleHeaderGuideProps> = ({
   defaultExpanded = true,
   className = "",
 }) => {
-  const [isOpen, setIsOpen] = useState<boolean>(defaultExpanded);
+  // Persisted per module (keyed by title) so a returning user's dismissal sticks instead of the
+  // full "how to use this page" tutorial re-expanding on every single visit.
+  const storageKey = `guide_collapsed_${moduleTitle.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`;
+  const [isOpen, setIsOpen] = useState<boolean>(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored !== null) return stored !== "true"; // stored value records "collapsed", not "open"
+    } catch {
+      // localStorage can throw (private browsing, blocked storage) -- fall back to the default.
+    }
+    return defaultExpanded;
+  });
   const { t, isRegionalActive, currentLanguage, translateWithAI } = useTranslation();
+
+  const handleToggleOpen = () => {
+    setIsOpen((prev) => {
+      const next = !prev;
+      try {
+        localStorage.setItem(storageKey, String(!next));
+      } catch {
+        // Non-fatal -- the toggle still works for this session even if it can't persist.
+      }
+      return next;
+    });
+  };
 
   // Every caller of this shared card passes its own module title, steps, and completion goal as
   // plain English literals. Rather than wiring translation into all ~19 call sites individually,
@@ -239,7 +262,7 @@ export const ModuleHeaderGuide: React.FC<ModuleHeaderGuideProps> = ({
         {/* Toggle Expand / Collapse Button */}
         <button
           type="button"
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={handleToggleOpen}
           className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg border border-white/10 transition-colors cursor-pointer ${themeStyles.toggleBtn}`}
           aria-expanded={isOpen}
           aria-label={isOpen ? "Hide instructions" : "Show instructions"}

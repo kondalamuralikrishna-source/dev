@@ -5,6 +5,7 @@ import {
   Mic,
   MicOff,
   Clock,
+  Lock,
   AlertTriangle,
   ShieldAlert,
   Sparkles,
@@ -42,18 +43,23 @@ import { createSpeechRecognizer } from "../utils/speechUtils";
 import { ModuleHeaderGuide } from "./ModuleHeaderGuide";
 import { AutoText, useAutoText } from "./AutoText";
 import { useTranslation } from "../context/TranslationContext";
+import { useEffectiveTier, FREE_TIER_SCENARIO_LIMIT } from "../utils/useEffectiveTier";
+import { ScenarioLockOverlay } from "./ScenarioLockOverlay";
 
 interface StressSpeakingStudioProps {
   progress: UserProgress;
   onGrantXp: (amount: number) => void;
   onRecordStressResult: (item: StressTestHistoryItem, xp: number) => void;
+  onOpenPricing?: () => void;
 }
 
 export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
   progress,
   onGrantXp,
   onRecordStressResult,
+  onOpenPricing,
 }) => {
+  const { tier } = useEffectiveTier();
   // Navigation & selection
   const [selectedScenario, setSelectedScenario] = useState<StressScenario>(
     STRESS_SCENARIOS[0]
@@ -339,16 +345,23 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
     try {
       setIsGeneratingCustom(true);
       setCustomGenError(null);
+      const authToken = localStorage.getItem("auth_token");
       const response = await fetch("/api/gemini/generate-stress-scenario", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
         body: JSON.stringify({
           topic: customTopic,
           level: customLevel,
         }),
       });
 
-      if (!response.ok) throw new Error("Failed to generate scenario");
+      if (!response.ok) {
+        const errJson = await response.json().catch(() => null);
+        throw new Error(errJson?.error || "Failed to generate scenario");
+      }
       const newScenario: StressScenario = await response.json();
       setSelectedScenario(newScenario);
       setShowCustomModal(false);
@@ -448,11 +461,20 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
             <button
               id="btn-custom-scenario-modal"
               type="button"
-              onClick={() => setShowCustomModal(true)}
+              onClick={() => {
+                // Custom Scenario Builder is Pro-only per the board doc's tier matrix -- Free,
+                // Plus, and Sachet all get the fixed scenario library, not the AI generator.
+                if (tier !== "pro") {
+                  onOpenPricing?.();
+                  return;
+                }
+                setShowCustomModal(true);
+              }}
               className="px-4 py-2.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md flex items-center justify-center gap-2 active:scale-95 transition-all"
             >
               <Sparkles size={15} />
               <span>{t("stress.create_custom_crisis", "Create AI Custom Crisis")}</span>
+              {tier !== "pro" && <Lock size={12} className="ml-0.5" />}
             </button>
 
             <div className="flex items-center justify-between gap-2 p-2 bg-white/10 rounded-xl border border-white/15 text-xs">
@@ -512,17 +534,25 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                 const isSelected = selectedScenario.id === sc.id;
                 const isCritical = sc.urgencyLevel === "Critical";
                 const isExtreme = sc.urgencyLevel === "Extreme";
+                const overallIdx = STRESS_SCENARIOS.findIndex((s) => s.id === sc.id);
+                const isLocked = tier === "free" && overallIdx >= FREE_TIER_SCENARIO_LIMIT;
 
                 return (
                   <div
                     key={sc.id}
-                    onClick={() => handleSelectScenario(sc)}
-                    className={`p-3.5 rounded-xl border transition-all cursor-pointer space-y-2 ${
+                    onClick={() => {
+                      if (isLocked) return;
+                      handleSelectScenario(sc);
+                    }}
+                    className={`relative p-3.5 rounded-xl border transition-all space-y-2 ${
+                      isLocked ? "cursor-default" : "cursor-pointer"
+                    } ${
                       isSelected
                         ? "bg-indigo-50/80 border-indigo-400 ring-2 ring-indigo-200 shadow-xs"
                         : "bg-white border-slate-200 hover:border-indigo-200 hover:bg-slate-50/70"
                     }`}
                   >
+                    {isLocked && <ScenarioLockOverlay onUpgradeClick={onOpenPricing} />}
                     <div className="flex items-center justify-between gap-2">
                       <span
                         className={`text-[10px] uppercase font-black px-2 py-0.5 rounded-full ${
@@ -1178,6 +1208,10 @@ export const StressSpeakingStudio: React.FC<StressSpeakingStudioProps> = ({
                         const nextIdx =
                           (STRESS_SCENARIOS.findIndex((s) => s.id === selectedScenario.id) + 1) %
                           STRESS_SCENARIOS.length;
+                        if (tier === "free" && nextIdx >= FREE_TIER_SCENARIO_LIMIT) {
+                          onOpenPricing?.();
+                          return;
+                        }
                         handleSelectScenario(STRESS_SCENARIOS[nextIdx]);
                       }}
                       className="px-6 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1.5 transition-colors"

@@ -49,10 +49,8 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   const [isPortalLinksOpen, setIsPortalLinksOpen] = useState(false);
   const [isTelemetryOpen, setIsTelemetryOpen] = useState(false);
 
-  const isOwner =
-    currentUser.role === "owner" ||
-    currentUser.email === "reganakasieswaramma@fluenxaapp.com" ||
-    currentUser.email === "reganakasieswaramma@fluenxiaapp.com";
+  // role alone is authoritative -- no email fallback.
+  const isOwner = currentUser.role === "owner";
 
   return (
     <header className="sticky top-0 z-40 bg-slate-900 text-white border-b border-slate-800 shadow-xl">

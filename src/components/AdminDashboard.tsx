@@ -370,6 +370,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
+  // The roster list response omits large embedded-photo avatars (see stripLargeAvatar in
+  // server.ts), so opening the detail modal re-fetches this one user's full record to get the
+  // real photo. Opens immediately with what's already known, then swaps in the fuller record.
+  const handleOpenUserDetail = async (user: UserAccount) => {
+    setSelectedUserDetail(user);
+    try {
+      const res = await fetch(`/api/admin/user/${user.id}`, { headers: authHeaders() });
+      if (!res.ok) return;
+      const data = await res.json();
+      if (data.user) setSelectedUserDetail(data.user);
+    } catch {
+      // Non-fatal -- the modal already has the list-view data to show.
+    }
+  };
+
   // Filter users list
   const filteredUsers = usersList.filter((u) => {
     const matchesSearch =
@@ -384,9 +399,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     return matchesSearch && matchesLevel && matchesRole;
   });
 
-  const isOwner =
-    currentUser?.role === "owner" ||
-    currentUser?.email === "reganakasieswaramma@fluenxiaapp.com";
+  // role alone is authoritative -- no email fallback (it would just ship the owner's real email
+  // into the client bundle with zero functional purpose).
+  const isOwner = currentUser?.role === "owner";
 
   if (isLoading && !analytics) {
     return (
@@ -804,7 +819,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                         <button
                           type="button"
-                          onClick={() => setSelectedUserDetail(user)}
+                          onClick={() => handleOpenUserDetail(user)}
                           className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg text-[11px] transition-colors cursor-pointer"
                         >
                           Details

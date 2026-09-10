@@ -347,6 +347,59 @@ export const siteSettingsStore = {
 };
 
 // ============================================================================
+// GUEST VOICE USAGE (short-lived, auto-expires via TTL index) -- meters the Free tier's 3-min/day
+// AI voice cap for callers with no account, keyed by IP + calendar date, so "just don't log in"
+// isn't a way to bypass the cap enforceVoiceQuota already applies to logged-in accounts.
+// ============================================================================
+
+interface GuestVoiceUsageDoc extends Document {
+  ip: string;
+  date: string; // YYYY-MM-DD
+  secondsUsed: number;
+  expiresAt: Date;
+}
+
+const guestVoiceUsageSchema = new Schema<GuestVoiceUsageDoc>({
+  ip: { type: String, required: true },
+  date: { type: String, required: true },
+  secondsUsed: { type: Number, default: 0 },
+  expiresAt: { type: Date, required: true },
+});
+guestVoiceUsageSchema.index({ ip: 1, date: 1 }, { unique: true });
+guestVoiceUsageSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+const GuestVoiceUsageModel = mongoose.model<GuestVoiceUsageDoc>("GuestVoiceUsage", guestVoiceUsageSchema);
+
+export const guestVoiceUsageStore = {
+  // Mirrors checkAndConsumeVoiceQuota's read-check-write shape (server.ts) for the same tolerance
+  // to a benign race between two near-simultaneous requests from the same guest -- the existing
+  // account-based version has the same minor race, so this isn't held to a stricter standard.
+  async checkAndConsume(
+    ip: string,
+    secondsRequested: number,
+    dailyLimitSeconds: number
+  ): Promise<{ allowed: boolean; secondsRemainingToday: number }> {
+    const today = new Date().toISOString().split("T")[0];
+    const existing = await GuestVoiceUsageModel.findOne({ ip, date: today });
+    const usedSoFar = existing?.secondsUsed || 0;
+
+    if (usedSoFar >= dailyLimitSeconds) {
+      return { allowed: false, secondsRemainingToday: 0 };
+    }
+
+    const newUsed = usedSoFar + secondsRequested;
+    const twoDaysFromNow = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+    await GuestVoiceUsageModel.findOneAndUpdate(
+      { ip, date: today },
+      { $set: { secondsUsed: newUsed, expiresAt: twoDaysFromNow } },
+      { upsert: true }
+    );
+
+    return { allowed: true, secondsRemainingToday: Math.max(0, dailyLimitSeconds - newUsed) };
+  },
+};
+
+// ============================================================================
 // OTP CACHE (short-lived, auto-expires via TTL index)
 // ============================================================================
 
@@ -496,7 +549,7 @@ export interface ActivityLogDoc extends Document {
   userName: string;
   userRole: "student" | "admin" | "owner";
   avatarUrl?: string;
-  type: "quiz" | "lesson" | "stress" | "chat" | "vocab" | "login";
+  type: "quiz" | "lesson" | "stress" | "chat" | "vocab" | "login" | "admin_action";
   title: string;
   detail: string;
   score?: number;
@@ -510,7 +563,7 @@ const activityLogSchema = new Schema<ActivityLogDoc>(
     userName: { type: String, required: true },
     userRole: { type: String, enum: ["student", "admin", "owner"], required: true },
     avatarUrl: String,
-    type: { type: String, enum: ["quiz", "lesson", "stress", "chat", "vocab", "login"], required: true },
+    type: { type: String, enum: ["quiz", "lesson", "stress", "chat", "vocab", "login", "admin_action"], required: true },
     title: { type: String, required: true },
     detail: { type: String, required: true },
     score: Number,

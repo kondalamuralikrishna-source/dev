@@ -13,10 +13,8 @@ export const StudentGateForAdmin: React.FC<StudentGateForAdminProps> = ({
   onNavigateToAdminPortal,
   onLogout,
 }) => {
-  const isOwner =
-    currentUser.role === "owner" ||
-    currentUser.email === "reganakasieswaramma@fluenxaapp.com" ||
-    currentUser.email === "reganakasieswaramma@fluenxiaapp.com";
+  // role alone is authoritative -- no email fallback.
+  const isOwner = currentUser.role === "owner";
 
   return (
     <div className="min-h-[70vh] flex items-center justify-center px-4 py-12">
