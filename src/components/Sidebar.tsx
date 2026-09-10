@@ -189,10 +189,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
         ))}
       </nav>
 
-      {/* Upgrade CTA -- opens the Cashfree pricing/checkout modal. The only always-visible entry
-          point to it on mobile, where Header's own copy of this button is hidden. */}
+      {/* Upgrade CTA -- opens the Cashfree pricing/checkout modal. lg:hidden because this sidebar
+          is a static desktop column at lg+ (where Header already shows its own Upgrade button --
+          having both would be a duplicate); below lg this is only ever a slide-in drawer, and
+          that's the one place with no other way to reach the pricing modal. */}
       {onOpenPricing && (
-        <div className="px-3 pt-3">
+        <div className="px-3 pt-3 lg:hidden">
           <button
             type="button"
             id="btn-open-pricing-sidebar"
