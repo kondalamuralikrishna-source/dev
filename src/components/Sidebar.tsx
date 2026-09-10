@@ -14,6 +14,7 @@ import {
   CheckCircle2,
   LogOut,
   X,
+  Zap,
 } from "lucide-react";
 import { LinguaFlowLogo } from "./LinguaFlowLogo";
 import { LanguageSelector } from "./LanguageSelector";
@@ -29,6 +30,10 @@ interface SidebarProps {
   // phones/tablets still have a way to switch tabs and reach the language selector.
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
+  // Header's own "Upgrade" button is hidden below the sm breakpoint (keeps the mobile header to
+  // hamburger + logo + profile), which left mobile users with literally no way to reach the
+  // pricing modal at all. This gives it a second, always-visible home in the nav itself.
+  onOpenPricing?: () => void;
 }
 
 interface NavItem {
@@ -50,6 +55,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onLogout,
   isMobileOpen = false,
   onCloseMobile,
+  onOpenPricing,
 }) => {
   const { t } = useTranslation();
 
@@ -182,6 +188,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         ))}
       </nav>
+
+      {/* Upgrade CTA -- opens the Cashfree pricing/checkout modal. The only always-visible entry
+          point to it on mobile, where Header's own copy of this button is hidden. */}
+      {onOpenPricing && (
+        <div className="px-3 pt-3">
+          <button
+            type="button"
+            id="btn-open-pricing-sidebar"
+            onClick={onOpenPricing}
+            className="w-full flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-500 hover:to-amber-600 text-slate-900 font-bold text-sm px-3 py-2.5 rounded-xl shadow-xs transition-all"
+          >
+            <Zap size={15} className="fill-slate-900" />
+            <span>Upgrade</span>
+          </button>
+        </div>
+      )}
 
       {/* Sign out */}
       <div className="p-3 border-t border-slate-800/80">

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { IndianRupee, Users, TrendingUp, CreditCard, RefreshCw, Pencil, Check, X } from "lucide-react";
+import { Skeleton } from "./Skeleton";
 
 interface Subscriber {
   id: string;
@@ -283,44 +284,55 @@ export const SubscriptionsRevenuePanel: React.FC = () => {
       )}
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <div className="bg-white rounded-2xl border border-slate-200 p-4">
-          <div className="flex items-center gap-2 text-slate-400 text-[10px] font-black uppercase tracking-wider">
-            <IndianRupee size={13} />
-            <span>Total Revenue</span>
-          </div>
-          <p className="text-xl font-black text-slate-900 mt-1">
-            {data ? formatInr(data.summary.totalRevenueInr) : "—"}
-          </p>
+      {isLoading && !data ? (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="bg-white rounded-2xl border border-slate-200 p-4 space-y-3">
+              <Skeleton className="h-3 w-20" />
+              <Skeleton className="h-6 w-16" />
+            </div>
+          ))}
         </div>
-        <div className="bg-white rounded-2xl border border-slate-200 p-4">
-          <div className="flex items-center gap-2 text-slate-400 text-[10px] font-black uppercase tracking-wider">
-            <TrendingUp size={13} />
-            <span>This Month</span>
+      ) : (
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="bg-white rounded-2xl border border-slate-200 p-4">
+            <div className="flex items-center gap-2 text-slate-400 text-[10px] font-black uppercase tracking-wider">
+              <IndianRupee size={13} />
+              <span>Total Revenue</span>
+            </div>
+            <p className="text-xl font-black text-slate-900 mt-1">
+              {data ? formatInr(data.summary.totalRevenueInr) : "—"}
+            </p>
           </div>
-          <p className="text-xl font-black text-slate-900 mt-1">
-            {data ? formatInr(data.summary.thisMonthRevenueInr) : "—"}
-          </p>
-        </div>
-        <div className="bg-white rounded-2xl border border-slate-200 p-4">
-          <div className="flex items-center gap-2 text-slate-400 text-[10px] font-black uppercase tracking-wider">
-            <Users size={13} />
-            <span>Active Subscribers</span>
+          <div className="bg-white rounded-2xl border border-slate-200 p-4">
+            <div className="flex items-center gap-2 text-slate-400 text-[10px] font-black uppercase tracking-wider">
+              <TrendingUp size={13} />
+              <span>This Month</span>
+            </div>
+            <p className="text-xl font-black text-slate-900 mt-1">
+              {data ? formatInr(data.summary.thisMonthRevenueInr) : "—"}
+            </p>
           </div>
-          <p className="text-xl font-black text-slate-900 mt-1">
-            {data ? data.summary.activeSubscriptions : "—"}
-          </p>
-        </div>
-        <div className="bg-white rounded-2xl border border-slate-200 p-4">
-          <div className="flex items-center gap-2 text-slate-400 text-[10px] font-black uppercase tracking-wider">
-            <CreditCard size={13} />
-            <span>Total Paid Orders</span>
+          <div className="bg-white rounded-2xl border border-slate-200 p-4">
+            <div className="flex items-center gap-2 text-slate-400 text-[10px] font-black uppercase tracking-wider">
+              <Users size={13} />
+              <span>Active Subscribers</span>
+            </div>
+            <p className="text-xl font-black text-slate-900 mt-1">
+              {data ? data.summary.activeSubscriptions : "—"}
+            </p>
           </div>
-          <p className="text-xl font-black text-slate-900 mt-1">
-            {data ? data.summary.totalPaidOrders : "—"}
-          </p>
+          <div className="bg-white rounded-2xl border border-slate-200 p-4">
+            <div className="flex items-center gap-2 text-slate-400 text-[10px] font-black uppercase tracking-wider">
+              <CreditCard size={13} />
+              <span>Total Paid Orders</span>
+            </div>
+            <p className="text-xl font-black text-slate-900 mt-1">
+              {data ? data.summary.totalPaidOrders : "—"}
+            </p>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Revenue by plan */}
       {data && data.plans.length > 0 && (
@@ -390,8 +402,17 @@ export const SubscriptionsRevenuePanel: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto">
-          {isLoading ? (
-            <p className="p-6 text-center text-xs text-slate-400">Loading…</p>
+          {isLoading && !data ? (
+            <div className="divide-y divide-slate-50">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="px-4 py-3 flex items-center gap-4">
+                  <Skeleton className="h-3 flex-1" />
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-3 w-12" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+              ))}
+            </div>
           ) : tab === "subscribers" ? (
             <table className="w-full text-left text-xs">
               <thead>

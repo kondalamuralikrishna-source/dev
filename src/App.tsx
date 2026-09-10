@@ -590,6 +590,7 @@ export default function App() {
           onLogout={handleLogout}
           isMobileOpen={isMobileSidebarOpen}
           onCloseMobile={() => setIsMobileSidebarOpen(false)}
+          onOpenPricing={() => setIsPricingModalOpen(true)}
         />
       )}
       {portal === "admin" && isOwnerOrAdmin && (

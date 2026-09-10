@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Mail, Type, Image as ImageIcon, FileText, ShieldCheck, Check, RefreshCw, Upload } from "lucide-react";
+import { Skeleton } from "./Skeleton";
 
 interface SiteSettings {
   contactEmail: string;
@@ -183,7 +184,25 @@ export const ContentManagementPanel: React.FC = () => {
   };
 
   if (isLoading) {
-    return <p className="p-6 text-center text-xs text-slate-400">Loading…</p>;
+    return (
+      <div className="space-y-5">
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-56" />
+          <Skeleton className="h-3 w-80" />
+        </div>
+        {[1, 1, 1, 3, 3].map((rows, i) => (
+          <div key={i} className="bg-white rounded-2xl border border-slate-200 p-5 space-y-3">
+            <div className="flex items-center gap-2.5">
+              <Skeleton className="h-8 w-8 rounded-xl shrink-0" />
+              <Skeleton className="h-4 w-40" />
+            </div>
+            {Array.from({ length: rows }).map((_, j) => (
+              <Skeleton key={j} className="h-9 w-full" />
+            ))}
+          </div>
+        ))}
+      </div>
+    );
   }
 
   return (
