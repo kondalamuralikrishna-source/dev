@@ -5,7 +5,6 @@ import {
   ChevronDown,
   LogIn,
   LogOut,
-  Bell,
   Search,
   Menu,
   UserCog,
@@ -182,17 +181,6 @@ export const Header: React.FC<HeaderProps> = ({
               <span>Upgrade</span>
             </button>
           )}
-
-          {/* Notification bell (visual placeholder — no live notifications yet). Hidden on
-              phones to keep the mobile header to hamburger + logo + profile; reappears at sm+. */}
-          <button
-            type="button"
-            aria-label="Notifications"
-            className="hidden sm:block relative p-2 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors"
-          >
-            <Bell size={18} />
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-white" />
-          </button>
 
           {/* Student Profile / Login Button — kept visible on mobile even when signed in: the
               hamburger drawer has Sign Out, but Edit Profile only lives in this dropdown, so

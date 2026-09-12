@@ -111,6 +111,11 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
   const [phoneInput, setPhoneInput] = useState("");
   const [emailInput, setEmailInput] = useState("");
 
+  // The tier the account is currently, actively subscribed to (accounts for expiry -- an expired
+  // plan doesn't count as "current"), so that plan's card can be shown as active rather than an
+  // upgrade you can buy again.
+  const [currentTier, setCurrentTier] = useState<string | null>(null);
+
   useEffect(() => {
     if (!isOpen) return;
     setErrorMsg(null);
@@ -120,6 +125,14 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
       .then((data) => setPlans(data.plans || []))
       .catch(() => setErrorMsg("Couldn't load pricing right now. Please try again."))
       .finally(() => setIsLoadingPlans(false));
+
+    const token = localStorage.getItem("auth_token");
+    if (token) {
+      fetch("/api/subscription/me", { headers: { Authorization: `Bearer ${token}` } })
+        .then((r) => r.json())
+        .then((data) => setCurrentTier(data.effectiveTier && data.effectiveTier !== "free" ? data.effectiveTier : null))
+        .catch(() => {});
+    }
   }, [isOpen]);
 
   if (!isOpen) return null;
@@ -208,9 +221,11 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                 {missingFields.includes("phone") && (
                   <input
                     type="tel"
+                    inputMode="numeric"
+                    maxLength={10}
                     value={phoneInput}
-                    onChange={(e) => setPhoneInput(e.target.value)}
-                    placeholder="Phone number"
+                    onChange={(e) => setPhoneInput(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                    placeholder="10-digit phone number"
                     className="h-10 px-3 bg-white border border-amber-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 )}
@@ -230,7 +245,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
                   onClick={handleCompleteProfileAndSubscribe}
                   disabled={
                     loadingPlanId !== null ||
-                    (missingFields.includes("phone") && !phoneInput.trim()) ||
+                    (missingFields.includes("phone") && phoneInput.trim().length !== 10) ||
                     (missingFields.includes("email") && !emailInput.trim())
                   }
                   className="flex items-center gap-1.5 h-9 px-4 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-colors disabled:opacity-50"
@@ -281,63 +296,78 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
               const style = TIER_STYLE[plan.tier] || TIER_STYLE.sachet;
               const Icon = style.icon;
               const perDay = plan.tier === "sachet" ? plan.amountInr / 7 : plan.amountInr / 30;
+              const isCurrentPlan = currentTier === plan.tier;
               return (
                 <div
                   key={plan.id}
-                  className={`relative rounded-2xl border p-4 flex flex-col transition-transform hover:-translate-y-1 ${style.cardBg} ${style.cardBorder} ${style.ring} ${
-                    style.badge ? "shadow-xl" : "shadow-xs"
-                  }`}
+                  className={`relative rounded-2xl border p-4 flex flex-col transition-transform hover:-translate-y-1 ${
+                    isCurrentPlan
+                      ? "bg-gradient-to-b from-slate-900 to-slate-800 border-slate-900 ring-2 ring-slate-700"
+                      : `${style.cardBg} ${style.cardBorder} ${style.ring}`
+                  } ${style.badge || isCurrentPlan ? "shadow-xl" : "shadow-xs"}`}
                 >
-                  {style.badge && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-900 text-white shadow-md whitespace-nowrap">
-                      {style.badge}
+                  {isCurrentPlan ? (
+                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500 text-white shadow-md whitespace-nowrap flex items-center gap-1">
+                      <Check size={11} /> Your Current Plan
                     </span>
+                  ) : (
+                    style.badge && (
+                      <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-900 text-white shadow-md whitespace-nowrap">
+                        {style.badge}
+                      </span>
+                    )
                   )}
 
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 ${style.iconWrap}`}>
-                    <Icon size={16} />
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center mb-2 ${isCurrentPlan ? "bg-white/10" : style.iconWrap}`}>
+                    <Icon size={16} className={isCurrentPlan ? "text-white" : ""} />
                   </div>
 
-                  <h3 className="font-black text-slate-900 text-sm">{plan.name}</h3>
+                  <h3 className={`font-black text-sm ${isCurrentPlan ? "text-white" : "text-slate-900"}`}>{plan.name}</h3>
 
                   <div className="mt-1.5 mb-0.5 flex items-baseline gap-1">
-                    <span className={`text-2xl font-black ${style.priceColor}`}>₹{plan.amountInr}</span>
-                    <span className="text-xs text-slate-500 font-semibold">
+                    <span className={`text-2xl font-black ${isCurrentPlan ? "text-white" : style.priceColor}`}>₹{plan.amountInr}</span>
+                    <span className={`text-xs font-semibold ${isCurrentPlan ? "text-slate-300" : "text-slate-500"}`}>
                       / {plan.tier === "sachet" ? "7 days" : "month"}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-400 font-medium mb-2.5">
+                  <p className={`text-[11px] font-medium mb-2.5 ${isCurrentPlan ? "text-slate-400" : "text-slate-400"}`}>
                     ≈ ₹{perDay.toFixed(0)}/day
                   </p>
 
-                  <p className="text-[11px] text-slate-500 mb-3 leading-snug">{plan.description}</p>
+                  <p className={`text-[11px] mb-3 leading-snug ${isCurrentPlan ? "text-slate-300" : "text-slate-500"}`}>{plan.description}</p>
 
                   <ul className="space-y-1.5 mb-4 flex-1">
                     {(TIER_FEATURES[plan.tier] || []).map((f) => (
-                      <li key={f} className="flex items-start gap-2 text-xs text-slate-700">
-                        <Check size={14} className="text-emerald-600 shrink-0 mt-0.5" />
+                      <li key={f} className={`flex items-start gap-2 text-xs ${isCurrentPlan ? "text-slate-200" : "text-slate-700"}`}>
+                        <Check size={14} className={`shrink-0 mt-0.5 ${isCurrentPlan ? "text-emerald-400" : "text-emerald-600"}`} />
                         <span>{f}</span>
                       </li>
                     ))}
                   </ul>
 
-                  <button
-                    type="button"
-                    id={`btn-subscribe-${plan.id}`}
-                    onClick={() => handleSubscribe(plan.id)}
-                    disabled={loadingPlanId !== null}
-                    className={`w-full h-10 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 ${style.button}`}
-                  >
-                    {loadingPlanId === plan.id ? (
-                      <>
-                        <Loader2 size={14} className="animate-spin" /> Redirecting...
-                      </>
-                    ) : (
-                      <>
-                        <Zap size={14} /> Get {plan.tier === "sachet" ? "Sachet Pass" : plan.name}
-                      </>
-                    )}
-                  </button>
+                  {isCurrentPlan ? (
+                    <div className="w-full h-10 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 bg-white/10 text-white border border-white/20">
+                      <Check size={14} className="text-emerald-400" /> Active Plan
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      id={`btn-subscribe-${plan.id}`}
+                      onClick={() => handleSubscribe(plan.id)}
+                      disabled={loadingPlanId !== null}
+                      className={`w-full h-10 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 ${style.button}`}
+                    >
+                      {loadingPlanId === plan.id ? (
+                        <>
+                          <Loader2 size={14} className="animate-spin" /> Redirecting...
+                        </>
+                      ) : (
+                        <>
+                          <Zap size={14} /> Get {plan.tier === "sachet" ? "Sachet Pass" : plan.name}
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               );
             })}

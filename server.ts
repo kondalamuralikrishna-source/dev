@@ -5967,7 +5967,13 @@ app.post("/api/auth/update-profile", requireAuth, async (req, res) => {
       }
       patch.avatarUrl = cleanAvatar || undefined;
     }
-    if (phone !== undefined) patch.phone = String(phone).trim() || undefined;
+    if (phone !== undefined) {
+      const cleanPhone = String(phone).replace(/\D/g, "");
+      if (cleanPhone && cleanPhone.length !== 10) {
+        return res.status(400).json({ error: "Phone number must be exactly 10 digits." });
+      }
+      patch.phone = cleanPhone || undefined;
+    }
     if (countryCode !== undefined) patch.countryCode = String(countryCode).trim() || undefined;
     if (email !== undefined) {
       const cleanEmail = String(email).trim().toLowerCase();
@@ -6358,7 +6364,11 @@ app.post("/api/payments/cashfree/create-order", requireAuth, async (req, res) =>
     // your profile" step), save it to the account now rather than requiring a second round trip.
     const patch: Record<string, any> = {};
     if (!user.phone && phone) {
-      patch.phone = String(phone).trim();
+      const cleanPhone = String(phone).replace(/\D/g, "");
+      if (cleanPhone.length !== 10) {
+        return res.status(400).json({ error: "Phone number must be exactly 10 digits." });
+      }
+      patch.phone = cleanPhone;
     }
     if (!user.email && email) {
       const cleanEmail = String(email).trim().toLowerCase();
