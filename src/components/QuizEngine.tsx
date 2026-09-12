@@ -505,7 +505,10 @@ export const QuizEngine: React.FC<QuizEngineProps> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {PRESET_QUIZ_SETS.map((quiz) => {
             const isCompleted = progress.completedQuizIds.includes(quiz.id);
-            const prevScore = progress.quizScores[quiz.id];
+            // quizScores is missing on every real account today (added after those records were
+            // created) -- accessing it unguarded crashed this entire screen to a blank page for
+            // every real user, since this runs inside a .map() over every quiz card.
+            const prevScore = progress.quizScores?.[quiz.id];
 
             return (
               <div

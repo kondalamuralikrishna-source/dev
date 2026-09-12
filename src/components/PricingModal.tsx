@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { X, Zap, Check, Sparkles, Loader2, Flame, Crown } from "lucide-react";
+import { Skeleton } from "./Skeleton";
 
 interface Plan {
   id: string;
@@ -98,21 +99,32 @@ const TIER_FEATURES: Record<string, string[]> = {
 
 export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) => {
   const [plans, setPlans] = useState<Plan[]>([]);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(true);
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // When checkout reports the account is missing contact details Cashfree needs (phone/email),
+  // this captures which plan was being purchased and which fields to ask for, instead of just
+  // showing a generic error and leaving the user stuck.
+  const [pendingPlanId, setPendingPlanId] = useState<string | null>(null);
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [phoneInput, setPhoneInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
 
   useEffect(() => {
     if (!isOpen) return;
     setErrorMsg(null);
+    setIsLoadingPlans(true);
     fetch("/api/payments/plans")
       .then((r) => r.json())
       .then((data) => setPlans(data.plans || []))
-      .catch(() => setErrorMsg("Couldn't load pricing right now. Please try again."));
+      .catch(() => setErrorMsg("Couldn't load pricing right now. Please try again."))
+      .finally(() => setIsLoadingPlans(false));
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleSubscribe = async (planId: string) => {
+  const handleSubscribe = async (planId: string, extra?: { phone?: string; email?: string }) => {
     setErrorMsg(null);
     setLoadingPlanId(planId);
     try {
@@ -123,10 +135,18 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
       const res = await fetch("/api/payments/cashfree/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ planId }),
+        body: JSON.stringify({ planId, ...extra }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to start checkout.");
+      if (!res.ok) {
+        if (data.code === "PROFILE_INCOMPLETE") {
+          setPendingPlanId(planId);
+          setMissingFields(data.missing || []);
+          setLoadingPlanId(null);
+          return;
+        }
+        throw new Error(data.error || "Failed to start checkout.");
+      }
 
       const Cashfree = await loadCashfreeSdk();
       const cashfree = Cashfree({ mode: "production" });
@@ -138,6 +158,14 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
       setErrorMsg(err.message || "Something went wrong starting checkout.");
       setLoadingPlanId(null);
     }
+  };
+
+  const handleCompleteProfileAndSubscribe = () => {
+    if (!pendingPlanId) return;
+    const extra: { phone?: string; email?: string } = {};
+    if (missingFields.includes("phone")) extra.phone = phoneInput.trim();
+    if (missingFields.includes("email")) extra.email = emailInput.trim();
+    handleSubscribe(pendingPlanId, extra);
   };
 
   return (
@@ -171,6 +199,83 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
             </div>
           )}
 
+          {pendingPlanId && missingFields.length > 0 && (
+            <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-2xl space-y-3">
+              <p className="text-xs font-bold text-amber-900">
+                Just need your {missingFields.join(" and ")} to continue -- Cashfree requires this for payment confirmations and refunds.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                {missingFields.includes("phone") && (
+                  <input
+                    type="tel"
+                    value={phoneInput}
+                    onChange={(e) => setPhoneInput(e.target.value)}
+                    placeholder="Phone number"
+                    className="h-10 px-3 bg-white border border-amber-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                )}
+                {missingFields.includes("email") && (
+                  <input
+                    type="email"
+                    value={emailInput}
+                    onChange={(e) => setEmailInput(e.target.value)}
+                    placeholder="Email address"
+                    className="h-10 px-3 bg-white border border-amber-300 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCompleteProfileAndSubscribe}
+                  disabled={
+                    loadingPlanId !== null ||
+                    (missingFields.includes("phone") && !phoneInput.trim()) ||
+                    (missingFields.includes("email") && !emailInput.trim())
+                  }
+                  className="flex items-center gap-1.5 h-9 px-4 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl transition-colors disabled:opacity-50"
+                >
+                  {loadingPlanId === pendingPlanId ? (
+                    <>
+                      <Loader2 size={13} className="animate-spin" /> Continuing...
+                    </>
+                  ) : (
+                    <span>Save & Continue to Payment</span>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPendingPlanId(null);
+                    setMissingFields([]);
+                  }}
+                  className="text-xs font-semibold text-slate-500 hover:text-slate-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {isLoadingPlans ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
+                  <Skeleton className="w-9 h-9 rounded-xl" />
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-28" />
+                  <Skeleton className="h-3 w-full" />
+                  <Skeleton className="h-3 w-4/5" />
+                  <div className="space-y-2 pt-2">
+                    {Array.from({ length: 4 }).map((_, j) => (
+                      <Skeleton key={j} className="h-3 w-full" />
+                    ))}
+                  </div>
+                  <Skeleton className="h-10 w-full rounded-xl" />
+                </div>
+              ))}
+            </div>
+          ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
             {plans.map((plan) => {
               const style = TIER_STYLE[plan.tier] || TIER_STYLE.sachet;
@@ -237,6 +342,7 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
               );
             })}
           </div>
+          )}
         </div>
       </div>
     </div>

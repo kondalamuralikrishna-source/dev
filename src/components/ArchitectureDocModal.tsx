@@ -157,7 +157,7 @@ export const ArchitectureDocModal: React.FC<ArchitectureDocModalProps> = ({
         </div>
 
         <div class="feature-box">
-          <h3>2. Complete Lenin Martin English Grammar Curriculum (100 Lessons across 20 Modules)</h3>
+          <h3>2. Complete English Grammar Curriculum (100 Lessons across 20 Modules)</h3>
           <p><strong>Functional Purpose:</strong> Authoritative theoretical and functional syntactic foundation.</p>
           <ul>
             <li><strong>20 Comprehensive Modules:</strong> Covering sentence structures, noun classification, pronoun agreements, all 12 tenses, voice/mood, modal auxiliaries, clauses, punctuation, business syntax, and rhetorical C2 mastery.</li>
@@ -212,7 +212,7 @@ export const ArchitectureDocModal: React.FC<ArchitectureDocModalProps> = ({
           <p><strong>Functional Purpose:</strong> Instant text diagnosis and corrective coaching.</p>
           <ul>
             <li><strong>Syntactic Error Highlighting:</strong> Color-coded categorization of tense clashes, subject-verb disagreement, preposition misuse, and awkward register.</li>
-            <li><strong>Pedagogical Explanations:</strong> Plain-English explanations linking directly to relevant Lenin Martin curriculum modules.</li>
+            <li><strong>Pedagogical Explanations:</strong> Plain-English explanations linking directly to relevant curriculum modules.</li>
           </ul>
         </div>
 

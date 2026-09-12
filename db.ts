@@ -290,7 +290,7 @@ Users must be at least 18 years of age (or the legal age of majority) to registe
 Fluenxia may offer free or discounted trials (e.g., 7-day trials). Unless canceled prior to the trial expiration, the subscription automatically converts into a paid recurring plan at the rates displayed at checkout. Subscriptions automatically renew until canceled via account settings or the respective app store. Fees are inclusive/exclusive of statutory taxes as indicated at purchase.
 
 ## Proprietary Rights & Prohibited Conduct
-All software, algorithms, speech models, prompt libraries, assessment frameworks, and the Lenin Martin English Grammar Curriculum are the exclusive Intellectual Property of the Company. Users shall not: (i) reverse engineer, decompile, or extract the source code or voice pipeline; (ii) use automated bots or scrapers to bypass the Anti-Gaming Engine or extract curriculum materials; or (iii) upload unlawful or infringing content.
+All software, algorithms, speech models, prompt libraries, assessment frameworks, and the proprietary English Grammar Curriculum are the exclusive Intellectual Property of the Company. Users shall not: (i) reverse engineer, decompile, or extract the source code or voice pipeline; (ii) use automated bots or scrapers to bypass the Anti-Gaming Engine or extract curriculum materials; or (iii) upload unlawful or infringing content.
 
 ## Anti-Gaming Heuristics & System Integrity
 To maintain standard assessment validity, Fluenxia monitors response timing, keystroke patterns, and interaction metrics. Suspicious activities indicative of automated scripts or spoofing may result in standard score invalidation or account suspension.

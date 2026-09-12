@@ -5943,7 +5943,7 @@ app.post("/api/auth/consent", requireAuth, async (req, res) => {
 // own verification flow, not a quick profile-form field.
 app.post("/api/auth/update-profile", requireAuth, async (req, res) => {
   try {
-    const { name, avatarUrl, phone, countryCode } = req.body;
+    const { name, avatarUrl, phone, countryCode, email } = req.body;
     const patch: Record<string, any> = {};
 
     if (name !== undefined) {
@@ -5969,6 +5969,18 @@ app.post("/api/auth/update-profile", requireAuth, async (req, res) => {
     }
     if (phone !== undefined) patch.phone = String(phone).trim() || undefined;
     if (countryCode !== undefined) patch.countryCode = String(countryCode).trim() || undefined;
+    if (email !== undefined) {
+      const cleanEmail = String(email).trim().toLowerCase();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(cleanEmail)) {
+        return res.status(400).json({ error: "Please enter a valid email address." });
+      }
+      const existing = await userStore.getByEmail(cleanEmail);
+      if (existing && existing.id !== req.authUser!.id) {
+        return res.status(409).json({ error: "That email is already in use by another account." });
+      }
+      patch.email = cleanEmail;
+    }
 
     if (Object.keys(patch).length === 0) {
       return res.status(400).json({ error: "No editable fields provided." });
@@ -6328,7 +6340,7 @@ app.post("/api/payments/cashfree/create-order", requireAuth, async (req, res) =>
     if (!isCashfreeConfigured()) {
       return res.status(503).json({ error: "Payments are not configured yet. Please try again later." });
     }
-    const { planId } = req.body;
+    const { planId, phone, email } = req.body;
     const plans = await effectivePlans();
     const plan = plans[planId as PlanId];
     if (!plan) {
@@ -6338,6 +6350,42 @@ app.post("/api/payments/cashfree/create-order", requireAuth, async (req, res) =>
     const user = await userStore.getById(req.authUser!.id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
+    // Real contact details are required before we hand this off to Cashfree -- previously a
+    // missing phone/email silently got replaced with a fake placeholder (a dummy phone number, an
+    // @fluenxiaapp.com address derived from the user id), which is a real problem for a live
+    // payment: refund contact, SMS confirmations, and Cashfree's own KYC all need the genuine
+    // customer. If the caller supplied phone/email in this same request (the frontend's "complete
+    // your profile" step), save it to the account now rather than requiring a second round trip.
+    const patch: Record<string, any> = {};
+    if (!user.phone && phone) {
+      patch.phone = String(phone).trim();
+    }
+    if (!user.email && email) {
+      const cleanEmail = String(email).trim().toLowerCase();
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(cleanEmail)) {
+        return res.status(400).json({ error: "Please enter a valid email address." });
+      }
+      const existing = await userStore.getByEmail(cleanEmail);
+      if (existing && existing.id !== user.id) {
+        return res.status(409).json({ error: "That email is already in use by another account." });
+      }
+      patch.email = cleanEmail;
+    }
+    if (Object.keys(patch).length > 0) {
+      Object.assign(user, patch);
+      await userStore.update(user.id, patch);
+    }
+
+    const stillMissing = [!user.phone && "phone", !user.email && "email"].filter(Boolean) as string[];
+    if (stillMissing.length > 0) {
+      return res.status(400).json({
+        error: "Please add your " + stillMissing.join(" and ") + " to continue with checkout.",
+        code: "PROFILE_INCOMPLETE",
+        missing: stillMissing,
+      });
+    }
+
     const orderId = `fx_${plan.id}_${Date.now()}_${crypto.randomBytes(3).toString("hex")}`;
     const appBaseUrl = process.env.APP_URL || "http://localhost:3000";
 
@@ -6345,7 +6393,7 @@ app.post("/api/payments/cashfree/create-order", requireAuth, async (req, res) =>
       orderId,
       amount: plan.amountInr,
       customerId: user.id,
-      customerEmail: user.email || `${user.id}@fluenxiaapp.com`,
+      customerEmail: user.email!,
       customerPhone: user.phone,
       returnUrl: `${appBaseUrl}/?portal=student&payment_return=1&order_id=${orderId}`,
       notifyUrl: `${appBaseUrl}/api/payments/webhook/cashfree`,
