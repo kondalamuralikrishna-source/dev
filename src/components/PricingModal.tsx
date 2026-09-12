@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { X, Zap, Check, Sparkles, Loader2, Flame, Crown } from "lucide-react";
 import { Skeleton } from "./Skeleton";
+import type { UserAccount } from "../types";
 
 interface Plan {
   id: string;
@@ -14,6 +15,11 @@ interface Plan {
 interface PricingModalProps {
   isOpen: boolean;
   onClose: () => void;
+  // Checkout can save a phone/email as part of this same request (the "complete your profile"
+  // step below); without this, that new value sits correctly in the database but the app's own
+  // cached currentUser never finds out, so screens like Profile Edit keep showing it as blank
+  // until the next full login.
+  onProfileUpdated?: (updatedUser: UserAccount) => void;
 }
 
 // Cashfree's hosted-checkout SDK is loaded lazily (only when this modal is actually used) rather
@@ -97,7 +103,7 @@ const TIER_FEATURES: Record<string, string[]> = {
   ],
 };
 
-export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) => {
+export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose, onProfileUpdated }) => {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [isLoadingPlans, setIsLoadingPlans] = useState(true);
   const [loadingPlanId, setLoadingPlanId] = useState<string | null>(null);
@@ -160,6 +166,8 @@ export const PricingModal: React.FC<PricingModalProps> = ({ isOpen, onClose }) =
         }
         throw new Error(data.error || "Failed to start checkout.");
       }
+
+      if (data.user) onProfileUpdated?.(data.user);
 
       const Cashfree = await loadCashfreeSdk();
       const cashfree = Cashfree({ mode: "production" });

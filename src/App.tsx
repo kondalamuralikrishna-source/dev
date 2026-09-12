@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Header, NavTab } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
 import { AdminHeader, AdminNavTab } from "./components/AdminHeader";
@@ -238,7 +238,11 @@ export default function App() {
           setPaymentStatusMsg("Payment successful! Your plan is now active.");
           setCurrentUser((prev) => {
             if (!prev) return prev;
-            const updated = { ...prev, subscription: data.subscription };
+            // Prefer the full user record when the server sends one -- checkout may have also
+            // saved a phone/email as part of this same purchase, and merging only `subscription`
+            // (the old behavior) left those stale in the app's cached currentUser until the next
+            // full login, even though the database had the real value all along.
+            const updated = data.user ? { ...prev, ...data.user } : { ...prev, subscription: data.subscription };
             localStorage.setItem("linguaflow_user_session", JSON.stringify(updated));
             return updated;
           });
@@ -256,9 +260,21 @@ export default function App() {
       });
   }, []);
 
-  // Dynamically sync browser URL address bar with current portal / tab
+  // Dynamically sync browser URL address bar with current portal / tab. Each tab/portal change
+  // pushes a real history entry (rather than replacing the current one) so the browser's Back
+  // button steps through the app's own navigation one screen at a time, instead of skipping
+  // straight past every in-app screen to whatever page was open before the app loaded. The ref
+  // guards against the popstate handler below re-triggering this same push when the user is the
+  // one going back/forward -- that state change must only ever update the URL bar via pushState,
+  // never re-push (which would turn Back into a no-op by immediately re-adding the entry it just
+  // stepped off of).
+  const isPopStateNavRef = useRef(false);
   useEffect(() => {
     if (!isAuthInitialized) return;
+    if (isPopStateNavRef.current) {
+      isPopStateNavRef.current = false;
+      return;
+    }
     try {
       const url = new URL(window.location.href);
       if (portal === "admin") {
@@ -276,11 +292,80 @@ export default function App() {
           url.searchParams.delete("tab");
         }
       }
-      window.history.replaceState(null, "", url.toString());
+      window.history.pushState(null, "", url.toString());
     } catch (e) {
       console.warn("Could not sync URL state:", e);
     }
   }, [portal, studentTab, adminTab, isAuthInitialized]);
+
+  // Handles the browser's actual Back/Forward buttons: re-read the URL that the browser just
+  // navigated to and update React state to match, so the visible screen actually changes instead
+  // of just the address bar (pushState/replaceState alone don't re-render anything on their own).
+  useEffect(() => {
+    const handlePopState = () => {
+      isPopStateNavRef.current = true;
+      // Fallback in case the parsed portal/tab end up identical to current state (e.g. duplicate
+      // history entries) -- the sync effect above then never re-runs to clear this flag itself,
+      // which would otherwise incorrectly skip the *next* legitimate forward navigation's push.
+      setTimeout(() => {
+        isPopStateNavRef.current = false;
+      }, 0);
+      const params = new URLSearchParams(window.location.search);
+      const pathname = window.location.pathname.toLowerCase();
+      const portalParam = params.get("portal")?.toLowerCase();
+      const tabParam = params.get("tab");
+
+      if (portalParam === "admin" || pathname.endsWith("/admin")) {
+        setPortal("admin");
+        if (
+          tabParam &&
+          [
+            "governance",
+            "subscriptions",
+            "content_settings",
+            "ala_studio",
+            "speech_science",
+            "enterprise_compliance",
+            "integrity_assessment",
+            "adaptive_curriculum",
+            "ase_engine",
+          ].includes(tabParam)
+        ) {
+          setAdminTab(tabParam as AdminNavTab);
+        } else {
+          setAdminTab("governance");
+        }
+      } else {
+        setPortal("student");
+        if (
+          tabParam &&
+          [
+            "dashboard",
+            "assessment",
+            "c2course",
+            "adaptive",
+            "grammar",
+            "vocabulary",
+            "quizzes",
+            "roleplay_coach",
+            "fluidconvo",
+            "fluency_suite",
+            "chat",
+            "pronunciation",
+            "stress",
+            "doctor",
+            "progress",
+          ].includes(tabParam)
+        ) {
+          setStudentTab(tabParam as NavTab);
+        } else {
+          setStudentTab("dashboard");
+        }
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
 
   // Update streak on mount. Must NOT clobber a just-restored logged-in user's server progress
   // with the guest-only localStorage progress (updateStreak() reads/writes that guest key
@@ -953,7 +1038,14 @@ export default function App() {
       />
 
       {/* Subscription tier upgrade / Cashfree checkout modal */}
-      <PricingModal isOpen={isPricingModalOpen} onClose={() => setIsPricingModalOpen(false)} />
+      <PricingModal
+        isOpen={isPricingModalOpen}
+        onClose={() => setIsPricingModalOpen(false)}
+        onProfileUpdated={(updatedUser) => {
+          setCurrentUser(updatedUser);
+          localStorage.setItem("linguaflow_user_session", JSON.stringify(updatedUser));
+        }}
+      />
 
       {/* Edit Profile (name, avatar, phone) */}
       {currentUser && isEditProfileModalOpen && (

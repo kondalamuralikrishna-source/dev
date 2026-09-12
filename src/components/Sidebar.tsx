@@ -121,7 +121,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
       {/* Brand */}
       <div className="flex items-center justify-between gap-2.5 px-5 py-5 border-b border-slate-800/80">
-        <div className="flex items-center gap-2.5">
+        <button
+          type="button"
+          onClick={() => handleSelectTab("dashboard")}
+          className="flex items-center gap-2.5 cursor-pointer text-left"
+          aria-label="Go to Dashboard"
+        >
           <div className="p-1 rounded-lg bg-white/95 flex items-center justify-center">
             <LinguaFlowLogo variant="mark" size="xs" />
           </div>
@@ -133,7 +138,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               Commanding The Cadence Of Clarity
             </span>
           </div>
-        </div>
+        </button>
         {/* Close button — mobile/tablet drawer only */}
         <button
           type="button"

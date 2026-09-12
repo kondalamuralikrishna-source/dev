@@ -6420,7 +6420,10 @@ app.post("/api/payments/cashfree/create-order", requireAuth, async (req, res) =>
       createdAt: new Date().toISOString(),
     });
 
-    res.json({ orderId, paymentSessionId: cfOrder.payment_session_id, amount: plan.amountInr, plan });
+    // Include the (possibly just-patched) user so the frontend can sync its cached currentUser --
+    // otherwise a phone/email saved here as part of checkout never reaches the app's own state
+    // until the next full login, and screens like Profile Edit keep showing it as blank.
+    res.json({ orderId, paymentSessionId: cfOrder.payment_session_id, amount: plan.amountInr, plan, user });
   } catch (err: any) {
     console.error("Error in /api/payments/cashfree/create-order:", err);
     res.status(500).json({ error: err.message || "Failed to create payment order." });
@@ -6471,14 +6474,14 @@ app.get("/api/payments/cashfree/verify/:orderId", requireAuth, async (req, res) 
     }
     if (localOrder.status === "paid") {
       const user = await userStore.getById(req.authUser!.id);
-      return res.json({ status: "paid", subscription: user?.subscription });
+      return res.json({ status: "paid", subscription: user?.subscription, user });
     }
 
     const cfStatus = await fetchCashfreeOrderStatus(orderId);
     if (cfStatus.order_status === "PAID") {
       await activateSubscriptionForOrder(orderId);
       const user = await userStore.getById(req.authUser!.id);
-      return res.json({ status: "paid", subscription: user?.subscription });
+      return res.json({ status: "paid", subscription: user?.subscription, user });
     }
 
     res.json({ status: cfStatus.order_status.toLowerCase() });

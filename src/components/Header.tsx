@@ -50,6 +50,7 @@ interface HeaderProps {
 
 // Slim top bar (search, notifications, stats, user menu). Primary navigation lives in <Sidebar>.
 export const Header: React.FC<HeaderProps> = ({
+  setActiveTab,
   progress,
   onUpdateLevel,
   currentUser,
@@ -100,12 +101,17 @@ export const Header: React.FC<HeaderProps> = ({
             in the header bar on phones (below md, where the search box is hidden and there'd
             otherwise be nothing balancing the hamburger/bell on either side); reverts to normal
             inline flow once the search box appears at md+. */}
-        <div className="lg:hidden md:static md:left-auto md:translate-x-0 absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 shrink-0">
+        <button
+          type="button"
+          onClick={() => setActiveTab("dashboard")}
+          aria-label="Go to dashboard"
+          className="lg:hidden md:static md:left-auto md:translate-x-0 absolute left-1/2 -translate-x-1/2 flex items-center gap-1.5 shrink-0"
+        >
           <LinguaFlowLogo variant="mark" size="xs" />
           <span className="font-black text-sm text-slate-900 tracking-tight">
             FLUENXI<span className="text-blue-600">A</span>
           </span>
-        </div>
+        </button>
 
         {/* Search (visual, matches design — filters nothing yet) */}
         <div className="hidden md:flex items-center flex-1 max-w-md">
